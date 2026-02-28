@@ -3,7 +3,7 @@
 // MINISTÉRIO DA SAÚDE - REPÚBLICA DE ANGOLA
 // ============================================
 // Módulo: Certificados Médicos Oficiais
-// Versão: 1.0.0 (SEM SENHA)
+// Versão: 1.0.0 (SEM SENHA - BOTÃO CORRIGIDO)
 // Data: 2025
 // ============================================
 
@@ -247,6 +247,8 @@ app.get('/ministerio', (req, res) => {
             cursor: pointer;
             width: 100%;
             transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
         }
         .btn-login:hover {
             background: #ffd700;
@@ -334,7 +336,10 @@ app.get('/ministerio', (req, res) => {
 
         <div class="login-form">
             <h3 style="margin-bottom: 20px;">🔐 Acesso ao Portal</h3>
-            <button class="btn-login" onclick="entrar()">ENTRAR NO SISTEMA</button>
+            <!-- BOTÃO CORRIGIDO - FUNCIONA SEMPRE -->
+            <a href="/ministerio/dashboard" style="text-decoration: none;">
+                <button class="btn-login">ENTRAR NO SISTEMA</button>
+            </a>
         </div>
 
         <div class="links">
@@ -362,9 +367,10 @@ app.get('/ministerio', (req, res) => {
             }
         }
 
-        function entrar() {
+        // Função de fallback caso alguém use onclick
+        window.entrar = function() {
             window.location.href = '/ministerio/dashboard';
-        }
+        };
 
         carregarStats();
     </script>
