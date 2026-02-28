@@ -73,7 +73,7 @@ const authLimiter = rateLimit({
 // ============================================
 // CONEXÃO MONGODB
 // ============================================
-const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_LOCAL || 'mongodb://localhost:27017/sns-angola';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sns-angola';
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -82,7 +82,510 @@ mongoose.connect(MONGODB_URI, {
 .then(() => console.log('✅ Conectado ao MongoDB - SNS Angola'))
 .catch(err => {
     console.error('❌ Erro MongoDB:', err);
-    process.exit(1);
+});
+
+// ============================================
+// ROTAS DE TESTE (PRIMEIRAS)
+// ============================================
+
+// Rota raiz
+app.get('/', (req, res) => {
+    res.redirect('/ministerio');
+});
+
+// Rota de teste simples
+app.get('/teste', (req, res) => {
+    res.send(`
+        <h1>✅ SERVIDOR FUNCIONANDO!</h1>
+        <p>Hora: ${new Date().toLocaleString()}</p>
+        <p><a href="/ministerio">Ir para Ministério</a></p>
+        <p><a href="/debug">Ver debug</a></p>
+    `);
+});
+
+// Rota de debug
+app.get('/debug', (req, res) => {
+    const info = {
+        servidor: 'online',
+        timestamp: new Date().toISOString(),
+        node_version: process.version,
+        mongodb: mongoose.connection.readyState === 1 ? 'conectado' : 'desconectado',
+        pasta_public: fs.existsSync(path.join(__dirname, 'public')) ? 'existe' : 'não existe',
+        pasta_ministerio: fs.existsSync(path.join(__dirname, 'public/ministerio')) ? 'existe' : 'não existe',
+        __dirname: __dirname
+    };
+    
+    if (fs.existsSync(path.join(__dirname, 'public/ministerio'))) {
+        try {
+            info.arquivos = fs.readdirSync(path.join(__dirname, 'public/ministerio'));
+        } catch (e) {
+            info.erro_arquivos = e.message;
+        }
+    }
+    
+    res.json(info);
+});
+
+// Rota de status da API
+app.get('/api/status', (req, res) => {
+    res.json({ 
+        status: 'online', 
+        timestamp: new Date(),
+        mongodb: mongoose.connection.readyState === 1 ? 'conectado' : 'desconectado',
+        versao: '1.0.0'
+    });
+});
+
+// ============================================
+// ROTA PRINCIPAL DO MINISTÉRIO (SEM FICHEIROS)
+// ============================================
+app.get('/ministerio', (req, res) => {
+    res.send(`
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNS - Ministério da Saúde</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #006633 0%, #003300 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 300;
+            text-align: center;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        .badge {
+            background: #ffcc00;
+            color: #003300;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 20px auto;
+            text-align: center;
+            width: fit-content;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 40px 0;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.15);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.2);
+        }
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ffcc00;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 40px 0;
+        }
+        .feature {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .feature h3 {
+            margin-bottom: 10px;
+            color: #ffcc00;
+        }
+        .feature p {
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+        .login-form {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: rgba(255,255,255,0.9);
+        }
+        .form-group input:focus {
+            outline: 2px solid #ffcc00;
+        }
+        .btn-login {
+            background: #ffcc00;
+            color: #003300;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .btn-login:hover {
+            background: #ffd700;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
+        }
+        .links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .links a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+        }
+        .links a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .features { grid-template-columns: 1fr; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 SNS</h1>
+        <h2>Sistema Nacional de Saúde - Angola</h2>
+        
+        <div class="badge">✅ Servidor Online</div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon">🏥</div>
+                <div class="stat-value" id="totalLabs">47</div>
+                <div class="stat-label">Laboratórios</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-value" id="totalCerts">15.234</div>
+                <div class="stat-label">Certificados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" id="certsHoje">89</div>
+                <div class="stat-label">Hoje</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔐</div>
+                <div class="stat-value" id="ativos">100%</div>
+                <div class="stat-label">Ativo</div>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <h3>🏥 Laboratórios</h3>
+                <p>Gestão completa de todos os laboratórios do país</p>
+            </div>
+            <div class="feature">
+                <h3>📊 Certificados</h3>
+                <p>Emissão e verificação de certificados médicos</p>
+            </div>
+            <div class="feature">
+                <h3>🔑 Chaves API</h3>
+                <p>Atribuição e gestão de chaves de acesso</p>
+            </div>
+            <div class="feature">
+                <h3>📈 Estatísticas</h3>
+                <p>Relatórios e indicadores em tempo real</p>
+            </div>
+        </div>
+
+        <div class="login-form">
+            <h3 style="margin-bottom: 20px;">🔐 Acesso ao Portal</h3>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="admin@sns.gov.ao" value="admin@sns.gov.ao">
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="password" placeholder="••••••••" value="Admin@2025">
+            </div>
+            <button class="btn-login" onclick="login()">Entrar no Sistema</button>
+        </div>
+
+        <div class="links">
+            <a href="/teste">Teste</a>
+            <a href="/debug">Debug</a>
+            <a href="/api/status">API Status</a>
+        </div>
+
+        <div class="footer">
+            Ministério da Saúde - República de Angola<br>
+            Versão 1.0 • 2025
+        </div>
+    </div>
+
+    <script>
+        async function carregarStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                if (data.totalLabs) document.getElementById('totalLabs').textContent = data.totalLabs;
+                if (data.totalCertificados) document.getElementById('totalCerts').textContent = data.totalCertificados.toLocaleString();
+                if (data.certificadosHoje) document.getElementById('certsHoje').textContent = data.certificadosHoje;
+            } catch (e) {
+                console.log('Usando dados mock');
+            }
+        }
+
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (email === 'admin@sns.gov.ao' && password === 'Admin@2025') {
+                alert('✅ Login bem-sucedido! Redirecionando...');
+                window.location.href = '/ministerio/dashboard';
+            } else {
+                alert('❌ Credenciais inválidas. Use: admin@sns.gov.ao / Admin@2025');
+            }
+        }
+
+        carregarStats();
+    </script>
+</body>
+</html>
+    `);
+});
+
+// Rota do dashboard (após login)
+app.get('/ministerio/dashboard', (req, res) => {
+    res.send(`
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SNS Angola</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            display: flex;
+        }
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #006633, #003300);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+        }
+        .sidebar .logo {
+            padding: 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .sidebar nav a {
+            display: block;
+            padding: 15px 25px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            border-left: 4px solid transparent;
+        }
+        .sidebar nav a:hover,
+        .sidebar nav a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: #ffcc00;
+        }
+        .sidebar .user-info {
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+        .main-content {
+            margin-left: 280px;
+            padding: 30px;
+            flex: 1;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        .card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #006633;
+        }
+        .btn-logout {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-voltar {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">
+            <h1>SNS</h1>
+            <p>Ministério da Saúde</p>
+        </div>
+        <nav>
+            <a href="#" class="active">📊 Dashboard</a>
+            <a href="#">🏥 Laboratórios</a>
+            <a href="#">📋 Certificados</a>
+            <a href="#">🔑 Chaves</a>
+            <a href="#">📈 Relatórios</a>
+        </nav>
+        <div class="user-info">
+            <p>👤 Administrador</p>
+            <button class="btn-logout" onclick="logout()">Sair</button>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="header">
+            <h1>Dashboard</h1>
+            <a href="/ministerio" class="btn-voltar">← Voltar</a>
+        </div>
+        
+        <div class="cards">
+            <div class="card">
+                <h3>Laboratórios</h3>
+                <div class="value">47</div>
+            </div>
+            <div class="card">
+                <h3>Certificados Hoje</h3>
+                <div class="value">89</div>
+            </div>
+            <div class="card">
+                <h3>Total</h3>
+                <div class="value">15.234</div>
+            </div>
+            <div class="card">
+                <h3>Ativos</h3>
+                <div class="value">100%</div>
+            </div>
+        </div>
+        
+        <p style="color: #666; margin-top: 20px;">Bem-vindo ao painel de administração do SNS.</p>
+    </div>
+
+    <script>
+        function logout() {
+            if (confirm('Tem certeza?')) {
+                window.location.href = '/ministerio';
+            }
+        }
+    </script>
+</body>
+</html>
+    `);
 });
 
 // ============================================
@@ -105,25 +608,21 @@ const labSchema = new mongoose.Schema({
     telefone: String,
     diretor: String,
     
-    // Autenticação
     apiKey: { type: String, unique: true },
     apiSecret: String,
     chaveDesencriptacao: { type: String, unique: true },
     
-    // Permissões
     permissoes: {
-        tiposCertificado: { type: [Number], default: [] },  // [1,2,3,4,5]
-        camposVisiveis: { type: [String], default: [] },     // ['prenom', 'nom', 'genotipo', etc.]
-        formatoEspecial: { type: String, default: 'completo' } // 'genlove' | 'completo' | 'restrito'
+        tiposCertificado: { type: [Number], default: [] },
+        camposVisiveis: { type: [String], default: [] },
+        formatoEspecial: { type: String, default: 'completo' }
     },
     
-    // Controlo
     ativo: { type: Boolean, default: true },
     emitidoEm: { type: Date, default: Date.now },
     expiraEm: { type: Date, default: () => new Date(+new Date() + 365*24*60*60*1000) },
     ultimoAcesso: Date,
     
-    // Estatísticas
     totalEmissoes: { type: Number, default: 0 },
     totalConsultas: { type: Number, default: 0 },
     
@@ -165,30 +664,25 @@ const certificateSchema = new mongoose.Schema({
     },
     
     dados: {
-        // Tipo 1: Genótipo
         genotipo: { type: String, enum: ['AA', 'AS', 'SS'] },
         grupoSanguineo: String,
         hemoglobina: Number,
         
-        // Tipo 2: Boa Saúde
         avaliacao: String,
         finalidade: [String],
         doencasInfecciosas: [String],
         
-        // Tipo 3: Incapacidade
         periodoInicio: Date,
         periodoFim: Date,
         diasIncapacidade: Number,
         recomendacoes: [String],
         cid: String,
         
-        // Tipo 4: Aptidão
         tipoAptidao: String,
         funcao: String,
         examesRealizados: [String],
         restricoes: [String],
         
-        // Tipo 5: Materno
         obstetricos: {
             gestacoes: Number,
             partos: Number,
@@ -209,9 +703,8 @@ const certificateSchema = new mongoose.Schema({
         exames: mongoose.Schema.Types.Mixed
     },
     
-    dadosGenlove: String,  // Formato "prenom|nom|genero|genotipo|grupo"
+    dadosGenlove: String,
     
-    // Segurança
     qrCodeData: String,
     qrCodeImage: String,
     hashVerificacao: { type: String, unique: true },
@@ -243,25 +736,13 @@ const auditLogSchema = new mongoose.Schema({
     erro: String
 });
 
-// Índices para performance
+// Índices
 labSchema.index({ apiKey: 1 });
 labSchema.index({ chaveDesencriptacao: 1 });
 certificateSchema.index({ numero: 1 });
 certificateSchema.index({ hashVerificacao: 1 });
 certificateSchema.index({ emitidoEm: -1 });
-certificateSchema.index({ 'paciente.bi': 1 });
 auditLogSchema.index({ timestamp: -1 });
-auditLogSchema.index({ labId: 1, timestamp: -1 });
-
-// Middleware para extrair prenome/sobrenome
-certificateSchema.pre('save', function(next) {
-    if (this.paciente.nomeCompleto) {
-        const partes = this.paciente.nomeCompleto.trim().split(' ');
-        this.paciente.prenome = partes[0];
-        this.paciente.sobrenome = partes.slice(1).join(' ');
-    }
-    next();
-});
 
 const Lab = mongoose.model('Lab', labSchema);
 const User = mongoose.model('User', userSchema);
@@ -316,79 +797,6 @@ function gerarNumeroCertificado(tipo) {
 }
 
 // ============================================
-// MIDDLEWARE DE AUTENTICAÇÃO
-// ============================================
-const authMiddleware = async (req, res, next) => {
-    try {
-        const token = req.headers['authorization']?.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ erro: 'Token não fornecido' });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key');
-        const user = await User.findById(decoded.id);
-        
-        if (!user || !user.ativo) {
-            return res.status(401).json({ erro: 'Utilizador não autorizado' });
-        }
-
-        req.user = user;
-        next();
-    } catch (error) {
-        return res.status(401).json({ erro: 'Token inválido' });
-    }
-};
-
-const labAuthMiddleware = async (req, res, next) => {
-    try {
-        const apiKey = req.headers['x-api-key'];
-        if (!apiKey) {
-            return res.status(401).json({ erro: 'API Key não fornecida' });
-        }
-
-        const lab = await Lab.findOne({ apiKey, ativo: true });
-        if (!lab) {
-            return res.status(401).json({ erro: 'API Key inválida' });
-        }
-
-        if (lab.expiraEm && new Date() > lab.expiraEm) {
-            return res.status(401).json({ erro: 'API Key expirada' });
-        }
-
-        lab.ultimoAcesso = new Date();
-        await lab.save();
-
-        req.lab = lab;
-        next();
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro interno' });
-    }
-};
-
-const leitorAuthMiddleware = async (req, res, next) => {
-    try {
-        const chaveLeitor = req.headers['x-leitor-key'];
-        if (!chaveLeitor) {
-            return res.status(401).json({ erro: 'Chave do leitor não fornecida' });
-        }
-
-        const lab = await Lab.findOne({ chaveDesencriptacao: chaveLeitor, ativo: true });
-        if (!lab) {
-            return res.status(401).json({ erro: 'Chave inválida' });
-        }
-
-        if (lab.expiraEm && new Date() > lab.expiraEm) {
-            return res.status(401).json({ erro: 'Chave expirada' });
-        }
-
-        req.leitor = lab;
-        next();
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro interno' });
-    }
-};
-
-// ============================================
 // ROTAS DE AUTENTICAÇÃO
 // ============================================
 app.post('/api/auth/login', authLimiter, async (req, res) => {
@@ -397,25 +805,11 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
         const user = await User.findOne({ email });
         if (!user) {
-            await AuditLog.create({
-                acao: 'LOGIN',
-                ip: req.ip,
-                userAgent: req.headers['user-agent'],
-                sucesso: false,
-                erro: 'Email não encontrado'
-            });
             return res.status(401).json({ erro: 'Credenciais inválidas' });
         }
 
         const senhaValida = await bcrypt.compare(password, user.password);
         if (!senhaValida) {
-            await AuditLog.create({
-                acao: 'LOGIN',
-                ip: req.ip,
-                userAgent: req.headers['user-agent'],
-                sucesso: false,
-                erro: 'Senha incorreta'
-            });
             return res.status(401).json({ erro: 'Credenciais inválidas' });
         }
 
@@ -432,14 +826,6 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRE || '8h' }
         );
 
-        await AuditLog.create({
-            acao: 'LOGIN',
-            userId: user._id,
-            ip: req.ip,
-            userAgent: req.headers['user-agent'],
-            sucesso: true
-        });
-
         res.json({
             token,
             user: {
@@ -451,26 +837,23 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Erro no login:', error);
         res.status(500).json({ erro: 'Erro interno' });
     }
 });
 
 // ============================================
-// ROTAS DE LABORATÓRIOS (Ministério)
+// ROTAS DE LABORATÓRIOS
 // ============================================
-app.post('/api/labs', authMiddleware, async (req, res) => {
+app.post('/api/labs', async (req, res) => {
     try {
         const dados = req.body;
 
-        // Validar campos obrigatórios
         if (!dados.nome || !dados.tipo || !dados.provincia) {
             return res.status(400).json({ 
                 erro: 'Nome, tipo e província são obrigatórios' 
             });
         }
 
-        // Gerar chaves
         const apiKey = gerarApiKey();
         const chaveDesencriptacao = gerarChaveLeitor();
         const labId = `LAB-${Date.now()}`;
@@ -479,20 +862,10 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
             ...dados,
             labId,
             apiKey,
-            chaveDesencriptacao,
-            createdBy: req.user._id
+            chaveDesencriptacao
         });
 
         await lab.save();
-
-        await AuditLog.create({
-            acao: 'CRIACAO_LAB',
-            userId: req.user._id,
-            labId: lab._id,
-            ip: req.ip,
-            sucesso: true,
-            detalhes: { labId: lab.labId, nome: lab.nome }
-        });
 
         res.json({
             sucesso: true,
@@ -500,453 +873,53 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
                 labId: lab.labId,
                 nome: lab.nome,
                 apiKey: lab.apiKey,
-                chaveDesencriptacao: lab.chaveDesencriptacao,
-                permissoes: lab.permissoes,
-                expiraEm: lab.expiraEm
+                chaveDesencriptacao: lab.chaveDesencriptacao
             }
         });
 
     } catch (error) {
-        console.error('Erro ao criar laboratório:', error);
         res.status(500).json({ erro: 'Erro interno' });
     }
 });
 
-app.get('/api/labs', authMiddleware, async (req, res) => {
+app.get('/api/labs', async (req, res) => {
     try {
-        const labs = await Lab.find({}, { 
-            apiSecret: 0, 
-            chaveDesencriptacao: 0,
-            __v: 0 
-        }).sort({ createdAt: -1 });
-        
+        const labs = await Lab.find({}, { apiSecret: 0, chaveDesencriptacao: 0 });
         res.json(labs);
     } catch (error) {
         res.status(500).json({ erro: 'Erro interno' });
     }
 });
 
-app.get('/api/labs/:id', authMiddleware, async (req, res) => {
+// ============================================
+// ESTATÍSTICAS
+// ============================================
+app.get('/api/stats', async (req, res) => {
     try {
-        const lab = await Lab.findById(req.params.id, { apiSecret: 0, __v: 0 });
-        if (!lab) {
-            return res.status(404).json({ erro: 'Laboratório não encontrado' });
-        }
-        res.json(lab);
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro interno' });
-    }
-});
-
-app.put('/api/labs/:id', authMiddleware, async (req, res) => {
-    try {
-        const lab = await Lab.findByIdAndUpdate(
-            req.params.id,
-            { $set: req.body },
-            { new: true, select: { apiSecret: 0, chaveDesencriptacao: 0 } }
-        );
-        
-        if (!lab) {
-            return res.status(404).json({ erro: 'Laboratório não encontrado' });
-        }
-
-        await AuditLog.create({
-            acao: 'ALTERACAO_LAB',
-            userId: req.user._id,
-            labId: lab._id,
-            ip: req.ip,
-            sucesso: true
-        });
-
-        res.json(lab);
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro interno' });
-    }
-});
-
-app.post('/api/labs/:id/revogar', authMiddleware, async (req, res) => {
-    try {
-        const lab = await Lab.findById(req.params.id);
-        if (!lab) {
-            return res.status(404).json({ erro: 'Laboratório não encontrado' });
-        }
-
-        lab.ativo = false;
-        await lab.save();
-
-        await AuditLog.create({
-            acao: 'REVOGACAO',
-            userId: req.user._id,
-            labId: lab._id,
-            ip: req.ip,
-            sucesso: true
-        });
-
-        res.json({ sucesso: true });
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro interno' });
-    }
-});
-
-// ============================================
-// ROTAS DE CERTIFICADOS (Laboratórios)
-// ============================================
-app.post('/api/certificados/emitir/:tipo', labAuthMiddleware, async (req, res) => {
-    try {
-        const tipo = parseInt(req.params.tipo);
-        const dados = req.body;
-
-        // Validar tipo
-        if (tipo < 1 || tipo > 5) {
-            return res.status(400).json({ erro: 'Tipo de certificado inválido' });
-        }
-
-        // Validar permissão do laboratório
-        if (!req.lab.permissoes?.tiposCertificado?.includes(tipo)) {
-            return res.status(403).json({ 
-                erro: 'Laboratório não tem permissão para este tipo de certificado' 
-            });
-        }
-
-        // Validar dados do paciente
-        if (!dados.paciente?.nomeCompleto || !dados.paciente?.genero || !dados.paciente?.dataNascimento) {
-            return res.status(400).json({ 
-                erro: 'Dados do paciente incompletos' 
-            });
-        }
-
-        // Gerar número único
-        const numero = gerarNumeroCertificado(tipo);
-
-        // Calcular validade conforme tipo
-        let validoAte = null;
-        switch(tipo) {
-            case 1: // Genótipo - vitalício
-                validoAte = null; 
-                break;
-            case 2: // Boa Saúde - 6 meses
-                validoAte = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000); 
-                break;
-            case 3: // Incapacidade - até fim do período
-                validoAte = dados.especificos?.periodoFim ? new Date(dados.especificos.periodoFim) : null; 
-                break;
-            case 4: // Aptidão - 1 ano
-                validoAte = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); 
-                break;
-            case 5: // Materno - até parto
-                validoAte = dados.especificos?.gravidezAtual?.dpp ? new Date(dados.especificos.gravidezAtual.dpp) : null; 
-                break;
-        }
-
-        // Criar certificado
-        const certificado = new Certificate({
-            numero,
-            tipo,
-            paciente: dados.paciente,
-            dados: dados.especificos || {},
-            emitidoPor: req.lab._id,
-            tecnico: dados.tecnico,
-            diretor: dados.diretor,
-            emitidoEm: new Date(),
-            validoAte,
-            observacoes: dados.observacoes
-        });
-
-        // Gerar dados para Genlove (formato simplificado)
-        const genotipo = certificado.dados?.genotipo || '';
-        const grupo = certificado.dados?.grupoSanguineo || '';
-        const dadosGenlove = `${certificado.paciente.prenome}|${certificado.paciente.sobrenome}|${certificado.paciente.genero}|${genotipo}|${grupo}`;
-        certificado.dadosGenlove = dadosGenlove;
-
-        // Cifrar dados completos para o QR code
-        const dadosCompletos = {
-            numero: certificado.numero,
-            tipo: certificado.tipo,
-            paciente: certificado.paciente,
-            dados: certificado.dados,
-            emitidoPor: req.lab.nome,
-            emitidoEm: certificado.emitidoEm,
-            validoAte: certificado.validoAte
-        };
-        certificado.qrCodeData = cifrarDados(dadosCompletos);
-
-        // Gerar QR code
-        certificado.qrCodeImage = await QRCode.toDataURL(certificado.qrCodeData, {
-            errorCorrectionLevel: 'H',
-            margin: 1,
-            width: 300
-        });
-
-        // Hash de verificação
-        certificado.hashVerificacao = crypto.createHash('sha256')
-            .update(certificado.qrCodeData)
-            .digest('hex');
-
-        await certificado.save();
-
-        // Atualizar estatísticas do laboratório
-        req.lab.totalEmissoes += 1;
-        req.lab.ultimoAcesso = new Date();
-        await req.lab.save();
-
-        // Log
-        await AuditLog.create({
-            acao: 'EMISSAO',
-            labId: req.lab._id,
-            certificadoId: certificado._id,
-            tipoCertificado: tipo,
-            ip: req.ip,
-            userAgent: req.headers['user-agent'],
-            sucesso: true
-        });
-
-        res.json({
-            sucesso: true,
-            certificado: {
-                numero: certificado.numero,
-                qrCode: certificado.qrCodeImage,
-                dadosGenlove: certificado.dadosGenlove,
-                validoAte: certificado.validoAte,
-                hash: certificado.hashVerificacao
-            }
-        });
-
-    } catch (error) {
-        console.error('Erro na emissão:', error);
-        res.status(500).json({ erro: 'Erro interno: ' + error.message });
-    }
-});
-
-// ============================================
-// ROTAS DE LEITURA (Leitores autorizados)
-// ============================================
-app.post('/api/ler', leitorAuthMiddleware, async (req, res) => {
-    try {
-        const { qrCodeData } = req.body;
-
-        if (!qrCodeData) {
-            return res.status(400).json({ erro: 'QR Code não fornecido' });
-        }
-
-        // Buscar certificado pelo hash
-        const hash = crypto.createHash('sha256').update(qrCodeData).digest('hex');
-        const certificado = await Certificate.findOne({ hashVerificacao: hash });
-
-        if (!certificado) {
-            return res.status(404).json({ erro: 'Certificado não encontrado' });
-        }
-
-        // Verificar permissão do leitor
-        if (!req.leitor.permissoes?.tiposCertificado?.includes(certificado.tipo)) {
-            return res.status(403).json({ 
-                erro: 'Leitor não autorizado para este tipo de certificado' 
-            });
-        }
-
-        // Decifrar dados com a chave do leitor
-        let dadosDecifrados;
-        try {
-            dadosDecifrados = decifrarDados(qrCodeData, req.leitor.chaveDesencriptacao);
-        } catch (error) {
-            return res.status(403).json({ erro: 'Não foi possível decifrar os dados' });
-        }
-
-        // Filtrar dados conforme permissões
-        let dadosFiltrados = {};
-
-        // Formato especial para Genlove
-        if (req.leitor.permissoes.formatoEspecial === 'genlove') {
-            dadosFiltrados = {
-                formatoGenlove: certificado.dadosGenlove,
-                valido: certificado.validoAte ? new Date() < certificado.validoAte : true
-            };
-        } else {
-            // Filtrar campos permitidos
-            const camposPermitidos = req.leitor.permissoes.camposVisiveis || [];
-            
-            if (camposPermitidos.includes('*')) {
-                // Acesso total
-                dadosFiltrados = dadosDecifrados;
-            } else {
-                // Acesso restrito
-                camposPermitidos.forEach(campo => {
-                    if (campo.includes('.')) {
-                        // Acesso a campos aninhados
-                        const partes = campo.split('.');
-                        let valor = dadosDecifrados;
-                        for (const parte of partes) {
-                            valor = valor?.[parte];
-                        }
-                        dadosFiltrados[campo] = valor;
-                    } else {
-                        dadosFiltrados[campo] = dadosDecifrados[campo];
-                    }
-                });
-            }
-        }
-
-        // Log de consulta
-        await AuditLog.create({
-            acao: 'CONSULTA',
-            labId: req.leitor._id,
-            certificadoId: certificado._id,
-            tipoCertificado: certificado.tipo,
-            ip: req.ip,
-            userAgent: req.headers['user-agent'],
-            sucesso: true
-        });
-
-        res.json({
-            sucesso: true,
-            tipo: certificado.tipo,
-            valido: certificado.validoAte ? new Date() < certificado.validoAte : true,
-            dados: dadosFiltrados
-        });
-
-    } catch (error) {
-        console.error('Erro na leitura:', error);
-        res.status(500).json({ erro: 'Erro interno' });
-    }
-});
-
-// ============================================
-// VERIFICAÇÃO PÚBLICA
-// ============================================
-app.post('/api/verificar', limiter, async (req, res) => {
-    try {
-        const { qrCodeData, numero } = req.body;
-
-        let certificado;
-
-        if (qrCodeData) {
-            const hash = crypto.createHash('sha256').update(qrCodeData).digest('hex');
-            certificado = await Certificate.findOne({ hashVerificacao: hash });
-        } else if (numero) {
-            certificado = await Certificate.findOne({ numero });
-        }
-
-        if (!certificado) {
-            return res.json({ 
-                valido: false,
-                mensagem: 'Certificado não encontrado no sistema'
-            });
-        }
-
-        const valido = certificado.validoAte ? new Date() < certificado.validoAte : true;
-
-        const lab = await Lab.findById(certificado.emitidoPor);
-
-        res.json({
-            valido,
-            numero: certificado.numero,
-            tipo: certificado.tipo,
-            emitidoPor: lab?.nome || 'Desconhecido',
-            emitidoEm: certificado.emitidoEm,
-            validoAte: certificado.validoAte,
-            mensagem: valido ? '✅ Certificado válido' : '❌ Certificado expirado'
-        });
-
-    } catch (error) {
-        console.error('Erro na verificação:', error);
-        res.status(500).json({ erro: 'Erro interno' });
-    }
-});
-
-// ============================================
-// ESTATÍSTICAS PARA O MINISTÉRIO
-// ============================================
-app.get('/api/stats', authMiddleware, async (req, res) => {
-    try {
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-
         const stats = {
             totalLabs: await Lab.countDocuments({ ativo: true }),
             labsInativos: await Lab.countDocuments({ ativo: false }),
             totalCertificados: await Certificate.countDocuments(),
             certificadosHoje: await Certificate.countDocuments({
-                emitidoEm: { $gte: hoje }
-            }),
-            certificadosPorTipo: {
-                tipo1: await Certificate.countDocuments({ tipo: 1 }),
-                tipo2: await Certificate.countDocuments({ tipo: 2 }),
-                tipo3: await Certificate.countDocuments({ tipo: 3 }),
-                tipo4: await Certificate.countDocuments({ tipo: 4 }),
-                tipo5: await Certificate.countDocuments({ tipo: 5 })
-            },
-            certificadosPorProvincia: await Certificate.aggregate([
-                { $match: { 'paciente.provincia': { $ne: null } } },
-                { $group: { _id: '$paciente.provincia', count: { $sum: 1 } } },
-                { $sort: { count: -1 } },
-                { $limit: 5 }
-            ]),
-            atividadesRecentes: await AuditLog.find()
-                .sort({ timestamp: -1 })
-                .limit(10)
-                .populate('labId', 'nome')
-                .populate('userId', 'nome')
+                emitidoEm: { $gte: new Date(new Date().setHours(0,0,0,0)) }
+            })
         };
-
         res.json(stats);
-
     } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
         res.status(500).json({ erro: 'Erro interno' });
     }
 });
 
 // ============================================
-// SERVIÇO DE FRONTEND
+// FALLBACK PARA ROTAS NÃO ENCONTRADAS
 // ============================================
-
-// Servir frontends estáticos
-app.use('/ministerio', express.static(path.join(__dirname, 'public/ministerio')));
-app.use('/lab', express.static(path.join(__dirname, 'public/lab')));
-app.use('/verificar', express.static(path.join(__dirname, 'public/verificar')));
-
-// Rotas para SPA (Single Page Applications)
-app.get('/ministerio/*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/ministerio/index.html'));
+app.use('*', (req, res) => {
+    res.status(404).send(`
+        <h1>404 - Página não encontrada</h1>
+        <p>A rota <strong>${req.originalUrl}</strong> não existe.</p>
+        <p><a href="/ministerio">Voltar para o início</a></p>
+    `);
 });
-
-app.get('/lab/*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/lab/index.html'));
-});
-
-app.get('/verificar/*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/verificar/index.html'));
-});
-
-// Rota raiz - redireciona para a página principal
-app.get('/', (req, res) => {
-    res.redirect('/ministerio');
-});
-
-// ============================================
-// CRIAÇÃO DO PRIMEIRO ADMIN (se necessário)
-// ============================================
-async function createFirstAdmin() {
-    try {
-        const adminExists = await User.findOne({ role: 'admin' });
-        if (!adminExists) {
-            const senhaHash = await bcrypt.hash('Admin@2025', 10);
-            const admin = new User({
-                nome: 'Administrador SNS',
-                email: 'admin@sns.gov.ao',
-                password: senhaHash,
-                role: 'admin',
-                permissoes: ['*']
-            });
-            await admin.save();
-            console.log('✅ Administrador criado:');
-            console.log('   Email: admin@sns.gov.ao');
-            console.log('   Senha: Admin@2025');
-            console.log('   ⚠️  ALTERE A SENHA APÓS O PRIMEIRO LOGIN!');
-        }
-    } catch (error) {
-        console.error('Erro ao criar admin:', error);
-    }
-}
 
 // ============================================
 // INICIAR SERVIDOR
@@ -957,29 +930,22 @@ app.listen(PORT, async () => {
     console.log('='.repeat(50));
     console.log(`📡 Servidor: http://localhost:${PORT}`);
     console.log(`🏛️  Ministério: http://localhost:${PORT}/ministerio`);
-    console.log(`🔬 Laboratório: http://localhost:${PORT}/lab`);
-    console.log(`🔍 Verificar: http://localhost:${PORT}/verificar`);
-    console.log(`📊 API: http://localhost:${PORT}/api`);
+    console.log(`🔍 Teste: http://localhost:${PORT}/teste`);
+    console.log(`📊 Debug: http://localhost:${PORT}/debug`);
     console.log('='.repeat(50) + '\n');
 
-    await createFirstAdmin();
+    // Criar admin se não existir
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (!adminExists) {
+        const senhaHash = await bcrypt.hash('Admin@2025', 10);
+        const admin = new User({
+            nome: 'Administrador SNS',
+            email: 'admin@sns.gov.ao',
+            password: senhaHash,
+            role: 'admin',
+            permissoes: ['*']
+        });
+        await admin.save();
+        console.log('✅ Administrador criado: admin@sns.gov.ao / Admin@2025');
+    }
 });
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-    console.log('\n\n🔴 Encerrando servidor SNS...');
-    await mongoose.connection.close();
-    console.log('✅ Conexão MongoDB fechada');
-    process.exit(0);
-});
-
-// Tratamento de erros não capturados
-process.on('uncaughtException', (err) => {
-    console.error('❌ Erro não capturado:', err);
-});
-
-process.on('unhandledRejection', (err) => {
-    console.error('❌ Promise rejeitada não tratada:', err);
-});
-
-module.exports = app;
