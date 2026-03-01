@@ -23,265 +23,203 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================
-// CONEXÃO MONGODB
+// ROTA PRINCIPAL - REDIRECIONA PARA LOGIN
 // ============================================
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sns';
-
-mongoose.connect(MONGODB_URI)
-.then(() => console.log('✅ MongoDB conectado'))
-.catch(err => console.log('❌ MongoDB erro:', err));
-
-// ============================================
-// MODELOS DE DADOS (sem senhas)
-// ============================================
-
-// Modelo de Usuário (as senhas serão adicionadas depois)
-const userSchema = new mongoose.Schema({
-    nome: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    // SENHA SERÁ ADICIONADA DEPOIS
-    role: { type: String, enum: ['admin', 'inspetor', 'estatistico'], default: 'inspetor' },
-    ativo: { type: Boolean, default: true },
-    criadoEm: { type: Date, default: Date.now }
-});
-
-// Modelo de Laboratório
-const labSchema = new mongoose.Schema({
-    labId: { type: String, unique: true },
-    nome: { type: String, required: true },
-    tipo: { type: String, enum: ['laboratorio', 'hospital', 'clinica'] },
-    provincia: String,
-    municipio: String,
-    endereco: String,
-    email: String,
-    telefone: String,
-    diretor: String,
-    apiKey: { type: String, unique: true },
-    permissoes: {
-        tiposCertificado: { type: [Number], default: [1,2,3,4,5] }
-    },
-    ativo: { type: Boolean, default: true },
-    criadoEm: { type: Date, default: Date.now }
-});
-
-// Modelo de Certificado
-const certificateSchema = new mongoose.Schema({
-    numero: { type: String, unique: true },
-    tipo: { type: Number, enum: [1,2,3,4,5] },
-    paciente: {
-        nomeCompleto: String,
-        bi: String,
-        dataNascimento: Date,
-        genero: String
-    },
-    dados: mongoose.Schema.Types.Mixed,
-    emitidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab' },
-    emitidoEm: { type: Date, default: Date.now },
-    validoAte: Date,
-    hash: String
-});
-
-const User = mongoose.model('User', userSchema);
-const Lab = mongoose.model('Lab', labSchema);
-const Certificate = mongoose.model('Certificate', certificateSchema);
-
-// ============================================
-// ROTAS PÚBLICAS
-// ============================================
-
-// Página de login (frontend)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
+    res.send(`
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNS - Login</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #006633, #003300);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial;
+            margin: 0;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            width: 350px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #006633;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #006633;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #004d26;
+        }
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>SNS - Angola</h1>
+        <div id="error" class="error"></div>
+        <input type="email" id="email" placeholder="Email" value="admin@sns.gov.ao">
+        <input type="password" id="password" placeholder="Senha" value="Admin@2025">
+        <button onclick="login()">Entrar</button>
+    </div>
 
-// Página do dashboard (protegida)
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+    <script>
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, password})
+            });
+            
+            const data = await res.json();
+            
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                window.location.href = '/dashboard';
+            } else {
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerText = data.erro || 'Erro no login';
+            }
+        }
+    </script>
+</body>
+</html>
+    `);
 });
 
 // ============================================
-// API DE AUTENTICAÇÃO (sem senhas por enquanto)
+// ROTA DO DASHBOARD
+// ============================================
+app.get('/dashboard', (req, res) => {
+    res.send(`
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SNS</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            display: flex;
+        }
+        .sidebar {
+            width: 250px;
+            background: #006633;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+        }
+        .main {
+            flex: 1;
+            padding: 30px;
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>SNS</h2>
+        <p>Dashboard</p>
+        <p>Laboratórios</p>
+        <p>Certificados</p>
+    </div>
+    <div class="main">
+        <h1>Dashboard</h1>
+        <button onclick="logout()">Sair</button>
+    </div>
+
+    <script>
+        if (!localStorage.getItem('token')) {
+            window.location.href = '/';
+        }
+        
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>
+    `);
+});
+
+// ============================================
+// API DE LOGIN
 // ============================================
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     
-    // POR ENQUANTO: retorno simulado
-    // AS SENHAS SERÃO ADICIONADAS DEPOIS
-    if (email.includes('@')) {
+    // Login de teste
+    if (email === 'admin@sns.gov.ao' && password === 'Admin@2025') {
         const token = jwt.sign(
             { email, role: 'admin' },
-            process.env.JWT_SECRET || 'dev-secret',
+            'secret-key-temporaria',
             { expiresIn: '8h' }
         );
         
-        res.json({
-            success: true,
-            token,
-            user: { email, nome: 'Usuário Teste', role: 'admin' }
-        });
+        res.json({ token });
     } else {
-        res.status(401).json({ error: 'Credenciais inválidas' });
-    }
-});
-
-// Verificação de token
-app.get('/api/verify', (req, res) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-        return res.status(401).json({ error: 'Token não fornecido' });
-    }
-    
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
-        res.json({ valid: true, user: decoded });
-    } catch (err) {
-        res.status(401).json({ valid: false, error: 'Token inválido' });
+        res.status(401).json({ erro: 'Email ou senha incorretos' });
     }
 });
 
 // ============================================
-// API DE LABORATÓRIOS
+// CONEXÃO MONGODB (opcional)
 // ============================================
-
-// Criar laboratório (gera API Key automática)
-app.post('/api/labs', async (req, res) => {
-    try {
-        const labData = req.body;
-        
-        // Gerar ID único e API Key
-        const labId = 'LAB-' + Date.now();
-        const apiKey = 'SNS-' + Date.now() + '-' + Math.random().toString(36).substring(7).toUpperCase();
-        
-        const lab = new Lab({
-            ...labData,
-            labId,
-            apiKey
-        });
-        
-        await lab.save();
-        
-        res.json({
-            success: true,
-            lab: {
-                labId: lab.labId,
-                nome: lab.nome,
-                apiKey: lab.apiKey,
-                permissoes: lab.permissoes
-            }
-        });
-        
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao criar laboratório' });
-    }
-});
-
-// Listar laboratórios
-app.get('/api/labs', async (req, res) => {
-    try {
-        const labs = await Lab.find({}, { apiKey: 0 });
-        res.json(labs);
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao buscar laboratórios' });
-    }
-});
-
-// ============================================
-// API DE CERTIFICADOS
-// ============================================
-
-// Gerar novo certificado
-app.post('/api/certificados', async (req, res) => {
-    try {
-        const dados = req.body;
-        const apiKey = req.headers['x-api-key'];
-        
-        // Buscar laboratório pela API Key
-        const lab = await Lab.findOne({ apiKey });
-        
-        if (!lab) {
-            return res.status(401).json({ error: 'API Key inválida' });
-        }
-        
-        // Gerar número único do certificado
-        const numero = 'CERT-' + Date.now() + '-' + Math.random().toString(36).substring(7).toUpperCase();
-        
-        const certificado = new Certificate({
-            ...dados,
-            numero,
-            emitidoPor: lab._id
-        });
-        
-        // Gerar hash simples (para verificação)
-        certificado.hash = require('crypto')
-            .createHash('sha256')
-            .update(numero + JSON.stringify(dados))
-            .digest('hex');
-        
-        await certificado.save();
-        
-        res.json({
-            success: true,
-            certificado: {
-                numero: certificado.numero,
-                hash: certificado.hash,
-                emitidoEm: certificado.emitidoEm
-            }
-        });
-        
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao gerar certificado' });
-    }
-});
-
-// Buscar certificado por número
-app.get('/api/certificados/:numero', async (req, res) => {
-    try {
-        const certificado = await Certificate.findOne({ numero: req.params.numero })
-            .populate('emitidoPor', 'nome labId');
-        
-        if (!certificado) {
-            return res.status(404).json({ error: 'Certificado não encontrado' });
-        }
-        
-        res.json(certificado);
-        
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao buscar certificado' });
-    }
-});
-
-// ============================================
-// ESTATÍSTICAS
-// ============================================
-app.get('/api/stats', async (req, res) => {
-    try {
-        const stats = {
-            totalLabs: await Lab.countDocuments({ ativo: true }),
-            totalCertificados: await Certificate.countDocuments(),
-            certificadosHoje: await Certificate.countDocuments({
-                emitidoEm: { $gte: new Date().setHours(0,0,0,0) }
-            })
-        };
-        
-        res.json(stats);
-        
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao carregar estatísticas' });
-    }
-});
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sns';
+mongoose.connect(MONGODB_URI)
+.then(() => console.log('✅ MongoDB conectado'))
+.catch(err => console.log('❌ MongoDB erro:', err));
 
 // ============================================
 // INICIAR SERVIDOR
 // ============================================
 app.listen(PORT, () => {
     console.log('\n' + '='.repeat(50));
-    console.log('🚀 SNS - SISTEMA NACIONAL DE SAÚDE');
+    console.log('🚀 SNS - Servidor iniciado');
     console.log('='.repeat(50));
-    console.log(`📡 Servidor: http://localhost:${PORT}`);
-    console.log(`🔧 Modo: ${process.env.NODE_ENV || 'desenvolvimento'}`);
+    console.log(`📱 URL: http://localhost:${PORT}`);
+    console.log(`👤 Login: admin@sns.gov.ao / Admin@2025`);
     console.log('='.repeat(50) + '\n');
-    
-    console.log('📌 NOTA: As senhas serão implementadas depois');
-    console.log('📌 Por enquanto, o login aceita qualquer email\n');
 });
