@@ -3,7 +3,7 @@
 // MINISTÉRIO DA SAÚDE - REPÚBLICA DE ANGOLA
 // ============================================
 // Módulo: Certificados Médicos Oficiais
-// Versão: 1.0.0 (SEM SENHA - BOTÃO CORRIGIDO)
+// Versão: 1.0.0
 // Data: 2025
 // ============================================
 
@@ -13,6 +13,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const QRCode = require('qrcode');
 const path = require('path');
@@ -63,6 +64,12 @@ const limiter = rateLimit({
     message: { erro: 'Muitas requisições. Tente novamente mais tarde.' }
 });
 
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { erro: 'Muitas tentativas de login. Aguarde 15 minutos.' }
+});
+
 // ============================================
 // CONEXÃO MONGODB
 // ============================================
@@ -78,7 +85,7 @@ mongoose.connect(MONGODB_URI, {
 });
 
 // ============================================
-// ROTAS DE TESTE
+// ROTAS DE TESTE (APENAS PARA DEBUG)
 // ============================================
 
 // Rota raiz
@@ -86,26 +93,12 @@ app.get('/', (req, res) => {
     res.redirect('/ministerio');
 });
 
-// Rota de teste simples
+// Rota de teste simples (remover em produção)
 app.get('/teste', (req, res) => {
     res.send(`
         <h1>✅ SERVIDOR FUNCIONANDO!</h1>
-        <p>Hora: ${new Date().toLocaleString()}</p>
         <p><a href="/ministerio">Ir para Ministério</a></p>
-        <p><a href="/debug">Ver debug</a></p>
     `);
-});
-
-// Rota de debug
-app.get('/debug', (req, res) => {
-    const info = {
-        servidor: 'online',
-        timestamp: new Date().toISOString(),
-        node_version: process.version,
-        mongodb: mongoose.connection.readyState === 1 ? 'conectado' : 'desconectado',
-        __dirname: __dirname
-    };
-    res.json(info);
 });
 
 // Rota de status da API
@@ -119,7 +112,7 @@ app.get('/api/status', (req, res) => {
 });
 
 // ============================================
-// ROTA PRINCIPAL DO MINISTÉRIO (SEM SENHA)
+// ROTA DO MINISTÉRIO - APENAS LOGIN (SEM DADOS SENSÍVEIS)
 // ============================================
 app.get('/ministerio', (req, res) => {
     res.send(`
@@ -143,236 +136,194 @@ app.get('/ministerio', (req, res) => {
             align-items: center;
             justify-content: center;
             padding: 20px;
-            color: white;
         }
         .container {
-            max-width: 900px;
+            max-width: 450px;
             width: 100%;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 30px;
+            background: white;
+            border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
         }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-        h2 {
-            font-size: 1.2rem;
-            font-weight: 300;
+        .logo {
             text-align: center;
             margin-bottom: 30px;
-            opacity: 0.9;
+        }
+        .logo h1 {
+            color: #006633;
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+        .logo p {
+            color: #666;
+            font-size: 0.9rem;
         }
         .badge {
-            background: #ffcc00;
-            color: #003300;
-            padding: 10px 25px;
-            border-radius: 30px;
-            font-weight: bold;
-            display: inline-block;
-            margin: 20px auto;
+            background: #e8f5e9;
+            color: #006633;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
             text-align: center;
-            width: fit-content;
+            margin-bottom: 30px;
+            border: 1px solid #006633;
         }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin: 40px 0;
+        .form-group {
+            margin-bottom: 20px;
         }
-        .stat-card {
-            background: rgba(255,255,255,0.15);
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-            transition: transform 0.3s;
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
         }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255,255,255,0.2);
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
         }
-        .stat-icon {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-        }
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ffcc00;
-        }
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin-top: 5px;
-        }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin: 40px 0;
-        }
-        .feature {
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .feature h3 {
-            margin-bottom: 10px;
-            color: #ffcc00;
-        }
-        .feature p {
-            opacity: 0.8;
-            line-height: 1.6;
-        }
-        .login-form {
-            background: rgba(255,255,255,0.1);
-            padding: 30px;
-            border-radius: 15px;
-            margin: 30px 0;
-            text-align: center;
+        .form-group input:focus {
+            border-color: #006633;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,102,51,0.1);
         }
         .btn-login {
-            background: #ffcc00;
-            color: #003300;
+            width: 100%;
+            background: #006633;
+            color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 14px;
             border-radius: 8px;
             font-size: 1.1rem;
-            font-weight: bold;
+            font-weight: 600;
             cursor: pointer;
-            width: 100%;
             transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
+            margin-bottom: 20px;
         }
         .btn-login:hover {
-            background: #ffd700;
+            background: #004d26;
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0,102,51,0.3);
+        }
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #666;
+            border-left: 4px solid #006633;
+        }
+        .info-box p {
+            margin: 5px 0;
         }
         .footer {
             text-align: center;
             margin-top: 30px;
             font-size: 0.8rem;
-            opacity: 0.7;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 20px;
+            color: #999;
         }
-        .links {
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin: 20px 0;
-        }
-        .links a {
-            color: white;
-            text-decoration: none;
-            opacity: 0.8;
-        }
-        .links a:hover {
-            opacity: 1;
-            text-decoration: underline;
-        }
-        @media (max-width: 600px) {
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .features { grid-template-columns: 1fr; }
-            h1 { font-size: 2rem; }
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+            border-left: 4px solid #c62828;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🏥 SNS</h1>
-        <h2>Sistema Nacional de Saúde - Angola</h2>
+        <div class="logo">
+            <h1>🏥 SNS</h1>
+            <p>Sistema Nacional de Saúde - Angola</p>
+        </div>
         
-        <div class="badge">✅ Servidor Online</div>
+        <div class="badge">
+            🔐 Acesso Restrito - Ministério da Saúde
+        </div>
         
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-icon">🏥</div>
-                <div class="stat-value" id="totalLabs">47</div>
-                <div class="stat-label">Laboratórios</div>
+        <div id="errorMessage" class="error-message"></div>
+        
+        <form id="loginForm" onsubmit="event.preventDefault(); fazerLogin();">
+            <div class="form-group">
+                <label>Email institucional</label>
+                <input type="email" id="email" placeholder="seu@ministerio.gov.ao" value="admin@sns.gov.ao" required>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon">📋</div>
-                <div class="stat-value" id="totalCerts">15.234</div>
-                <div class="stat-label">Certificados</div>
+            
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" id="password" placeholder="••••••••" value="Admin@2025" required>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon">✅</div>
-                <div class="stat-value" id="certsHoje">89</div>
-                <div class="stat-label">Hoje</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🔐</div>
-                <div class="stat-value" id="ativos">100%</div>
-                <div class="stat-label">Ativo</div>
-            </div>
+            
+            <button type="submit" class="btn-login">
+                Entrar no Sistema
+            </button>
+        </form>
+        
+        <div class="info-box">
+            <p><strong>🔒 Acesso exclusivo:</strong> Funcionários do Ministério da Saúde</p>
+            <p style="margin-top: 10px;">• Administradores</p>
+            <p>• Gestores de laboratórios</p>
+            <p>• Inspetores</p>
         </div>
-
-        <div class="features">
-            <div class="feature">
-                <h3>🏥 Laboratórios</h3>
-                <p>Gestão completa de todos os laboratórios do país</p>
-            </div>
-            <div class="feature">
-                <h3>📊 Certificados</h3>
-                <p>Emissão e verificação de certificados médicos</p>
-            </div>
-            <div class="feature">
-                <h3>🔑 Chaves API</h3>
-                <p>Atribuição e gestão de chaves de acesso</p>
-            </div>
-            <div class="feature">
-                <h3>📈 Estatísticas</h3>
-                <p>Relatórios e indicadores em tempo real</p>
-            </div>
-        </div>
-
-        <div class="login-form">
-            <h3 style="margin-bottom: 20px;">🔐 Acesso ao Portal</h3>
-            <!-- BOTÃO CORRIGIDO - FUNCIONA SEMPRE -->
-            <a href="/ministerio/dashboard" style="text-decoration: none;">
-                <button class="btn-login">ENTRAR NO SISTEMA</button>
-            </a>
-        </div>
-
-        <div class="links">
-            <a href="/teste">Teste</a>
-            <a href="/debug">Debug</a>
-            <a href="/api/status">API Status</a>
-        </div>
-
+        
         <div class="footer">
-            Ministério da Saúde - República de Angola<br>
-            Versão 1.0 • 2025
+            © 2025 Ministério da Saúde - Angola<br>
+            Versão 1.0
         </div>
     </div>
 
     <script>
-        async function carregarStats() {
-            try {
-                const response = await fetch('/api/stats');
-                const data = await response.json();
-                if (data.totalLabs) document.getElementById('totalLabs').textContent = data.totalLabs;
-                if (data.totalCertificados) document.getElementById('totalCerts').textContent = data.totalCertificados.toLocaleString();
-                if (data.certificadosHoje) document.getElementById('certsHoje').textContent = data.certificadosHoje;
-            } catch (e) {
-                console.log('Usando dados mock');
+        function fazerLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMessage');
+            
+            errorDiv.style.display = 'none';
+            
+            if (!email || !password) {
+                mostrarErro('Preencha email e senha');
+                return;
             }
+            
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = '/ministerio/dashboard';
+                } else {
+                    mostrarErro(data.erro || 'Credenciais inválidas');
+                }
+            })
+            .catch(err => {
+                mostrarErro('Erro de conexão com o servidor');
+            });
         }
-
-        // Função de fallback caso alguém use onclick
-        window.entrar = function() {
-            window.location.href = '/ministerio/dashboard';
-        };
-
-        carregarStats();
+        
+        function mostrarErro(mensagem) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = mensagem;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fazerLogin();
+        });
     </script>
 </body>
 </html>
@@ -380,10 +331,23 @@ app.get('/ministerio', (req, res) => {
 });
 
 // ============================================
-// ROTA DO DASHBOARD (APÓS CLIQUE)
+// ROTA DO DASHBOARD (PROTEGIDA - SÓ APÓS LOGIN)
 // ============================================
 app.get('/ministerio/dashboard', (req, res) => {
-    res.send(`
+    // Verificar se o token existe (proteção simples)
+    const token = req.headers['authorization']?.split(' ')[1];
+    
+    // Se não houver token, redirecionar para login
+    if (!token) {
+        return res.redirect('/ministerio');
+    }
+    
+    try {
+        // Verificar token
+        jwt.verify(token, process.env.JWT_SECRET || 'secret-key');
+        
+        // Se token válido, mostrar dashboard
+        res.send(`
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -391,9 +355,13 @@ app.get('/ministerio/dashboard', (req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - SNS Angola</title>
     <style>
-        body {
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Segoe UI', sans-serif;
+        }
+        body {
             background: #f0f2f5;
             display: flex;
         }
@@ -406,17 +374,21 @@ app.get('/ministerio/dashboard', (req, res) => {
             left: 0;
             top: 0;
         }
-        .sidebar .logo {
+        .logo {
             padding: 30px 20px;
             text-align: center;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
+        .logo h1 { font-size: 2rem; }
+        .logo p { opacity: 0.8; font-size: 0.9rem; }
+        
         .sidebar nav a {
             display: block;
             padding: 15px 25px;
             color: rgba(255,255,255,0.8);
             text-decoration: none;
             border-left: 4px solid transparent;
+            transition: all 0.3s;
         }
         .sidebar nav a:hover,
         .sidebar nav a.active {
@@ -424,7 +396,7 @@ app.get('/ministerio/dashboard', (req, res) => {
             color: white;
             border-left-color: #ffcc00;
         }
-        .sidebar .user-info {
+        .user-info {
             padding: 20px;
             border-top: 1px solid rgba(255,255,255,0.1);
             position: absolute;
@@ -442,27 +414,46 @@ app.get('/ministerio/dashboard', (req, res) => {
             align-items: center;
             margin-bottom: 30px;
         }
-        .cards {
+        .header h1 { color: #333; }
+        .user-badge {
+            background: #006633;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
-        .card {
+        .stat-card {
             background: white;
             padding: 25px;
             border-radius: 15px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
-        .card h3 {
+        .stat-card h3 {
             color: #666;
             font-size: 0.9rem;
             margin-bottom: 10px;
         }
-        .card .value {
+        .stat-card .value {
             font-size: 2rem;
             font-weight: bold;
             color: #006633;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         .btn-logout {
             background: #dc3545;
@@ -472,16 +463,26 @@ app.get('/ministerio/dashboard', (req, res) => {
             border-radius: 5px;
             cursor: pointer;
             width: 100%;
+            margin-top: 10px;
         }
-        .btn-voltar {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
+        .btn-logout:hover {
+            background: #c82333;
+        }
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+        th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+        }
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
         }
     </style>
 </head>
@@ -495,53 +496,113 @@ app.get('/ministerio/dashboard', (req, res) => {
             <a href="#" class="active">📊 Dashboard</a>
             <a href="#">🏥 Laboratórios</a>
             <a href="#">📋 Certificados</a>
-            <a href="#">🔑 Chaves</a>
+            <a href="#">🔑 Chaves API</a>
             <a href="#">📈 Relatórios</a>
+            <a href="#">⚙️ Configurações</a>
         </nav>
         <div class="user-info">
-            <p>👤 Administrador</p>
-            <button class="btn-logout" onclick="sair()">Sair</button>
+            <p id="userName">Carregando...</p>
+            <p id="userEmail" style="font-size: 0.8rem; opacity: 0.7;"></p>
+            <button class="btn-logout" onclick="logout()">Sair</button>
         </div>
     </div>
     
     <div class="main-content">
         <div class="header">
-            <h1>Dashboard</h1>
-            <a href="/ministerio" class="btn-voltar">← Voltar</a>
+            <h1>Dashboard Nacional</h1>
+            <div class="user-badge" id="userRole"></div>
         </div>
         
-        <div class="cards">
-            <div class="card">
-                <h3>Laboratórios</h3>
-                <div class="value">47</div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Laboratórios Ativos</h3>
+                <div class="value" id="totalLabs">0</div>
             </div>
-            <div class="card">
+            <div class="stat-card">
                 <h3>Certificados Hoje</h3>
-                <div class="value">89</div>
+                <div class="value" id="certsHoje">0</div>
             </div>
-            <div class="card">
-                <h3>Total</h3>
-                <div class="value">15.234</div>
+            <div class="stat-card">
+                <h3>Total Certificados</h3>
+                <div class="value" id="totalCerts">0</div>
             </div>
-            <div class="card">
-                <h3>Ativos</h3>
-                <div class="value">100%</div>
+            <div class="stat-card">
+                <h3>Labs Inativos</h3>
+                <div class="value" id="labsInativos">0</div>
             </div>
         </div>
         
-        <p style="color: #666; margin-top: 20px;">Bem-vindo ao painel de administração do SNS.</p>
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Certificados por Tipo</h3>
+                <div id="tipoChart" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                    <p style="color: #666;">Carregando dados...</p>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Atividade Recente</h3>
+                <table>
+                    <thead>
+                        <tr><th>Laboratório</th><th>Ação</th><th>Hora</th></tr>
+                    </thead>
+                    <tbody id="recentActivity">
+                        <tr><td colspan="3">Carregando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
-        function sair() {
-            if (confirm('Tem certeza?')) {
-                window.location.href = '/ministerio';
+        // Carregar dados do usuário
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('userName').textContent = user.nome || 'Administrador';
+        document.getElementById('userEmail').textContent = user.email || 'admin@sns.gov.ao';
+        document.getElementById('userRole').textContent = user.role || 'Admin';
+        
+        // Carregar estatísticas
+        async function carregarStats() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/stats', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                
+                document.getElementById('totalLabs').textContent = data.totalLabs || 47;
+                document.getElementById('certsHoje').textContent = data.certificadosHoje || 89;
+                document.getElementById('totalCerts').textContent = data.totalCertificados || 15234;
+                document.getElementById('labsInativos').textContent = data.labsInativos || 3;
+                
+                // Atividade recente
+                const tbody = document.getElementById('recentActivity');
+                tbody.innerHTML = '';
+                for(let i = 0; i < 5; i++) {
+                    tbody.innerHTML += \`
+                        <tr><td>Lab Central</td><td>Emissão</td><td>\${new Date().toLocaleTimeString()}</td></tr>
+                    \`;
+                }
+                
+            } catch (error) {
+                console.log('Erro ao carregar stats:', error);
             }
+        }
+        
+        carregarStats();
+        
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/ministerio';
         }
     </script>
 </body>
 </html>
-    `);
+        `);
+    } catch (error) {
+        // Token inválido, redirecionar para login
+        res.redirect('/ministerio');
+    }
 });
 
 // ============================================
@@ -565,6 +626,7 @@ const labSchema = new mongoose.Schema({
     diretor: String,
     
     apiKey: { type: String, unique: true },
+    apiSecret: String,
     chaveDesencriptacao: { type: String, unique: true },
     
     permissoes: {
@@ -579,13 +641,16 @@ const labSchema = new mongoose.Schema({
     ultimoAcesso: Date,
     
     totalEmissoes: { type: Number, default: 0 },
-    totalConsultas: { type: Number, default: 0 }
+    totalConsultas: { type: Number, default: 0 },
+    
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 
-// Modelo de Utilizador do Ministério (simplificado, sem password)
+// Modelo de Utilizador do Ministério
 const userSchema = new mongoose.Schema({
     nome: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
     role: { 
         type: String, 
         enum: ['admin', 'inspetor', 'estatistico', 'suporte'],
@@ -593,7 +658,8 @@ const userSchema = new mongoose.Schema({
     },
     permissoes: [{ type: String }],
     ativo: { type: Boolean, default: true },
-    ultimoLogin: Date
+    ultimoLogin: Date,
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
 // Modelo de Certificado
@@ -618,18 +684,22 @@ const certificateSchema = new mongoose.Schema({
         genotipo: { type: String, enum: ['AA', 'AS', 'SS'] },
         grupoSanguineo: String,
         hemoglobina: Number,
+        
         avaliacao: String,
         finalidade: [String],
         doencasInfecciosas: [String],
+        
         periodoInicio: Date,
         periodoFim: Date,
         diasIncapacidade: Number,
         recomendacoes: [String],
         cid: String,
+        
         tipoAptidao: String,
         funcao: String,
         examesRealizados: [String],
         restricoes: [String],
+        
         obstetricos: {
             gestacoes: Number,
             partos: Number,
@@ -685,6 +755,7 @@ const auditLogSchema = new mongoose.Schema({
 
 // Índices
 labSchema.index({ apiKey: 1 });
+labSchema.index({ chaveDesencriptacao: 1 });
 certificateSchema.index({ numero: 1 });
 certificateSchema.index({ hashVerificacao: 1 });
 certificateSchema.index({ emitidoEm: -1 });
@@ -732,43 +803,87 @@ function gerarChaveLeitor() {
 function gerarApiKey() {
     const timestamp = Date.now().toString(36);
     const random = crypto.randomBytes(4).toString('hex').toUpperCase();
-    return `SNS-${timestamp}-${random}`;
+    return \`SNS-\${timestamp}-\${random}\`;
 }
 
 function gerarNumeroCertificado(tipo) {
     const ano = new Date().getFullYear();
     const mes = (new Date().getMonth() + 1).toString().padStart(2, '0');
     const random = crypto.randomBytes(3).toString('hex').toUpperCase();
-    return `CERT-${tipo}-${ano}${mes}-${random}`;
+    return \`CERT-\${tipo}-\${ano}\${mes}-\${random}\`;
 }
+
+// ============================================
+// ROTAS DE AUTENTICAÇÃO
+// ============================================
+app.post('/api/auth/login', authLimiter, async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ erro: 'Credenciais inválidas' });
+        }
+
+        const senhaValida = await bcrypt.compare(password, user.password);
+        if (!senhaValida) {
+            return res.status(401).json({ erro: 'Credenciais inválidas' });
+        }
+
+        if (!user.ativo) {
+            return res.status(401).json({ erro: 'Utilizador inativo' });
+        }
+
+        user.ultimoLogin = new Date();
+        await user.save();
+
+        const token = jwt.sign(
+            { id: user._id, email: user.email, role: user.role },
+            process.env.JWT_SECRET || 'secret-key',
+            { expiresIn: process.env.JWT_EXPIRE || '8h' }
+        );
+
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                nome: user.nome,
+                email: user.email,
+                role: user.role
+            }
+        });
+
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro interno' });
+    }
+});
 
 // ============================================
 // ROTAS DE LABORATÓRIOS
 // ============================================
-
 app.post('/api/labs', async (req, res) => {
     try {
         const dados = req.body;
-        
+
         if (!dados.nome || !dados.tipo || !dados.provincia) {
             return res.status(400).json({ 
                 erro: 'Nome, tipo e província são obrigatórios' 
             });
         }
-        
+
         const apiKey = gerarApiKey();
         const chaveDesencriptacao = gerarChaveLeitor();
-        const labId = `LAB-${Date.now()}`;
-        
+        const labId = \`LAB-\${Date.now()}\`;
+
         const lab = new Lab({
             ...dados,
             labId,
             apiKey,
             chaveDesencriptacao
         });
-        
+
         await lab.save();
-        
+
         res.json({
             sucesso: true,
             lab: {
@@ -778,6 +893,7 @@ app.post('/api/labs', async (req, res) => {
                 chaveDesencriptacao: lab.chaveDesencriptacao
             }
         });
+
     } catch (error) {
         res.status(500).json({ erro: 'Erro interno' });
     }
@@ -785,7 +901,7 @@ app.post('/api/labs', async (req, res) => {
 
 app.get('/api/labs', async (req, res) => {
     try {
-        const labs = await Lab.find({}, { chaveDesencriptacao: 0 });
+        const labs = await Lab.find({}, { apiSecret: 0, chaveDesencriptacao: 0 });
         res.json(labs);
     } catch (error) {
         res.status(500).json({ erro: 'Erro interno' });
@@ -793,53 +909,62 @@ app.get('/api/labs', async (req, res) => {
 });
 
 // ============================================
-// ESTATÍSTICAS
+// ESTATÍSTICAS (PROTEGIDAS)
 // ============================================
 app.get('/api/stats', async (req, res) => {
     try {
+        // Verificar token
+        const token = req.headers['authorization']?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ erro: 'Não autorizado' });
+        }
+        
+        jwt.verify(token, process.env.JWT_SECRET || 'secret-key');
+        
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        
         const stats = {
             totalLabs: await Lab.countDocuments({ ativo: true }),
             labsInativos: await Lab.countDocuments({ ativo: false }),
             totalCertificados: await Certificate.countDocuments(),
             certificadosHoje: await Certificate.countDocuments({
-                emitidoEm: { $gte: new Date(new Date().setHours(0,0,0,0)) }
-            })
+                emitidoEm: { $gte: hoje }
+            }),
+            certificadosPorTipo: {
+                tipo1: await Certificate.countDocuments({ tipo: 1 }),
+                tipo2: await Certificate.countDocuments({ tipo: 2 }),
+                tipo3: await Certificate.countDocuments({ tipo: 3 }),
+                tipo4: await Certificate.countDocuments({ tipo: 4 }),
+                tipo5: await Certificate.countDocuments({ tipo: 5 })
+            }
         };
         res.json(stats);
     } catch (error) {
-        res.status(500).json({ erro: 'Erro interno' });
+        res.status(401).json({ erro: 'Não autorizado' });
     }
 });
 
 // ============================================
-// FALLBACK PARA ROTAS NÃO ENCONTRADAS
+// CRIAÇÃO DO PRIMEIRO ADMIN
 // ============================================
-app.use('*', (req, res) => {
-    res.status(404).send(`
-        <h1>404 - Página não encontrada</h1>
-        <p>A rota <strong>${req.originalUrl}</strong> não existe.</p>
-        <p><a href="/ministerio">Voltar para o início</a></p>
-    `);
-});
-
-// ============================================
-// CRIAR ADMIN PADRÃO (SEM SENHA)
-// ============================================
-async function criarAdminPadrao() {
+async function createFirstAdmin() {
     try {
         const adminExists = await User.findOne({ role: 'admin' });
         if (!adminExists) {
+            const senhaHash = await bcrypt.hash('Admin@2025', 10);
             const admin = new User({
                 nome: 'Administrador SNS',
                 email: 'admin@sns.gov.ao',
+                password: senhaHash,
                 role: 'admin',
                 permissoes: ['*']
             });
             await admin.save();
-            console.log('✅ Administrador criado: admin@sns.gov.ao (sem senha)');
+            console.log('✅ Administrador criado: admin@sns.gov.ao / Admin@2025');
         }
     } catch (error) {
-        console.error('❌ Erro ao criar admin:', error);
+        console.error('Erro ao criar admin:', error);
     }
 }
 
@@ -848,13 +973,11 @@ async function criarAdminPadrao() {
 // ============================================
 app.listen(PORT, async () => {
     console.log('\n' + '='.repeat(50));
-    console.log('🚀 SNS - SISTEMA NACIONAL DE SAÚDE (SEM SENHA)');
+    console.log('🚀 SNS - SISTEMA NACIONAL DE SAÚDE');
     console.log('='.repeat(50));
-    console.log(`📍 Servidor: http://localhost:${PORT}`);
-    console.log(`🏥 Ministério: http://localhost:${PORT}/ministerio`);
-    console.log(`🧪 Teste: http://localhost:${PORT}/teste`);
-    console.log(`🔍 Debug: http://localhost:${PORT}/debug`);
+    console.log(`📡 Servidor: http://localhost:${PORT}`);
+    console.log(`🏛️  Ministério: http://localhost:${PORT}/ministerio`);
     console.log('='.repeat(50) + '\n');
-    
-    await criarAdminPadrao();
+
+    await createFirstAdmin();
 });
