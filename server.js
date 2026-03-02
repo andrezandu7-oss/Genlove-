@@ -968,58 +968,79 @@ app.get('/api/labs/pdf/:labId', authMiddleware, async (req, res) => {
 });
 
 // ============================================
-// API DE CERTIFICADOS
+// ============================================
+// API DE CERTIFICADOS - VERSÃO COM LOGS
 // ============================================
 app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
     try {
+        console.log('\n📝 ===== NOVA REQUISIÇÃO DE CERTIFICADO =====');
+        console.log('📌 Tipo:', req.params.tipo);
+        console.log('📦 Dados recebidos:', JSON.stringify(req.body, null, 2));
+        console.log('🔑 Laboratório:', req.lab.nome, '(ID:', req.lab._id, ')');
+        
         const tipo = parseInt(req.params.tipo);
+        
+        // Validar tipo
+        if (tipo < 1 || tipo > 7) {
+            console.log('❌ ERRO: Tipo inválido');
+            return res.status(400).json({ erro: 'Tipo de certificado inválido' });
+        }
+        
         const dados = req.body;
         
-        const numero = gerarNumeroCertificado(tipo);
-        const hash = crypto.createHash('sha256').update(numero + JSON.stringify(dados) + Date.now()).digest('hex');
+        // Validar dados do paciente
+        if (!dados.paciente) {
+            console.log('❌ ERRO: paciente não enviado');
+            return res.status(400).json({ erro: 'Dados do paciente não fornecidos' });
+        }
         
+        if (!dados.paciente.nomeCompleto) {
+            console.log('❌ ERRO: nomeCompleto não enviado');
+            return res.status(400).json({ erro: 'Nome do paciente é obrigatório' });
+        }
+        
+        if (!dados.paciente.bi) {
+            console.log('❌ ERRO: BI não enviado');
+            return res.status(400).json({ erro: 'BI do paciente é obrigatório' });
+        }
+        
+        // Gerar número único
+        const numero = gerarNumeroCertificado(tipo);
+        console.log('✅ Número gerado:', numero);
+        
+        // Gerar hash
+        const hash = crypto.createHash('sha256').update(numero + JSON.stringify(dados) + Date.now()).digest('hex');
+        console.log('✅ Hash gerado:', hash.substring(0, 20) + '...');
+        
+        // Criar certificado
         const certificado = new Certificate({
             numero,
             tipo,
             paciente: dados.paciente,
-            dados: dados.dados,
+            dados: dados.dados || {},
             hash,
             emitidoPor: req.lab._id
         });
         
-        await certificado.save();
+        console.log('📄 Certificado a ser salvo:', JSON.stringify(certificado, null, 2));
         
+        await certificado.save();
+        console.log('✅ Certificado SALVO com sucesso no banco!');
+        
+        // Atualizar contador do laboratório
         req.lab.totalEmissoes++;
         await req.lab.save();
+        console.log('✅ Contador do laboratório atualizado');
         
+        console.log('🎉 ===== SUCESSO! =====\n');
         res.json({ success: true, numero, hash });
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro ao emitir certificado' });
-    }
-});
-
-app.get('/api/certificados/lab', labMiddleware, async (req, res) => {
-    try {
-        const certs = await Certificate.find({ emitidoPor: req.lab._id })
-            .sort({ emitidoEm: -1 })
-            .limit(50);
-        res.json(certs);
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro ao buscar certificados' });
-    }
-});
-
-app.get('/api/certificados/:numero/pdf', async (req, res) => {
-    try {
-        const cert = await Certificate.findOne({ numero: req.params.numero });
-        if (!cert) return res.status(404).json({ erro: 'Certificado não encontrado' });
         
-        const pdf = await gerarPDFCertificado(cert);
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename=' + cert.numero + '.pdf');
-        res.send(pdf);
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao gerar PDF' });
+        console.error('❌❌❌ ERRO GRAVE ❌❌❌');
+        console.error('Mensagem:', error.message);
+        console.error('Stack:', error.stack);
+        console.error('Detalhes:', error);
+        res.status(500).json({ erro: 'Erro interno: ' + error.message });
     }
 });
 
