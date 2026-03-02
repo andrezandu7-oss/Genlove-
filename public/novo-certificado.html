@@ -279,7 +279,7 @@ Número: ${numero}
 Laboratório: ${laboratorio}
 Técnico: ${laborantin}`;
 
-                    // SEULEMENT pour le type 1 (Genótipo) - format spécial avec ;
+                    // SEULEMENT pour le type 1 (Genótipo) - format spécial avec || pour Genlove
                     if (tipo === '1' && dados.dados) {
                         // Découper le nom complet
                         const nomeParts = dados.paciente.nomeCompleto.split(' ');
@@ -287,8 +287,8 @@ Técnico: ${laborantin}`;
                         const nom = nomeParts.slice(1).join(' ') || '';
                         const genre = dados.paciente.genero === 'M' ? 'MASC' : 'FEM';
                         
-                        // Format spécial pour Genótipo
-                        dadosQR += `\nDADOS: ${prenom};${nom};${genre};${dados.dados.genotipo || 'N/A'};${dados.dados.grupoSanguineo || 'N/A'}`;
+                        // Format avec || pour Genlove
+                        dadosQR += `\nDADOS: ${prenom}||${nom}||${genre}||${dados.dados.genotipo || 'N/A'}||${dados.dados.grupoSanguineo || 'N/A'}`;
                     } 
                     else {
                         // Pour TOUS les autres types (2,3,4,5,6,7) - format normal
