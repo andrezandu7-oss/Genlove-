@@ -663,7 +663,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // ============================================
-// DASHBOARD DO LABORATÓRIO (CORRIGIDO)
+// DASHBOARD DO LABORATÓRIO - COM LOADING E FEEDBACK
 // ============================================
 app.get('/lab-dashboard', (req, res) => {
     res.send('<!DOCTYPE html>' +
@@ -681,18 +681,36 @@ app.get('/lab-dashboard', (req, res) => {
     '.btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;margin:5px;}' +
     '.btn:hover{background:#004d26;}' +
     '.btn-danger{background:#dc3545;}' +
+    '.btn-danger:hover{background:#c82333;}' +
+    '.btn-success{background:#28a745;}' +
+    '.btn-success:hover{background:#218838;}' +
     '.tipo-selector{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0;}' +
     '.tipo-btn{padding:10px;background:#f5f5f5;border:1px solid #ddd;border-radius:5px;cursor:pointer;}' +
     '.tipo-btn.selected{background:#006633;color:white;}' +
-    '.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;}' +
-    '.modal-content{background:white;padding:20px;border-radius:10px;width:500px;max-height:80vh;overflow-y:auto;}' +
+    '.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:1000;}' +
+    '.modal-content{background:white;padding:30px;border-radius:10px;width:500px;max-height:80vh;overflow-y:auto;}' +
     '.modal-content input,.modal-content select{width:100%;padding:8px;margin:5px 0;border:1px solid #ddd;border-radius:5px;}' +
-    'table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}' +
+    '.modal-content button{margin-top:10px;}' +
+    'table{width:100%;background:white;border-collapse:collapse;margin-top:20px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}' +
     'th{background:#006633;color:white;padding:10px;text-align:left;}' +
-    'td{padding:10px;border-bottom:1px solid #ddd;}' +
+    'td{padding:10px;border-bottom:1px solid #eee;}' +
+    '.loader{display:inline-block;width:20px;height:20px;border:3px solid #f3f3f3;border-top:3px solid #006633;border-radius:50%;animation:spin 1s linear infinite;margin-right:10px;}' +
+    '@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}' +
+    '.loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:2000;}' +
+    '.loading-card{background:white;padding:30px;border-radius:10px;text-align:center;min-width:300px;}' +
+    '.loading-card .loader{width:50px;height:50px;margin:20px auto;}' +
+    '.success-message{background:#d4edda;color:#155724;padding:15px;border-radius:5px;margin:10px 0;display:none;}' +
     '</style>' +
     '</head>' +
     '<body>' +
+    '<div class="loading-overlay" id="loadingOverlay">' +
+    '<div class="loading-card">' +
+    '<div class="loader"></div>' +
+    '<h3 id="loadingMessage">Processando...</h3>' +
+    '<p>Aguarde enquanto geramos o PDF</p>' +
+    '</div>' +
+    '</div>' +
+
     '<div class="sidebar">' +
     '<h2>SNS - Laboratório</h2>' +
     '<a href="#" onclick="mostrar(\'dashboard\')">📊 Dashboard</a>' +
@@ -701,10 +719,13 @@ app.get('/lab-dashboard', (req, res) => {
     '</div>' +
     '<div class="main">' +
     '<div id="welcome" class="welcome"></div>' +
+    '<div id="successMessage" class="success-message"></div>' +
+
     '<div id="dashboard">' +
     '<h2>Dashboard</h2>' +
     '<p>Total de certificados emitidos: <span id="total">0</span></p>' +
     '</div>' +
+
     '<div id="certificados" style="display:none;">' +
     '<h2>Certificados</h2>' +
     '<div class="tipo-selector">' +
@@ -721,7 +742,7 @@ app.get('/lab-dashboard', (req, res) => {
     '</div>' +
     '</div>' +
 
-    // Modais com IDs numerados (modal1, modal2, etc.)
+    // MODAIS (todos os 7 tipos)
     '<div id="modal1" class="modal">' +
     '<div class="modal-content">' +
     '<h3>Genótipo</h3>' +
@@ -817,86 +838,148 @@ app.get('/lab-dashboard', (req, res) => {
     '</div></div>' +
 
     '<script>' +
-    'const key=localStorage.getItem("labKey");' +
-    'if(!key) window.location.href="/lab-login";' +
-    'let tipoAtual=1;' +
+    'const key = localStorage.getItem("labKey");' +
+    'if(!key) window.location.href = "/lab-login";' +
+    'let tipoAtual = 1;' +
+    'let pdfDownloadTimeout = null;' +
 
     'async function carregarLab(){' +
     'try{' +
-    'const r=await fetch("/api/labs/me",{headers:{"x-api-key":key}});' +
-    'const d=await r.json();' +
-    'document.getElementById("welcome").innerHTML="<h2>👋 Olá, "+d.nome+"!</h2><p>💪 Pronto para mais um dia de trabalho? Vamos juntos!</p>";' +
+    'const r = await fetch("/api/labs/me",{headers:{"x-api-key":key}});' +
+    'const d = await r.json();' +
+    'document.getElementById("welcome").innerHTML = "<h2>👋 Olá, " + d.nome + "!</h2><p>💪 Pronto para mais um dia de trabalho? Vamos juntos!</p>";' +
     '}catch(e){}}' +
 
     'function mostrar(s){' +
-    'document.getElementById("dashboard").style.display="none";' +
-    'document.getElementById("certificados").style.display="none";' +
-    'document.getElementById(s).style.display="block";' +
-    'if(s==="certificados") carregarLista();' +
+    'document.getElementById("dashboard").style.display = "none";' +
+    'document.getElementById("certificados").style.display = "none";' +
+    'document.getElementById(s).style.display = "block";' +
+    'if(s === "certificados") carregarLista();' +
     '}' +
 
     'function setTipo(t){' +
-    'tipoAtual=t;' +
-    'for(let i=1;i<=7;i++) document.getElementById("tipo"+i).classList.remove("selected");' +
+    'tipoAtual = t;' +
+    'for(let i = 1; i <= 7; i++) document.getElementById("tipo"+i).classList.remove("selected");' +
     'document.getElementById("tipo"+t).classList.add("selected");' +
     '}' +
 
     'function abrirModal(){' +
-    'for(let i=1;i<=7;i++) document.getElementById("modal"+i).style.display="none";' +
-    'document.getElementById("modal"+tipoAtual).style.display="flex";' +
+    'for(let i = 1; i <= 7; i++) document.getElementById("modal"+i).style.display = "none";' +
+    'document.getElementById("modal"+tipoAtual).style.display = "flex";' +
     '}' +
 
-    'function fechar(t){document.getElementById("modal"+t).style.display="none";}' +
+    'function fechar(t){' +
+    'document.getElementById("modal"+t).style.display = "none";' +
+    '}' +
+
+    'function mostrarLoading(mensagem) {' +
+    'document.getElementById("loadingMessage").innerText = mensagem || "Processando...";' +
+    'document.getElementById("loadingOverlay").style.display = "flex";' +
+    '}' +
+
+    'function esconderLoading() {' +
+    'document.getElementById("loadingOverlay").style.display = "none";' +
+    '}' +
+
+    'function mostrarSucesso(mensagem) {' +
+    'const msgDiv = document.getElementById("successMessage");' +
+    'msgDiv.innerText = mensagem;' +
+    'msgDiv.style.display = "block";' +
+    'setTimeout(() => { msgDiv.style.display = "none"; }, 5000);' +
+    '}' +
 
     'async function carregarLista(){' +
-    'const r=await fetch("/api/certificados/lab",{headers:{"x-api-key":key}});' +
-    'const lista=await r.json();' +
-    'document.getElementById("total").innerText=lista.length;' +
-    'let html="";' +
-    'const tipos=["","Genótipo","Boa Saúde","Incapacidade","Aptidão","Materna","CPN","Epidemio"];' +
-    'lista.forEach(c=>{html+="<tr><td>"+c.numero+"</td><td>"+tipos[c.tipo]+"</td><td>"+c.paciente.nomeCompleto+"</td><td>"+new Date(c.emitidoEm).toLocaleDateString()+"</td><td><button class=\'btn\' onclick=\'baixar(\\""+c.numero+"\\")\'>PDF</button></td></tr>";});' +
-    'document.getElementById("tabela").innerHTML=html;' +
-    '}' +
+    'try{' +
+    'const r = await fetch("/api/certificados/lab",{headers:{"x-api-key":key}});' +
+    'const lista = await r.json();' +
+    'document.getElementById("total").innerText = lista.length;' +
+    'let html = "";' +
+    'const tipos = ["","Genótipo","Boa Saúde","Incapacidade","Aptidão","Materna","CPN","Epidemio"];' +
+    'lista.forEach(c => {' +
+    'html += "<tr><td>" + c.numero + "</td><td>" + tipos[c.tipo] + "</td><td>" + c.paciente.nomeCompleto + "</td><td>" + new Date(c.emitidoEm).toLocaleDateString() + "</td><td><button class=\'btn btn-success\' onclick=\'baixar(\\"" + c.numero + "\\")\'>📥 PDF</button></td></tr>";' +
+    '});' +
+    'document.getElementById("tabela").innerHTML = html;' +
+    '}catch(e){console.log(e);}}' +
 
-    'function baixar(num){window.open("/api/certificados/"+num+"/pdf","_blank");}' +
+    'function baixar(numero){' +
+    'window.open("/api/certificados/" + numero + "/pdf", "_blank");' +
+    '}' +
 
     'async function emitir(t){' +
-    'let dados={}, paciente={};' +
-    'if(t===1){' +
-    'paciente={nomeCompleto:document.getElementById("nome1").value,genero:document.getElementById("gen1").value,dataNascimento:document.getElementById("data1").value,bi:document.getElementById("bi1").value};' +
-    'dados={genotipo:document.getElementById("geno1").value,grupoSanguineo:document.getElementById("grupo1").value};}' +
-    'else if(t===2){' +
-    'paciente={nomeCompleto:document.getElementById("nome2").value,genero:document.getElementById("gen2").value,dataNascimento:document.getElementById("data2").value,bi:document.getElementById("bi2").value};' +
-    'dados={avaliacao:document.getElementById("aval2").value,finalidade:document.getElementById("final2").value};}' +
-    'else if(t===3){' +
-    'paciente={nomeCompleto:document.getElementById("nome3").value,genero:document.getElementById("gen3").value,dataNascimento:document.getElementById("data3").value,bi:document.getElementById("bi3").value};' +
-    'dados={periodoInicio:document.getElementById("inicio3").value,periodoFim:document.getElementById("fim3").value,cid:document.getElementById("cid3").value};}' +
-    'else if(t===4){' +
-    'paciente={nomeCompleto:document.getElementById("nome4").value,genero:document.getElementById("gen4").value,dataNascimento:document.getElementById("data4").value,bi:document.getElementById("bi4").value};' +
-    'dados={tipoAptidao:document.getElementById("tipo4").value,restricoes:document.getElementById("rest4").value};}' +
-    'else if(t===5){' +
-    'paciente={nomeCompleto:document.getElementById("nome5").value,genero:document.getElementById("gen5").value,dataNascimento:document.getElementById("data5").value,bi:document.getElementById("bi5").value};' +
-    'dados={gestacoes:document.getElementById("gest5").value,partos:document.getElementById("part5").value,dpp:document.getElementById("dpp5").value};}' +
-    'else if(t===6){' +
-    'paciente={nomeCompleto:document.getElementById("nome6").value,dataNascimento:document.getElementById("data6").value,bi:document.getElementById("bi6").value};' +
-    'dados={gestacoes:document.getElementById("gest6").value,partos:document.getElementById("part6").value,examesCPN:{genotipo:document.getElementById("gen6").value,vih:document.getElementById("vih6").value}};}' +
-    'else if(t===7){' +
-    'paciente={nomeCompleto:document.getElementById("nome7").value,dataNascimento:document.getElementById("data7").value,bi:document.getElementById("bi7").value};' +
-    'dados={doenca:document.getElementById("doenca7").value,dataExame:document.getElementById("exame7").value,resultado:document.getElementById("result7").value}};' +
+    'let dados = {}, paciente = {};' +
 
-    'const r=await fetch("/api/certificados/emitir/"+t,{method:"POST",headers:{"Content-Type":"application/json","x-api-key":key},body:JSON.stringify({paciente,dados})});' +
-    'const res=await r.json();' +
-    'if(res.success){alert("✅ Certificado emitido! Nº: "+res.numero);fechar(t);carregarLista();baixar(res.numero);}' +
-    'else alert("Erro: "+res.erro);' +
+    '// Coletar dados conforme o tipo' +
+    'if(t === 1){' +
+    'paciente = {nomeCompleto: document.getElementById("nome1").value, genero: document.getElementById("gen1").value, dataNascimento: document.getElementById("data1").value, bi: document.getElementById("bi1").value};' +
+    'dados = {genotipo: document.getElementById("geno1").value, grupoSanguineo: document.getElementById("grupo1").value};' +
+    '} else if(t === 2){' +
+    'paciente = {nomeCompleto: document.getElementById("nome2").value, genero: document.getElementById("gen2").value, dataNascimento: document.getElementById("data2").value, bi: document.getElementById("bi2").value};' +
+    'dados = {avaliacao: document.getElementById("aval2").value, finalidade: document.getElementById("final2").value};' +
+    '} else if(t === 3){' +
+    'paciente = {nomeCompleto: document.getElementById("nome3").value, genero: document.getElementById("gen3").value, dataNascimento: document.getElementById("data3").value, bi: document.getElementById("bi3").value};' +
+    'dados = {periodoInicio: document.getElementById("inicio3").value, periodoFim: document.getElementById("fim3").value, cid: document.getElementById("cid3").value};' +
+    '} else if(t === 4){' +
+    'paciente = {nomeCompleto: document.getElementById("nome4").value, genero: document.getElementById("gen4").value, dataNascimento: document.getElementById("data4").value, bi: document.getElementById("bi4").value};' +
+    'dados = {tipoAptidao: document.getElementById("tipo4").value, restricoes: document.getElementById("rest4").value};' +
+    '} else if(t === 5){' +
+    'paciente = {nomeCompleto: document.getElementById("nome5").value, genero: document.getElementById("gen5").value, dataNascimento: document.getElementById("data5").value, bi: document.getElementById("bi5").value};' +
+    'dados = {gestacoes: document.getElementById("gest5").value, partos: document.getElementById("part5").value, dpp: document.getElementById("dpp5").value};' +
+    '} else if(t === 6){' +
+    'paciente = {nomeCompleto: document.getElementById("nome6").value, dataNascimento: document.getElementById("data6").value, bi: document.getElementById("bi6").value};' +
+    'dados = {gestacoes: document.getElementById("gest6").value, partos: document.getElementById("part6").value, examesCPN: {genotipo: document.getElementById("gen6").value, vih: document.getElementById("vih6").value}};' +
+    '} else if(t === 7){' +
+    'paciente = {nomeCompleto: document.getElementById("nome7").value, dataNascimento: document.getElementById("data7").value, bi: document.getElementById("bi7").value};' +
+    'dados = {doenca: document.getElementById("doenca7").value, dataExame: document.getElementById("exame7").value, resultado: document.getElementById("result7").value};' +
     '}' +
 
-    'function logout(){localStorage.removeItem("labKey");window.location.href="/";}' +
+    '// Validar dados mínimos' +
+    'if(!paciente.nomeCompleto || !paciente.bi || !paciente.dataNascimento) {' +
+    'alert("❌ Preencha nome, BI e data de nascimento");' +
+    'return;' +
+    '}' +
+
+    '// Mostrar loading' +
+    'mostrarLoading("Gerando certificado... Aguarde 5 segundos");' +
+    'fechar(t);' +
+
+    'try{' +
+    'const r = await fetch("/api/certificados/emitir/" + t, {' +
+    'method: "POST",' +
+    'headers: {"Content-Type": "application/json", "x-api-key": key},' +
+    'body: JSON.stringify({paciente, dados})' +
+    '});' +
+
+    'const res = await r.json();' +
+
+    'if(res.success){' +
+    '// Simular tempo de processamento' +
+    'setTimeout(() => {' +
+    'esconderLoading();' +
+    'mostrarSucesso("✅ Certificado emitido! Baixando PDF...");' +
+    '// Baixar PDF automaticamente' +
+    'baixar(res.numero);' +
+    '// Atualizar lista' +
+    'carregarLista();' +
+    '}, 5000);' + // 5 segundos de loading
+    '} else {' +
+    'esconderLoading();' +
+    'alert("Erro: " + (res.erro || "Erro desconhecido"));' +
+    '}' +
+    '} catch(e){' +
+    'esconderLoading();' +
+    'alert("Erro na requisição: " + e.message);' +
+    '}}' +
+
+    'function logout(){' +
+    'localStorage.removeItem("labKey");' +
+    'window.location.href = "/";' +
+    '}' +
+
     'carregarLab();' +
     'mostrar("dashboard");' +
     '</script>' +
     '</body></html>');
 });
-
 // ============================================
 // API DE LABORATÓRIOS
 // ============================================
