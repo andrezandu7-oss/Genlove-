@@ -63,9 +63,15 @@
                 <input type="date" id="dataNascimento">
             </div>
 
+            <h3>Dados do Laboratório</h3>
+            <div class="form-group">
+                <label>Nome do Laborantin/Técnico:</label>
+                <input type="text" id="nomeLaborantin" required placeholder="Ex: Dr. António Silva">
+            </div>
+
             <!-- Tipo 1: Genótipo -->
             <div id="tipo1" class="tipo-specific">
-                <h4>Dados do Genótipo</h4>
+                <h4>Exames Realizados - Genótipo</h4>
                 <div class="form-group">
                     <label>Genótipo:</label>
                     <select id="genotipo">
@@ -158,12 +164,7 @@
 
             <!-- Tipo 6: Pré-Natal -->
             <div id="tipo6" class="tipo-specific">
-                <h4>Pré-Natal Completo</h4>
-                <div class="form-group">
-                    <label>Número de consultas:</label>
-                    <input type="number" id="consultas" value="1" min="0">
-                </div>
-                <h4>Exames</h4>
+                <h4>Exames Realizados - Pré-Natal</h4>
                 <div class="form-group">
                     <label>Genótipo:</label>
                     <select id="exameGenotipo">
@@ -194,25 +195,36 @@
 
             <!-- Tipo 7: Epidemiológico -->
             <div id="tipo7" class="tipo-specific">
-                <h4>Dados Epidemiológicos</h4>
+                <h4>Doenças Testadas</h4>
                 <div class="form-group">
-                    <label>Doença:</label>
-                    <input type="text" id="doenca" placeholder="Ex: Malária">
+                    <label>Doença 1:</label>
+                    <input type="text" id="doenca1" placeholder="Ex: Malária">
                 </div>
                 <div class="form-group">
-                    <label>Data do Exame:</label>
-                    <input type="date" id="dataExame">
+                    <label>Resultado 1:</label>
+                    <select id="resultado1">
+                        <option value="Positivo">Positivo</option>
+                        <option value="Negativo">Negativo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Doença 2:</label>
+                    <input type="text" id="doenca2" placeholder="Ex: Tuberculose">
+                </div>
+                <div class="form-group">
+                    <label>Resultado 2:</label>
+                    <select id="resultado2">
+                        <option value="Positivo">Positivo</option>
+                        <option value="Negativo">Negativo</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Método:</label>
                     <input type="text" id="metodo" placeholder="Teste rápido">
                 </div>
                 <div class="form-group">
-                    <label>Resultado:</label>
-                    <select id="resultado">
-                        <option value="Positivo">Positivo</option>
-                        <option value="Negativo">Negativo</option>
-                    </select>
+                    <label>Data do Exame:</label>
+                    <input type="date" id="dataExame">
                 </div>
             </div>
 
@@ -250,7 +262,7 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
 
-        function gerarPDF(dados, numero, tipo, laboratorio, laborantin) {
+        function gerarPDF(dados, numero, tipo, laboratorio, endereco, laborantin) {
             return new Promise((resolve) => {
                 setTimeout(() => {
                     const tipos = ['', 'GENÓTIPO', 'BOA SAÚDE', 'INCAPACIDADE', 'APTIDÃO', 'SAÚDE MATERNA', 'PRÉ-NATAL', 'EPIDEMIOLÓGICO'];
@@ -307,7 +319,8 @@
                                 <div class="laboratorio">
                                     <h3 style="color:#006633; margin-bottom: 10px;">🏥 LABORATÓRIO EMISSOR</h3>
                                     <p style="font-size: 18px; margin: 5px 0;"><strong>${laboratorio}</strong></p>
-                                    <p style="font-size: 16px; color: #333;">Técnico Responsável: <strong>${laborantin}</strong></p>
+                                    <p style="font-size: 14px; color: #333;">${endereco || 'Endereço não informado'}</p>
+                                    <p style="font-size: 16px; color: #333; margin-top: 10px;">Técnico Responsável: <strong>${laborantin}</strong></p>
                                 </div>
                                 
                                 <div class="paciente">
@@ -321,7 +334,7 @@
                                 </div>
                                 
                                 <div class="dados">
-                                    <h3 style="color:#006633; margin-bottom: 15px;">🔬 RESULTADO DO EXAME</h3>
+                                    <h3 style="color:#006633; margin-bottom: 15px;">🔬 EXAMES REALIZADOS</h3>
                                     <table>
                     `;
                     
@@ -342,16 +355,19 @@
                         html += `<tr><td>Nº de Partos:</td><td><strong>${dados.dados.partos || '0'}</strong></td></tr>`;
                         html += `<tr><td>Data Provável do Parto:</td><td><strong>${dados.dados.dpp ? new Date(dados.dados.dpp).toLocaleDateString() : 'N/A'}</strong></td></tr>`;
                     } else if (tipo === '6' && dados.dados) {
-                        html += `<tr><td>Consultas Realizadas:</td><td><strong>${dados.dados.consultas || '0'}</strong></td></tr>`;
-                        html += `<tr><td>Genótipo (CPN):</td><td><strong>${dados.dados.examesCPN?.genotipo || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Genótipo:</td><td><strong>${dados.dados.examesCPN?.genotipo || 'N/A'}</strong></td></tr>`;
                         html += `<tr><td>VIH:</td><td><strong>${dados.dados.examesCPN?.vih || 'N/A'}</strong></td></tr>`;
                         html += `<tr><td>Malária:</td><td><strong>${dados.dados.examesCPN?.malaria || 'N/A'}</strong></td></tr>`;
                         html += `<tr><td>Hemoglobina:</td><td><strong>${dados.dados.examesCPN?.hemoglobinia || 'N/A'} g/dL</strong></td></tr>`;
                     } else if (tipo === '7' && dados.dados) {
-                        html += `<tr><td>Doença:</td><td><strong>${dados.dados.doenca || 'N/A'}</strong></td></tr>`;
-                        html += `<tr><td>Data do Exame:</td><td><strong>${dados.dados.dataExame ? new Date(dados.dados.dataExame).toLocaleDateString() : 'N/A'}</strong></td></tr>`;
+                        if(dados.dados.doenca1 && dados.dados.resultado1) {
+                            html += `<tr><td>Doença testada: ${dados.dados.doenca1}</td><td><strong>${dados.dados.resultado1}</strong></td></tr>`;
+                        }
+                        if(dados.dados.doenca2 && dados.dados.resultado2) {
+                            html += `<tr><td>Doença testada: ${dados.dados.doenca2}</td><td><strong>${dados.dados.resultado2}</strong></td></tr>`;
+                        }
                         html += `<tr><td>Método:</td><td><strong>${dados.dados.metodo || 'N/A'}</strong></td></tr>`;
-                        html += `<tr><td>Resultado:</td><td><strong>${dados.dados.resultado || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Data do Exame:</td><td><strong>${dados.dados.dataExame ? new Date(dados.dados.dataExame).toLocaleDateString() : 'N/A'}</strong></td></tr>`;
                     }
                     
                     html += `
@@ -388,7 +404,6 @@
                                     window.print();
                                 }
                             
-                                // Dados completos para o QR Code
                                 const qrData = \`CERTIFICADO SNS
 NÚMERO: ${numero}
 LABORATÓRIO: ${laboratorio}
@@ -398,30 +413,20 @@ BI: ${dados.paciente.bi}
 TIPO: ${tipos[tipo]}
 DATA: ${new Date().toLocaleDateString()}\`;
                                 
-                                // Garantir que o QR Code aparece
                                 window.onload = function() {
                                     const qrElement = document.getElementById("qrcode");
                                     if(qrElement) {
                                         qrElement.innerHTML = '';
-                                        try {
-                                            new QRCode(qrElement, {
-                                                text: qrData,
-                                                width: 200,
-                                                height: 200,
-                                                colorDark: "#006633",
-                                                colorLight: "#ffffff",
-                                                correctLevel: QRCode.CorrectLevel.H
-                                            });
-                                        } catch(e) {
-                                            qrElement.innerHTML = '<div style="padding:20px; border:2px solid #006633; border-radius:5px;">QR Code: SNS Angola</div>';
-                                        }
+                                        new QRCode(qrElement, {
+                                            text: qrData,
+                                            width: 200,
+                                            height: 200,
+                                            colorDark: "#006633",
+                                            colorLight: "#ffffff",
+                                            correctLevel: QRCode.CorrectLevel.H
+                                        });
                                     }
                                 };
-                                
-                                // Fallback
-                                if(document.readyState === 'complete') {
-                                    window.onload();
-                                }
                             <\/script>
                         </body>
                         </html>
@@ -442,9 +447,15 @@ DATA: ${new Date().toLocaleDateString()}\`;
                 return;
             }
 
+            const laborantin = document.getElementById('nomeLaborantin').value;
+            if(!laborantin) {
+                alert('Nome do laborantin é obrigatório');
+                return;
+            }
+
             // Buscar dados do laboratório automaticamente
             let laboratorio = "Laboratório Nacional de Saúde";
-            let laborantin = "Técnico de Serviço";
+            let endereco = "Endereço não informado";
             
             try {
                 const key = localStorage.getItem('labKey');
@@ -454,7 +465,7 @@ DATA: ${new Date().toLocaleDateString()}\`;
                 const labData = await labResponse.json();
                 if(labData && labData.nome) {
                     laboratorio = labData.nome;
-                    laborantin = labData.diretor || labData.responsavel || "Técnico de Serviço";
+                    endereco = labData.endereco || `${labData.provincia || 'Luanda'}, Angola`;
                 }
             } catch(e) {
                 console.log('Usando dados padrão do laboratório');
@@ -504,7 +515,6 @@ DATA: ${new Date().toLocaleDateString()}\`;
                 };
             } else if(tipo === '6') {
                 dados.dados = {
-                    consultas: document.getElementById('consultas').value,
                     examesCPN: {
                         genotipo: document.getElementById('exameGenotipo').value,
                         vih: document.getElementById('vih').value,
@@ -514,10 +524,12 @@ DATA: ${new Date().toLocaleDateString()}\`;
                 };
             } else if(tipo === '7') {
                 dados.dados = {
-                    doenca: document.getElementById('doenca').value,
-                    dataExame: document.getElementById('dataExame').value,
+                    doenca1: document.getElementById('doenca1').value,
+                    resultado1: document.getElementById('resultado1').value,
+                    doenca2: document.getElementById('doenca2').value,
+                    resultado2: document.getElementById('resultado2').value,
                     metodo: document.getElementById('metodo').value,
-                    resultado: document.getElementById('resultado').value
+                    dataExame: document.getElementById('dataExame').value
                 };
             }
 
@@ -538,7 +550,7 @@ DATA: ${new Date().toLocaleDateString()}\`;
                 
                 if(result.success) {
                     mostrarLoading('Gerando certificado oficial...');
-                    await gerarPDF(dados, result.numero, tipo, laboratorio, laborantin);
+                    await gerarPDF(dados, result.numero, tipo, laboratorio, endereco, laborantin);
                     esconderLoading();
                 } else {
                     esconderLoading();
