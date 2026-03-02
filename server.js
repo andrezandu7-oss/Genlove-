@@ -989,9 +989,17 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
     }
 });
 
-// ============================================
-// INICIAR SERVIDOR
-// ============================================
+app.get('/api/certificados/lab', labMiddleware, async (req, res) => {
+  try {
+    const certificados = await Certificate.find({ emitidoPor: req.lab._id })
+      .sort({ emitidoEm: -1 })
+      .limit(100);
+    res.json(certificados);
+  } catch (error) {
+    res.status(500).json({ erro: 'Erro ao buscar certificados' });
+  }
+});
+
 app.listen(PORT, () => {
     console.log('\n' + '='.repeat(50));
     console.log('🚀 SNS - SISTEMA NACIONAL DE SAÚDE');
