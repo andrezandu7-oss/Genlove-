@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Novo Certificado - SNS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
         body{background:#f5f5f5;padding:20px;}
@@ -17,6 +18,11 @@
         .btn-secondary:hover{background:#5a6268;}
         .tipo-specific{display:none;padding:15px;background:#f8f9fa;border-radius:5px;margin-top:15px;}
         .error{color:#dc3545;margin:10px 0;}
+        .loading-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;z-index:1000;}
+        .loading-card{background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;}
+        .spinner{border:5px solid #f3f3f3;border-top:5px solid #006633;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;margin:0 auto 20px;}
+        @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+        .qrcode{display:flex;justify-content:center;margin:20px 0;}
     </style>
 </head>
 <body>
@@ -111,7 +117,7 @@
                     <input type="date" id="periodoFim">
                 </div>
                 <div class="form-group">
-                    <label>CID (Código da doença):</label>
+                    <label>CID:</label>
                     <input type="text" id="cid" placeholder="Ex: A09">
                 </div>
             </div>
@@ -146,19 +152,19 @@
                     <input type="number" id="partos" value="0" min="0">
                 </div>
                 <div class="form-group">
-                    <label>Data Provável do Parto (DPP):</label>
+                    <label>Data Provável do Parto:</label>
                     <input type="date" id="dpp">
                 </div>
             </div>
 
-            <!-- Tipo 6: Pré-Natal (CPN) -->
+            <!-- Tipo 6: Pré-Natal -->
             <div id="tipo6" class="tipo-specific">
                 <h4>Pré-Natal Completo</h4>
                 <div class="form-group">
                     <label>Número de consultas:</label>
                     <input type="number" id="consultas" value="1" min="0">
                 </div>
-                <h4>Exames CPN</h4>
+                <h4>Exames</h4>
                 <div class="form-group">
                     <label>Genótipo:</label>
                     <select id="exameGenotipo">
@@ -172,7 +178,6 @@
                     <select id="vih">
                         <option value="Não reagente">Não reagente</option>
                         <option value="Reagente">Reagente</option>
-                        <option value="Em tratamento">Em tratamento</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -183,7 +188,7 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Hemoglobina (g/dL):</label>
+                    <label>Hemoglobina:</label>
                     <input type="number" id="hemoglobina" step="0.1" value="12.0">
                 </div>
             </div>
@@ -193,7 +198,7 @@
                 <h4>Dados Epidemiológicos</h4>
                 <div class="form-group">
                     <label>Doença:</label>
-                    <input type="text" id="doenca" placeholder="Ex: Malária, Tuberculose...">
+                    <input type="text" id="doenca" placeholder="Ex: Malária">
                 </div>
                 <div class="form-group">
                     <label>Data do Exame:</label>
@@ -201,14 +206,13 @@
                 </div>
                 <div class="form-group">
                     <label>Método:</label>
-                    <input type="text" id="metodo" placeholder="Ex: Teste rápido, PCR...">
+                    <input type="text" id="metodo" placeholder="Teste rápido">
                 </div>
                 <div class="form-group">
                     <label>Resultado:</label>
                     <select id="resultado">
                         <option value="Positivo">Positivo</option>
                         <option value="Negativo">Negativo</option>
-                        <option value="Inconclusivo">Inconclusivo</option>
                     </select>
                 </div>
             </div>
@@ -218,8 +222,17 @@
                 <button type="button" onclick="emitirCertificado()">Emitir Certificado</button>
                 <button type="button" class="btn-secondary" onclick="window.location.href='/lab-dashboard'">Cancelar</button>
             </div>
-            <div id="resultado" class="error"></div>
         </form>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-card">
+            <div class="spinner"></div>
+            <h3>Gerando certificado...</h3>
+            <p id="loadingMessage">Preparando dados do paciente</p>
+            <p style="color:#006633;font-size:14px;margin-top:10px;">Aguarde 5 segundos</p>
+        </div>
     </div>
 
     <script>
@@ -228,6 +241,150 @@
             const tipo = this.value;
             if(tipo) document.getElementById('tipo' + tipo).style.display = 'block';
         });
+
+        function mostrarLoading(mensagem) {
+            document.getElementById('loadingMessage').innerText = mensagem;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function esconderLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function gerarPDF(dados, numero, tipo) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    // Criar conteúdo do PDF
+                    const tipos = ['', 'GENÓTIPO', 'BOA SAÚDE', 'INCAPACIDADE', 'APTIDÃO', 'SAÚDE MATERNA', 'PRÉ-NATAL', 'EPIDEMIOLÓGICO'];
+                    
+                    // Dados para QR Code
+                    const qrData = `CERTIFICADO SNS
+Número: ${numero}
+Paciente: ${dados.paciente.nomeCompleto}
+BI: ${dados.paciente.bi}
+Tipo: ${tipos[tipo]}
+Data: ${new Date().toLocaleDateString()}`;
+
+                    // Criar div temporária para QR Code
+                    const qrDiv = document.createElement('div');
+                    qrDiv.id = 'tempQR';
+                    document.body.appendChild(qrDiv);
+                    
+                    new QRCode(qrDiv, {
+                        text: qrData,
+                        width: 150,
+                        height: 150
+                    });
+
+                    // Esperar QR Code gerar
+                    setTimeout(() => {
+                        const qrCanvas = qrDiv.querySelector('canvas');
+                        const qrImage = qrCanvas ? qrCanvas.toDataURL('image/png') : '';
+
+                        // Montar HTML do PDF
+                        let html = `
+                            <html>
+                            <head>
+                                <style>
+                                    body { font-family: Arial; padding: 40px; }
+                                    .header { text-align: center; color: #006633; }
+                                    h1 { font-size: 24px; }
+                                    h2 { font-size: 18px; }
+                                    .numero { text-align: right; font-size: 12px; margin-bottom: 30px; }
+                                    .dados { margin: 30px 0; }
+                                    .paciente { background: #f5f5f5; padding: 15px; border-radius: 5px; }
+                                    .footer { margin-top: 50px; font-size: 10px; color: #666; text-align: center; }
+                                    table { width: 100%; border-collapse: collapse; }
+                                    td { padding: 8px; border-bottom: 1px solid #ddd; }
+                                    .qr { text-align: center; margin: 30px 0; }
+                                </style>
+                            </head>
+                            <body>
+                                <div class="header">
+                                    <h1>REPÚBLICA DE ANGOLA</h1>
+                                    <h2>MINISTÉRIO DA SAÚDE</h2>
+                                    <h3>SISTEMA NACIONAL DE SAÚDE</h3>
+                                </div>
+                                <div class="numero">
+                                    <strong>Nº ${numero}</strong>
+                                </div>
+                                <div class="dados">
+                                    <h3 style="color:#006633;">${tipos[tipo]}</h3>
+                                    <div class="paciente">
+                                        <h4>Dados do Paciente</h4>
+                                        <table>
+                                            <tr><td><strong>Nome:</strong></td><td>${dados.paciente.nomeCompleto}</td></tr>
+                                            <tr><td><strong>BI:</strong></td><td>${dados.paciente.bi}</td></tr>
+                                            <tr><td><strong>Gênero:</strong></td><td>${dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino'}</td></tr>
+                                            <tr><td><strong>Data Nascimento:</strong></td><td>${dados.paciente.dataNascimento || 'Não informada'}</td></tr>
+                                        </table>
+                                    </div>
+                                    <div style="margin-top:20px;">
+                                        <h4>Dados do Certificado</h4>
+                                        <table>
+                        `;
+
+                        // Adicionar dados específicos do tipo
+                        if (tipo === '1' && dados.dados) {
+                            html += `<tr><td><strong>Genótipo:</strong></td><td>${dados.dados.genotipo || 'N/A'}</td></tr>`;
+                            html += `<tr><td><strong>Grupo Sanguíneo:</strong></td><td>${dados.dados.grupoSanguineo || 'N/A'}</td></tr>`;
+                        } else if (tipo === '2' && dados.dados) {
+                            html += `<tr><td><strong>Avaliação:</strong></td><td>${dados.dados.avaliacao || 'N/A'}</td></tr>`;
+                            html += `<tr><td><strong>Finalidade:</strong></td><td>${dados.dados.finalidade || 'N/A'}</td></tr>`;
+                        } else if (tipo === '3' && dados.dados) {
+                            html += `<tr><td><strong>Período:</strong></td><td>${dados.dados.periodoInicio || ''} a ${dados.dados.periodoFim || ''}</td></tr>`;
+                            html += `<tr><td><strong>CID:</strong></td><td>${dados.dados.cid || 'N/A'}</td></tr>`;
+                        } else if (tipo === '4' && dados.dados) {
+                            html += `<tr><td><strong>Aptidão:</strong></td><td>${dados.dados.tipoAptidao || 'N/A'}</td></tr>`;
+                            html += `<tr><td><strong>Restrições:</strong></td><td>${dados.dados.restricoes || 'Nenhuma'}</td></tr>`;
+                        } else if (tipo === '5' && dados.dados) {
+                            html += `<tr><td><strong>Gestações:</strong></td><td>${dados.dados.gestacoes || '0'}</td></tr>`;
+                            html += `<tr><td><strong>Partos:</strong></td><td>${dados.dados.partos || '0'}</td></tr>`;
+                            html += `<tr><td><strong>DPP:</strong></td><td>${dados.dados.dpp || 'N/A'}</td></tr>`;
+                        } else if (tipo === '6' && dados.dados) {
+                            html += `<tr><td><strong>Consultas:</strong></td><td>${dados.dados.consultas || '0'}</td></tr>`;
+                            html += `<tr><td><strong>Genótipo:</strong></td><td>${dados.dados.examesCPN?.genotipo || 'N/A'}</td></tr>`;
+                            html += `<tr><td><strong>VIH:</strong></td><td>${dados.dados.examesCPN?.vih || 'N/A'}</td></tr>`;
+                            html += `<tr><td><strong>Malária:</strong></td><td>${dados.dados.examesCPN?.malaria || 'N/A'}</td></tr>`;
+                            html += `<tr><td><strong>Hemoglobina:</strong></td><td>${dados.dados.examesCPN?.hemoglobinia || 'N/A'}</td></tr>`;
+                        } else if (tipo === '7' && dados.dados) {
+                            html += `<tr><td><strong>Doença:</strong></td><td>${dados.dados.doenca || 'N/A'}</td></tr>`;
+                            html += `<tr><td><strong>Data Exame:</strong></td><td>${dados.dados.dataExame || 'N/A'}</td></tr>`;
+                            html += `<tr><td><strong>Método:</strong></td><td>${dados.dados.metodo || 'N/A'}</td></tr>`;
+                            html += `<tr><td><strong>Resultado:</strong></td><td>${dados.dados.resultado || 'N/A'}</td></tr>`;
+                        }
+
+                        html += `
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="qr">
+                                    <img src="${qrImage}" style="width:150px;height:150px;">
+                                    <p>Scan para validar certificado</p>
+                                </div>
+                                <div class="footer">
+                                    <p>Documento emitido em ${new Date().toLocaleString()}</p>
+                                    <p>Certificado válido em todo território nacional</p>
+                                </div>
+                            </body>
+                            </html>
+                        `;
+
+                        // Criar blob e download
+                        const blob = new Blob([html], { type: 'text/html' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `certificado_${numero}.html`;
+                        a.click();
+
+                        // Limpar
+                        document.body.removeChild(qrDiv);
+                        resolve();
+                    }, 300);
+                }, 5000); // 5 segundos de loading
+            });
+        }
 
         async function emitirCertificado() {
             const tipo = document.getElementById('tipo').value;
@@ -251,6 +408,7 @@
                 return;
             }
 
+            // Coletar dados específicos
             if(tipo === '1') {
                 dados.dados = {
                     genotipo: document.getElementById('genotipo').value,
@@ -297,6 +455,9 @@
                 };
             }
 
+            // Loading passo 1
+            mostrarLoading('Preparando dados do paciente...');
+            
             try {
                 const key = localStorage.getItem('labKey');
                 const response = await fetch('/api/certificados/emitir/' + tipo, {
@@ -309,13 +470,23 @@
                 });
 
                 const result = await response.json();
+                
                 if(result.success) {
+                    // Loading passo 2
+                    mostrarLoading('Gerando certificado oficial...');
+                    
+                    // Gerar PDF com loading de 5 segundos
+                    await gerarPDF(dados, result.numero, tipo);
+                    
+                    esconderLoading();
                     alert('✅ Certificado emitido com sucesso!\nNúmero: ' + result.numero);
                     window.location.href = '/lab-dashboard';
                 } else {
+                    esconderLoading();
                     alert('❌ Erro: ' + result.erro);
                 }
             } catch(e) {
+                esconderLoading();
                 alert('❌ Erro ao emitir certificado');
             }
         }
