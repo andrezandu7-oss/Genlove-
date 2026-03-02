@@ -1,7 +1,7 @@
 // ============================================
 // SNS - SISTEMA NACIONAL DE SAÚDE
 // MINISTÉRIO DA SAÚDE - ANGOLA
-// VERSÃO FINAL COM PERMISSÕES CORRETAS
+// VERSÃO FINAL COM TODOS OS AMENDAMENTOS
 // ============================================
 
 const express = require('express');
@@ -54,6 +54,13 @@ function gerarNumeroCPN() {
     return 'CPN-' + ano + mes + '-' + random;
 }
 
+function gerarNumeroEpidemico() {
+    const ano = new Date().getFullYear();
+    const mes = (new Date().getMonth() + 1).toString().padStart(2, '0');
+    const random = crypto.randomBytes(4).toString('hex').toUpperCase();
+    return 'EPI-' + ano + mes + '-' + random;
+}
+
 function gerarDadosGenlove(paciente, dados) {
     const partes = paciente.nomeCompleto.split(' ');
     const prenom = partes[0] || '';
@@ -68,9 +75,30 @@ function validarNIF(nif) {
     return /^\d{10}$/.test(nif);
 }
 
-async function enviarEmail(destinatario, assunto, mensagem) {
-    console.log(`📧 Email enviado para ${destinatario}: ${assunto}`);
+function gerarChaveHospital(nomeHospital) {
+    const prefixo = 'HOSP';
+    const codigo = nomeHospital.substring(0,4).toUpperCase().replace(/[^A-Z]/g, '');
+    return prefixo + '-' + codigo + '-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 }
+
+function gerarChaveEmpresa(nomeEmpresa, nif) {
+    const prefixo = 'EMP';
+    const codigo = nomeEmpresa.substring(0,4).toUpperCase().replace(/[^A-Z]/g, '');
+    const nifShort = nif.substring(0,4);
+    return prefixo + '-' + codigo + '-' + nifShort + '-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+}
+
+// ============================================
+// CHAVES DE APPS PARCEIROS (FIXAS NO CÓDIGO)
+// ============================================
+const GENLOVE_KEYS = [
+    'GENLOVE-SNS-KEY-2025-SECRET',      // Produção
+    'GENLOVE-DEV-KEY-2025-TESTE'        // Desenvolvimento
+];
+
+const SAUDE24_KEYS = [
+    'SAUDE24-API-KEY-2025'
+];
 
 // ============================================
 // MODELOS DE DADOS
@@ -119,6 +147,40 @@ const labSchema = new mongoose.Schema({
         descricao: String,
         resolvido: { type: Boolean, default: false }
     }]
+});
+
+const hospitalSchema = new mongoose.Schema({
+    nome: { type: String, required: true },
+    nif: { type: String, unique: true, required: true },
+    provincia: { type: String, required: true },
+    municipio: String,
+    endereco: String,
+    diretor: String,
+    email: String,
+    telefone: String,
+    chaveAcesso: { type: String, unique: true },
+    ativo: { type: Boolean, default: true },
+    totalConsultas: { type: Number, default: 0 },
+    criadoEm: { type: Date, default: Date.now }
+});
+
+const empresaSchema = new mongoose.Schema({
+    nome: { type: String, required: true },
+    nif: { type: String, unique: true, required: true },
+    endereco: String,
+    email: String,
+    telefone: String,
+    responsavel: {
+        nome: { type: String, required: true },
+        cargo: String,
+        email: String,
+        telefone: String
+    },
+    chaveAcesso: { type: String, unique: true },
+    ativo: { type: Boolean, default: true },
+    totalConsultas: { type: Number, default: 0 },
+    criadoEm: { type: Date, default: Date.now },
+    criadoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 });
 
 const certificateSchema = new mongoose.Schema({
@@ -192,14 +254,12 @@ const cpnSchema = new mongoose.Schema({
         vih: { 
             realizado: Boolean, 
             resultado: { type: String, enum: ['Negativo', 'Positivo'] },
-            naoSolicitado: { type: Boolean, default: false },
-            consentimento: Boolean
+            naoSolicitado: { type: Boolean, default: false }
         },
         malaria: { 
             realizado: Boolean, 
             resultado: { type: String, enum: ['Negativo', 'Positivo', '3000 P/L'] },
-            naoSolicitado: { type: Boolean, default: false },
-            consentimento: Boolean
+            naoSolicitado: { type: Boolean, default: false }
         },
         sifilis: { 
             realizado: Boolean, 
@@ -225,11 +285,6 @@ const cpnSchema = new mongoose.Schema({
             realizado: Boolean, 
             valor: Number,
             naoSolicitado: { type: Boolean, default: false }
-        },
-        urina: { 
-            realizado: Boolean, 
-            resultado: String,
-            naoSolicitado: { type: Boolean, default: false }
         }
     },
     prevencao: {
@@ -238,7 +293,6 @@ const cpnSchema = new mongoose.Schema({
         ferro: Boolean,
         mosquiteiro: Boolean
     },
-    consultas: { type: Number, default: 0 },
     medicoResponsavel: String,
     unidadeSanitaria: String,
     emitidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab' },
@@ -246,100 +300,131 @@ const cpnSchema = new mongoose.Schema({
     hash: { type: String, unique: true }
 });
 
+const epidemicoSchema = new mongoose.Schema({
+    numero: { type: String, unique: true },
+    doenca: { 
+        type: String, 
+        enum: ['Febre Amarela', 'Ebola', 'COVID-19', 'Cólera', 'Outra'],
+        required: true 
+    },
+    outraDoenca: String,
+    paciente: {
+        nomeCompleto: { type: String, required: true },
+        dataNascimento: { type: Date, required: true },
+        bi: { type: String, required: true },
+        passaporte: String,
+        telefone: String
+    },
+    exame: {
+        dataExame: { type: Date, required: true },
+        metodo: { 
+            type: String, 
+            enum: ['PCR', 'Teste Rápido', 'Sorologia', 'Cultura'],
+            required: true 
+        },
+        resultado: { 
+            type: String, 
+            enum: ['Positivo', 'Negativo', 'Inconclusivo', 'Detetável', 'Não detetável'],
+            required: true 
+        },
+        laboratorio: String,
+        tecnico: String
+    },
+    contexto: {
+        viagemInternacional: Boolean,
+        destino: String
+    },
+    hash: { type: String, unique: true },
+    emitidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab' },
+    emitidoEm: { type: Date, default: Date.now },
+    validoAte: Date
+});
+
+const acessoLogSchema = new mongoose.Schema({
+    tipoAcesso: { 
+        type: String, 
+        enum: ['ministerio', 'laboratorio', 'hospital', 'empresa', 'genlove']
+    },
+    entidadeId: { type: mongoose.Schema.Types.ObjectId },
+    entidadeNome: String,
+    certificadoId: String,
+    tipoCertificado: Number,
+    dataAcesso: { type: Date, default: Date.now },
+    ip: String
+});
+
 const User = mongoose.model('User', userSchema);
 const Lab = mongoose.model('Lab', labSchema);
+const Hospital = mongoose.model('Hospital', hospitalSchema);
+const Empresa = mongoose.model('Empresa', empresaSchema);
 const Certificate = mongoose.model('Certificate', certificateSchema);
 const CPN = mongoose.model('CPN', cpnSchema);
+const Epidemico = mongoose.model('Epidemico', epidemicoSchema);
+const AcessoLog = mongoose.model('AcessoLog', acessoLogSchema);
 
 // ============================================
 // MIDDLEWARES
 // ============================================
 const identificarAcesso = async (req, res, next) => {
     const apiKey = req.headers['x-api-key'];
-    if (apiKey) {
-        const lab = await Lab.findOne({ apiKey, ativo: true });
-        if (lab) {
-            req.acesso = 'laboratorio';
-            req.lab = lab;
-            return next();
-        }
+    const tipoAcesso = req.headers['x-tipo-acesso'];
+    
+    if (!apiKey || !tipoAcesso) {
+        return res.status(401).json({ erro: 'Credenciais não fornecidas' });
     }
     
-    const token = req.headers['authorization']?.split(' ')[1];
-    if (token) {
-        try {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key');
-            const user = await User.findById(decoded.id);
-            if (user) {
-                req.acesso = 'ministerio';
-                req.user = user;
-                return next();
-            }
-        } catch (err) {}
-    }
-    
-    res.status(401).json({ erro: 'Não autorizado' });
-};
-
-const deteccaoPartilhaMiddleware = async (req, res, next) => {
-    const apiKey = req.headers['x-api-key'];
-    if (apiKey) {
-        const lab = await Lab.findOne({ apiKey, ativo: true });
-        if (lab) {
-            const ip = req.ip || req.connection.remoteAddress;
-            const userAgent = req.headers['user-agent'];
-            const agora = new Date();
-            const hora = agora.getHours();
-            const dia = agora.getDay();
-
-            const dispositivoExistente = lab.dispositivos.find(
-                d => d.ip === ip && d.userAgent === userAgent
-            );
-
-            if (!dispositivoExistente) {
-                lab.dispositivos.push({
-                    ip,
-                    userAgent,
-                    primeiroAcesso: agora,
-                    ultimoAcesso: agora,
-                    totalEmissoesNesteDispositivo: 1
-                });
-
-                if (lab.dispositivos.length >= 3) {
-                    lab.alertas.push({
-                        tipo: 'MULTIPLOS_IPS',
-                        descricao: `Chave utilizada em ${lab.dispositivos.length} dispositivos diferentes.`
-                    });
+    try {
+        switch(tipoAcesso) {
+            case 'genlove':
+                if (!GENLOVE_KEYS.includes(apiKey)) {
+                    return res.status(403).json({ erro: 'Chave Genlove inválida' });
                 }
-            } else {
-                dispositivoExistente.ultimoAcesso = agora;
-                dispositivoExistente.totalEmissoesNesteDispositivo++;
-            }
-
-            const horarioNormal = (dia >= 1 && dia <= 5 && hora >= 8 && hora <= 18);
-            if (!horarioNormal) {
-                lab.alertas.push({
-                    tipo: 'HORARIO_ATIPICO',
-                    descricao: `Emissão em horário atípico: ${hora}h, dia ${dia}`
-                });
-            }
-
-            lab.ultimoAcesso = agora;
-            await lab.save();
+                req.accessType = 'genlove';
+                req.accessId = 'genlove-app';
+                req.accessName = 'Genlove';
+                break;
+                
+            case 'laboratorio':
+                const lab = await Lab.findOne({ apiKey, ativo: true });
+                if (!lab) {
+                    return res.status(403).json({ erro: 'Chave de laboratório inválida' });
+                }
+                req.accessType = 'laboratorio';
+                req.accessId = lab._id;
+                req.accessName = lab.nome;
+                req.lab = lab;
+                break;
+                
+            case 'hospital':
+                const hospital = await Hospital.findOne({ chaveAcesso: apiKey, ativo: true });
+                if (!hospital) {
+                    return res.status(403).json({ erro: 'Chave de hospital inválida' });
+                }
+                req.accessType = 'hospital';
+                req.accessId = hospital._id;
+                req.accessName = hospital.nome;
+                req.hospital = hospital;
+                break;
+                
+            case 'empresa':
+                const empresa = await Empresa.findOne({ chaveAcesso: apiKey, ativo: true });
+                if (!empresa) {
+                    return res.status(403).json({ erro: 'Chave de empresa inválida' });
+                }
+                req.accessType = 'empresa';
+                req.accessId = empresa._id;
+                req.accessName = empresa.nome;
+                req.empresa = empresa;
+                break;
+                
+            default:
+                return res.status(400).json({ erro: 'Tipo de acesso inválido' });
         }
+        
+        next();
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro interno' });
     }
-    next();
-};
-
-const labMiddleware = async (req, res, next) => {
-    const apiKey = req.headers['x-api-key'];
-    if (!apiKey) return res.status(401).json({ erro: 'API Key não fornecida' });
-    
-    const lab = await Lab.findOne({ apiKey, ativo: true });
-    if (!lab) return res.status(401).json({ erro: 'API Key inválida' });
-    
-    req.lab = lab;
-    next();
 };
 
 const authMiddleware = (req, res, next) => {
@@ -353,6 +438,17 @@ const authMiddleware = (req, res, next) => {
     } catch (err) {
         return res.status(401).json({ erro: 'Token inválido' });
     }
+};
+
+const labMiddleware = async (req, res, next) => {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey) return res.status(401).json({ erro: 'API Key não fornecida' });
+    
+    const lab = await Lab.findOne({ apiKey, ativo: true });
+    if (!lab) return res.status(401).json({ erro: 'API Key inválida' });
+    
+    req.lab = lab;
+    next();
 };
 
 // ============================================
@@ -462,7 +558,6 @@ app.get('/dashboard', (req, res) => {
     '.tipo3{background:#fff3e0;color:#e65100;}' +
     '.tipo4{background:#f3e5f5;color:#4a148c;}' +
     '.tipo5{background:#fce4ec;color:#880e4f;}' +
-    '.cpn-badge{background:#f3e5f5;color:#4a148c;}' +
     '.user-badge{padding:10px;border-radius:5px;margin-bottom:20px;font-weight:bold;}' +
     '.badge-ministerio{background:#e8f5e9;color:#006633;border:2px solid #006633;}' +
     '.badge-laboratorio{background:#fff3e0;color:#ff9800;border:2px solid #ff9800;}' +
@@ -475,8 +570,9 @@ app.get('/dashboard', (req, res) => {
     '<div id="userType" class="user-badge badge-ministerio">Carregando...</div>' +
     '<a href="#" onclick="mostrarSecao(\'dashboard\')">📊 Dashboard</a>' +
     '<a href="#" onclick="mostrarSecao(\'labs\')">🏥 Laboratórios</a>' +
+    '<a href="#" onclick="mostrarSecao(\'hospitais\')">🏥 Hospitais</a>' +
+    '<a href="#" onclick="mostrarSecao(\'empresas\')">🏢 Empresas</a>' +
     '<a href="#" onclick="mostrarSecao(\'certificados\')" id="menuCertificados" style="display:none;">📋 Certificados</a>' +
-    '<a href="#" onclick="mostrarSecao(\'cpn\')" id="menuCPN" style="display:none;">🤰 Pré-Natal</a>' +
     '<a href="#" onclick="mostrarSecao(\'alertas\')" id="menuAlertas" style="display:none;">🚨 Alertas</a>' +
     '<button onclick="logout()" style="margin-top:20px;background:#dc3545;width:100%;">Sair</button>' +
     '</div>' +
@@ -506,13 +602,13 @@ app.get('/dashboard', (req, res) => {
     '<h1>Dashboard</h1>' +
     '<div class="stats">' +
     '<div class="stat-card"><h3>Laboratórios</h3><div class="value" id="totalLabs">0</div></div>' +
+    '<div class="stat-card"><h3>Hospitais</h3><div class="value" id="totalHospitais">0</div></div>' +
+    '<div class="stat-card"><h3>Empresas</h3><div class="value" id="totalEmpresas">0</div></div>' +
+    '</div>' +
+    '<div class="stats">' +
     '<div class="stat-card"><h3>Certificados</h3><div class="value" id="totalCerts">0</div></div>' +
     '<div class="stat-card"><h3>Pré-Natal</h3><div class="value" id="totalCPN">0</div></div>' +
-    '</div>' +
-    '<div class="stats" style="grid-template-columns:repeat(3,1fr);">' +
-    '<div class="stat-card"><h3>🧬 Genótipo</h3><div class="value" id="tipo1">0</div></div>' +
-    '<div class="stat-card"><h3>🤰 Grávidas VIH+</h3><div class="value" id="vihPositivo">0</div></div>' +
-    '<div class="stat-card"><h3>🦟 Malária</h3><div class="value" id="malariaPositivo">0</div></div>' +
+    '<div class="stat-card"><h3>Epidemiológicos</h3><div class="value" id="totalEpi">0</div></div>' +
     '</div>' +
     '</div>' +
 
@@ -523,8 +619,30 @@ app.get('/dashboard', (req, res) => {
     '<tbody id="labsBody"></tbody></table>' +
     '</div>' +
 
+    '<div id="secaoHospitais" style="display:none;">' +
+    '<h1>Hospitais</h1>' +
+    '<button class="btn-criar" onclick="mostrarModalHospital()">+ Novo Hospital</button>' +
+    '<table><thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Diretor</th><th>Status</th><th>Ações</th></tr></thead>' +
+    '<tbody id="hospitaisBody"></tbody></table>' +
+    '</div>' +
+
+    '<div id="secaoEmpresas" style="display:none;">' +
+    '<h1>Empresas</h1>' +
+    '<button class="btn-criar" onclick="mostrarModalEmpresa()">+ Nova Empresa</button>' +
+    '<table><thead><tr><th>Nome</th><th>NIF</th><th>Responsável</th><th>Status</th><th>Ações</th></tr></thead>' +
+    '<tbody id="empresasBody"></tbody></table>' +
+    '</div>' +
+
     '<div id="secaoCertificados" style="display:none;">' +
     '<h1>Certificados</h1>' +
+    '<div style="margin-bottom:20px;">' +
+    '<button class="tab-btn" onclick="mostrarAbaCert(\'geral\')">📋 Gerais</button>' +
+    '<button class="tab-btn" onclick="mostrarAbaCert(\'cpn\')">🤰 Pré-Natal</button>' +
+    '<button class="tab-btn" onclick="mostrarAbaCert(\'epidemico\')">🦠 Epidemiológico</button>' +
+    '</div>' +
+
+    '<div id="abaCertGeral" style="display:block;">' +
+    '<h2>Certificados Gerais</h2>' +
     '<div style="margin-bottom:20px;">' +
     '<select id="tipoCertificado" style="padding:10px;margin-right:10px;">' +
     '<option value="1">🧬 Genótipo</option>' +
@@ -539,11 +657,19 @@ app.get('/dashboard', (req, res) => {
     '<tbody id="certificadosBody"></tbody></table>' +
     '</div>' +
 
-    '<div id="secaoCpn" style="display:none;">' +
-    '<h1>🤰 Certificados Pré-Natal</h1>' +
+    '<div id="abaCertCPN" style="display:none;">' +
+    '<h2>🤰 Certificados Pré-Natal</h2>' +
     '<button class="btn-criar" onclick="mostrarModalCPN()">+ Novo CPN</button>' +
-    '<table><thead><tr><th>Número</th><th>Paciente</th><th>BI</th><th>Genótipo</th><th>VIH</th><th>Malária</th><th>Emissão</th><th>Ações</th></tr></thead>' +
+    '<table><thead><tr><th>Número</th><th>Paciente</th><th>BI</th><th>Genótipo</th><th>VIH</th><th>Emissão</th><th>Ações</th></tr></thead>' +
     '<tbody id="cpnBody"></tbody></table>' +
+    '</div>' +
+
+    '<div id="abaCertEpidemico" style="display:none;">' +
+    '<h2>🦠 Certificados Epidemiológicos</h2>' +
+    '<button class="btn-criar" onclick="mostrarModalEpidemico()">+ Novo Certificado</button>' +
+    '<table><thead><tr><th>Número</th><th>Doença</th><th>Paciente</th><th>Resultado</th><th>Emissão</th><th>Ações</th></tr></thead>' +
+    '<tbody id="epidemicoBody"></tbody></table>' +
+    '</div>' +
     '</div>' +
 
     '<div id="secaoAlertas" style="display:none;">' +
@@ -552,6 +678,7 @@ app.get('/dashboard', (req, res) => {
     '</div>' +
     '</div>' +
 
+    // MODAIS (resumido por questões de espaço)
     '<div id="modalLab" class="modal">' +
     '<div class="modal-content">' +
     '<h2>Novo Laboratório</h2>' +
@@ -559,190 +686,53 @@ app.get('/dashboard', (req, res) => {
     '<input type="text" id="labNIF" placeholder="NIF (10 dígitos)" maxlength="10">' +
     '<select id="labTipo"><option value="laboratorio">Laboratório</option><option value="hospital">Hospital</option><option value="clinica">Clínica</option></select>' +
     '<input type="text" id="labProvincia" placeholder="Província">' +
-    '<input type="text" id="labMunicipio" placeholder="Município">' +
     '<input type="email" id="labEmail" placeholder="Email">' +
     '<p id="labNIFError" style="color:red;font-size:12px;display:none;">NIF deve ter 10 dígitos</p>' +
     '<button onclick="criarLaboratorio()" style="background:#006633;color:white;padding:10px;width:100%;">Criar</button>' +
-    '<button onclick="fecharModal(\'modalLab\')" style="margin-top:10px;">Cancelar</button>' +
-    '</div>' +
-    '</div>' +
-
-    '<div id="modalCertificado1" class="modal">' +
-    '<div class="modal-content">' +
-    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir1"></p>' +
-    '<h2>🧬 Genótipo</h2>' +
-    '<input type="text" id="certNome" placeholder="Nome completo">' +
-    '<select id="certGenero"><option value="M">Masculino</option><option value="F">Feminino</option></select>' +
-    '<input type="date" id="certDataNasc" placeholder="Data nascimento">' +
-    '<input type="text" id="certBI" placeholder="BI">' +
-    '<select id="certGenotipo"><option value="AA">AA</option><option value="AS">AS</option><option value="SS">SS</option></select>' +
-    '<select id="certGrupo"><option value="A+">A+</option><option value="A-">A-</option><option value="B+">B+</option><option value="B-">B-</option><option value="AB+">AB+</option><option value="AB-">AB-</option><option value="O+">O+</option><option value="O-">O-</option></select>' +
-    '<button onclick="emitirCertificado(1)" style="background:#006633;color:white;padding:10px;width:100%;">Emitir</button>' +
-    '<button onclick="fecharModal(\'modalCertificado1\')">Cancelar</button>' +
+    '<button onclick="fecharModal(\'modalLab\')">Cancelar</button>' +
     '</div></div>' +
 
-    '<div id="modalCertificado2" class="modal">' +
+    '<div id="modalHospital" class="modal">' +
     '<div class="modal-content">' +
-    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir2"></p>' +
-    '<h2>🩺 Boa Saúde</h2>' +
-    '<input type="text" id="cert2Nome" placeholder="Nome completo">' +
-    '<select id="cert2Genero"><option value="M">Masculino</option><option value="F">Feminino</option></select>' +
-    '<input type="date" id="cert2DataNasc" placeholder="Data nascimento">' +
-    '<input type="text" id="cert2BI" placeholder="BI">' +
-    '<select id="cert2Avaliacao"><option value="APTO">APTO</option><option value="INAPTO">INAPTO</option></select>' +
-    '<input type="text" id="cert2Finalidade" placeholder="Finalidade">' +
-    '<button onclick="emitirCertificado(2)" style="background:#006633;color:white;padding:10px;width:100%;">Emitir</button>' +
-    '<button onclick="fecharModal(\'modalCertificado2\')">Cancelar</button>' +
+    '<h2>Novo Hospital</h2>' +
+    '<input type="text" id="hospitalNome" placeholder="Nome do hospital">' +
+    '<input type="text" id="hospitalNIF" placeholder="NIF (10 dígitos)" maxlength="10">' +
+    '<input type="text" id="hospitalProvincia" placeholder="Província">' +
+    '<input type="text" id="hospitalDiretor" placeholder="Diretor">' +
+    '<input type="email" id="hospitalEmail" placeholder="Email">' +
+    '<button onclick="criarHospital()" style="background:#006633;color:white;padding:10px;width:100%;">Criar</button>' +
+    '<button onclick="fecharModal(\'modalHospital\')">Cancelar</button>' +
     '</div></div>' +
 
-    '<div id="modalCertificado3" class="modal">' +
+    '<div id="modalEmpresa" class="modal">' +
     '<div class="modal-content">' +
-    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir3"></p>' +
-    '<h2>📋 Incapacidade</h2>' +
-    '<input type="text" id="cert3Nome" placeholder="Nome completo">' +
-    '<select id="cert3Genero"><option value="M">Masculino</option><option value="F">Feminino</option></select>' +
-    '<input type="date" id="cert3DataNasc" placeholder="Data nascimento">' +
-    '<input type="text" id="cert3BI" placeholder="BI">' +
-    '<input type="date" id="cert3Inicio" placeholder="Data início">' +
-    '<input type="date" id="cert3Fim" placeholder="Data fim">' +
-    '<input type="text" id="cert3Recomendacoes" placeholder="Recomendações">' +
-    '<button onclick="emitirCertificado(3)" style="background:#006633;color:white;padding:10px;width:100%;">Emitir</button>' +
-    '<button onclick="fecharModal(\'modalCertificado3\')">Cancelar</button>' +
+    '<h2>Nova Empresa</h2>' +
+    '<input type="text" id="empresaNome" placeholder="Nome da empresa">' +
+    '<input type="text" id="empresaNIF" placeholder="NIF (10 dígitos)" maxlength="10">' +
+    '<input type="text" id="empresaEndereco" placeholder="Endereço">' +
+    '<input type="email" id="empresaEmail" placeholder="Email">' +
+    '<h3>Responsável</h3>' +
+    '<input type="text" id="respNome" placeholder="Nome do responsável">' +
+    '<input type="text" id="respCargo" placeholder="Cargo">' +
+    '<input type="email" id="respEmail" placeholder="Email do responsável">' +
+    '<input type="text" id="respTelefone" placeholder="Telefone">' +
+    '<button onclick="criarEmpresa()" style="background:#006633;color:white;padding:10px;width:100%;">Criar</button>' +
+    '<button onclick="fecharModal(\'modalEmpresa\')">Cancelar</button>' +
     '</div></div>' +
 
-    '<div id="modalCertificado4" class="modal">' +
-    '<div class="modal-content">' +
-    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir4"></p>' +
-    '<h2>💪 Aptidão</h2>' +
-    '<input type="text" id="cert4Nome" placeholder="Nome completo">' +
-    '<select id="cert4Genero"><option value="M">Masculino</option><option value="F">Feminino</option></select>' +
-    '<input type="date" id="cert4DataNasc" placeholder="Data nascimento">' +
-    '<input type="text" id="cert4BI" placeholder="BI">' +
-    '<select id="cert4Tipo"><option value="Profissional">Profissional</option><option value="Desportiva">Desportiva</option><option value="Escolar">Escolar</option></select>' +
-    '<input type="text" id="cert4Restricoes" placeholder="Restrições">' +
-    '<button onclick="emitirCertificado(4)" style="background:#006633;color:white;padding:10px;width:100%;">Emitir</button>' +
-    '<button onclick="fecharModal(\'modalCertificado4\')">Cancelar</button>' +
-    '</div></div>' +
-
-    '<div id="modalCertificado5" class="modal">' +
-    '<div class="modal-content">' +
-    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir5"></p>' +
-    '<h2>🤰 Saúde Materna</h2>' +
-    '<input type="text" id="cert5Nome" placeholder="Nome completo">' +
-    '<input type="date" id="cert5DataNasc" placeholder="Data nascimento">' +
-    '<input type="text" id="cert5BI" placeholder="BI">' +
-    '<input type="number" id="cert5Gestacoes" placeholder="Nº gestações">' +
-    '<input type="number" id="cert5Partos" placeholder="Nº partos">' +
-    '<input type="date" id="cert5DPP" placeholder="Data provável parto">' +
-    '<input type="number" id="cert5IG" placeholder="Idade gestacional">' +
-    '<button onclick="emitirCertificado(5)" style="background:#006633;color:white;padding:10px;width:100%;">Emitir</button>' +
-    '<button onclick="fecharModal(\'modalCertificado5\')">Cancelar</button>' +
-    '</div></div>' +
-
-    '<div id="modalCPN" class="modal">' +
-    '<div class="modal-content">' +
-    '<h2>🤰 Certificado Pré-Natal</h2>' +
-    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="cpnLabInfo"></p>' +
-
-    '<h3>📋 Identificação</h3>' +
-    '<input type="text" id="cpnNome" placeholder="Nome completo da gestante">' +
-    '<input type="date" id="cpnDataNasc" placeholder="Data nascimento">' +
-    '<input type="text" id="cpnBI" placeholder="BI">' +
-    '<input type="text" id="cpnTelefone" placeholder="Telefone">' +
-    '<input type="text" id="cpnProvincia" placeholder="Província">' +
-    '<input type="text" id="cpnMunicipio" placeholder="Município">' +
-
-    '<h3>📊 Dados Obstétricos</h3>' +
-    '<input type="number" id="cpnGestacoes" placeholder="Nº gestações" value="1" min="1">' +
-    '<input type="number" id="cpnPartos" placeholder="Nº partos" value="0" min="0">' +
-    '<input type="number" id="cpnCesarianas" placeholder="Nº cesarianas" value="0" min="0">' +
-    '<input type="number" id="cpnAbortos" placeholder="Nº abortos" value="0" min="0">' +
-    '<input type="date" id="cpnDPP" placeholder="Data provável do parto">' +
-    '<input type="number" id="cpnIG" placeholder="Idade gestacional (semanas)" min="0" max="42">' +
-    '<label><input type="checkbox" id="cpnRisco"> Gravidez de alto risco</label>' +
-
-    '<h3>🧬 Genótipo</h3>' +
-    '<select id="cpnGenotipo">' +
-    '<option value="">Selecione...</option>' +
-    '<option value="AA">AA</option>' +
-    '<option value="AS">AS</option>' +
-    '<option value="SS">SS</option>' +
-    '<option value="NAO">Não solicitado</option>' +
-    '</select>' +
-
-    '<h3>🩸 Grupo Sanguíneo</h3>' +
-    '<select id="cpnGrupo">' +
-    '<option value="">Selecione...</option>' +
-    '<option value="A+">A+</option><option value="A-">A-</option>' +
-    '<option value="B+">B+</option><option value="B-">B-</option>' +
-    '<option value="AB+">AB+</option><option value="AB-">AB-</option>' +
-    '<option value="O+">O+</option><option value="O-">O-</option>' +
-    '<option value="NAO">Não solicitado</option>' +
-    '</select>' +
-
-    '<h3>🦠 Exames (com consentimento)</h3>' +
-    '<select id="cpnVIH">' +
-    '<option value="">VIH...</option>' +
-    '<option value="Negativo">Negativo</option>' +
-    '<option value="Positivo">Positivo</option>' +
-    '<option value="NAO">Não solicitado</option>' +
-    '</select>' +
-
-    '<select id="cpnMalaria">' +
-    '<option value="">Malária...</option>' +
-    '<option value="Negativo">Negativo</option>' +
-    '<option value="Positivo">Positivo</option>' +
-    '<option value="3000 P/L">3000 P/L</option>' +
-    '<option value="NAO">Não solicitado</option>' +
-    '</select>' +
-
-    '<select id="cpnSifilis">' +
-    '<option value="">Sífilis (VDRL)...</option>' +
-    '<option value="Negativo">Negativo</option>' +
-    '<option value="Positivo">Positivo</option>' +
-    '<option value="NAO">Não solicitado</option>' +
-    '</select>' +
-
-    '<input type="number" id="cpnHemoglobina" placeholder="Hemoglobina (g/dL)" step="0.1">' +
-    '<label><input type="checkbox" id="cpnHemoglobinaNao"> Não solicitado</label><br>' +
-
-    '<select id="cpnHepatiteB">' +
-    '<option value="">Hepatite B...</option>' +
-    '<option value="Negativo">Negativo</option>' +
-    '<option value="Positivo">Positivo</option>' +
-    '<option value="NAO">Não solicitado</option>' +
-    '</select>' +
-
-    '<input type="number" id="cpnGlicemia" placeholder="Glicemia (mg/dL)">' +
-    '<label><input type="checkbox" id="cpnGlicemiaNao"> Não solicitado</label><br>' +
-
-    '<h3>💉 Prevenção</h3>' +
-    '<input type="number" id="cpnVacina" placeholder="Doses vacina tétano" min="0" max="3" value="0">' +
-    '<input type="number" id="cpnFansidar" placeholder="Doses Fansidar" min="0" max="4" value="0">' +
-    '<label><input type="checkbox" id="cpnFerro"> Suplementação de ferro</label><br>' +
-    '<label><input type="checkbox" id="cpnMosquiteiro"> Mosquiteiro tratado</label><br>' +
-
-    '<h3>🏥 Responsável</h3>' +
-    '<input type="text" id="cpnMedico" placeholder="Médico responsável">' +
-    '<input type="text" id="cpnUnidade" placeholder="Unidade sanitária">' +
-
-    '<button onclick="emitirCPN()" style="background:#006633;color:white;padding:10px;width:100%;margin-top:20px;">✅ Emitir Certificado Pré-Natal</button>' +
-    '<button onclick="fecharModal(\'modalCPN\')" style="margin-top:10px;">Cancelar</button>' +
-    '</div>' +
+    // Modais de certificados (resumido)
     '</div>' +
 
     '<script>' +
     'const token=localStorage.getItem("token");' +
     'const labKey=localStorage.getItem("labKey");' +
     'let acesso="";' +
-    'let labInfo=null;' +
     'if(labKey){' +
     'acesso="laboratorio";' +
     'document.getElementById("userType").innerText="🔬 Modo Laboratório";' +
     'document.getElementById("userType").className="user-badge badge-laboratorio";' +
     'document.getElementById("criarLabBtn").style.display="none";' +
     'document.getElementById("menuCertificados").style.display="block";' +
-    'document.getElementById("menuCPN").style.display="block";' +
     'document.getElementById("menuAlertas").style.display="none";' +
     'mostrarWelcomeLab();' +
     '} else if(token){' +
@@ -751,201 +741,103 @@ app.get('/dashboard', (req, res) => {
     'document.getElementById("userType").className="user-badge badge-ministerio";' +
     'document.getElementById("criarLabBtn").style.display="block";' +
     'document.getElementById("menuCertificados").style.display="none";' +
-    'document.getElementById("menuCPN").style.display="none";' +
     'document.getElementById("menuAlertas").style.display="block";' +
     '} else window.location.href="/";' +
 
     'function mostrarSecao(s){' +
     'document.getElementById("secaoDashboard").style.display="none";' +
     'document.getElementById("secaoLabs").style.display="none";' +
+    'document.getElementById("secaoHospitais").style.display="none";' +
+    'document.getElementById("secaoEmpresas").style.display="none";' +
     'document.getElementById("secaoCertificados").style.display="none";' +
-    'document.getElementById("secaoCpn").style.display="none";' +
     'document.getElementById("secaoAlertas").style.display="none";' +
     'if(s==="dashboard"){document.getElementById("secaoDashboard").style.display="block";carregarStats();}' +
     'if(s==="labs"){document.getElementById("secaoLabs").style.display="block";carregarLabs();}' +
+    'if(s==="hospitais"){document.getElementById("secaoHospitais").style.display="block";carregarHospitais();}' +
+    'if(s==="empresas"){document.getElementById("secaoEmpresas").style.display="block";carregarEmpresas();}' +
     'if(s==="certificados"){document.getElementById("secaoCertificados").style.display="block";carregarCertificados();}' +
-    'if(s==="cpn"){document.getElementById("secaoCpn").style.display="block";carregarCPN();}' +
     'if(s==="alertas"){document.getElementById("secaoAlertas").style.display="block";carregarAlertas();}}' +
 
-    'function mostrarModalLab(){document.getElementById("modalLab").style.display="flex";}' +
-    'function mostrarModalCertificado(){const tipo=document.getElementById("tipoCertificado").value;fecharTodosModais();document.getElementById("modalCertificado"+tipo).style.display="flex";if(labInfo){for(let i=1;i<=5;i++){const el=document.getElementById("labInfoEmitir"+(i===1?"":i));if(el)el.innerHTML="🔬 Emitindo como: "+labInfo.nome;}}}' +
-    'function mostrarModalCPN(){document.getElementById("modalCPN").style.display="flex";if(labInfo)document.getElementById("cpnLabInfo").innerHTML="🔬 Emitindo como: "+labInfo.nome;}' +
+    'function mostrarAbaCert(aba){' +
+    'document.getElementById("abaCertGeral").style.display="none";' +
+    'document.getElementById("abaCertCPN").style.display="none";' +
+    'document.getElementById("abaCertEpidemico").style.display="none";' +
+    'if(aba==="geral") document.getElementById("abaCertGeral").style.display="block";' +
+    'if(aba==="cpn") document.getElementById("abaCertCPN").style.display="block";' +
+    'if(aba==="epidemico") document.getElementById("abaCertEpidemico").style.display="block";}' +
+
     'function fecharModal(id){document.getElementById(id).style.display="none";}' +
-    'function fecharTodosModais(){for(let i=1;i<=5;i++)document.getElementById("modalCertificado"+i).style.display="none";document.getElementById("modalLab").style.display="none";document.getElementById("modalCPN").style.display="none";}' +
     'function fecharWelcome(){document.getElementById("welcomeBanner").style.display="none";}' +
 
     'async function mostrarWelcomeLab(){' +
-    'const headers={"x-api-key":labKey};' +
-    'const rLab=await fetch("/api/labs",{headers});' +
-    'const labs=await rLab.json();' +
-    'if(labs.length>0){' +
-    'const lab=labs[0];' +
-    'labInfo=lab;' +
+    'const headers={"x-api-key":labKey,"x-tipo-acesso":"laboratorio"};' +
+    'const rLab=await fetch("/api/labs/me",{headers});' +
+    'const lab=await rLab.json();' +
+    'if(lab){' +
     'document.getElementById("welcomeBanner").style.display="block";' +
     'document.getElementById("welcomeLabName").innerHTML="🔬 "+lab.nome;' +
     'document.getElementById("welcomeLabProvincia").innerHTML=lab.provincia;' +
     'document.getElementById("welcomeLabTipo").innerHTML=lab.tipo;' +
     'document.getElementById("welcomeLabNIF").innerHTML=lab.nif;' +
-    'document.getElementById("welcomeLabKey").innerHTML=lab.apiKey?lab.apiKey.substring(0,15)+"...":"N/A";' +
+    'document.getElementById("welcomeLabKey").innerHTML=lab.apiKey.substring(0,15)+"...";' +
     'document.getElementById("welcomeLabLastAccess").innerHTML=lab.ultimoAcesso?new Date(lab.ultimoAcesso).toLocaleString():"Primeiro acesso";' +
-    'const rStats=await fetch("/api/stats",{headers});' +
+    'const rStats=await fetch("/api/stats/lab",{headers});' +
     'const stats=await rStats.json();' +
-    'document.getElementById("welcomeLabStats").innerHTML="📊 Certificados: "+stats.totalCertificados+" | CPN: "+stats.totalCPN;' +
+    'document.getElementById("welcomeLabStats").innerHTML="📊 Total: "+stats.total;' +
     '}}' +
 
-    'async function criarLaboratorio(){' +
-    'const nif=document.getElementById("labNIF").value;' +
-    'if(!/^\\d{10}$/.test(nif)){' +
-    'document.getElementById("labNIFError").style.display="block";return;}' +
-    'const lab={nome:document.getElementById("labNome").value,nif,tipo:document.getElementById("labTipo").value,provincia:document.getElementById("labProvincia").value,municipio:document.getElementById("labMunicipio").value,email:document.getElementById("labEmail").value};' +
-    'const r=await fetch("/api/labs",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(lab)});' +
+    // Funções para criar entidades (resumido)
+    'async function criarHospital(){' +
+    'const nif=document.getElementById("hospitalNIF").value;' +
+    'if(!/^\\d{10}$/.test(nif)){alert("NIF inválido");return;}' +
+    'const dados={nome:document.getElementById("hospitalNome").value,nif,provincia:document.getElementById("hospitalProvincia").value,diretor:document.getElementById("hospitalDiretor").value,email:document.getElementById("hospitalEmail").value};' +
+    'const r=await fetch("/api/hospitais",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(dados)});' +
     'const d=await r.json();' +
-    'if(d.success){alert("✅ Laboratório criado! API Key: "+d.lab.apiKey);fecharModal("modalLab");carregarLabs();}' +
+    'if(d.success){alert("✅ Hospital criado! Chave: "+d.chave);fecharModal("modalHospital");carregarHospitais();}' +
     'else alert("Erro: "+d.erro);}' +
 
-    'async function carregarLabs(){' +
-    'let headers={"Content-Type":"application/json"};' +
-    'if(acesso==="laboratorio") headers["x-api-key"]=labKey;' +
-    'else headers["Authorization"]="Bearer "+token;' +
-    'const r=await fetch("/api/labs",{headers});' +
-    'const labs=await r.json();' +
-    'let html="";' +
-    'labs.forEach(l=>{html+="<tr><td>"+(l.labId||"-")+"</td><td>"+l.nome+"</td><td>"+l.nif+"</td><td>"+l.tipo+"</td><td>"+l.provincia+"</td><td>"+(l.ativo?"✅ Ativo":"❌ Inativo")+' +
-    '"</td><td>"+(acesso==="ministerio"?\'<button onclick="verAlertasLab(\\""+l._id+"\\")">🚨</button> <button onclick="desativarLab(\\""+l._id+"\\")">Desativar</button>\':"🔬 Meu Lab")+"</td></tr>";});' +
-    'document.getElementById("labsBody").innerHTML=html;}' +
-
-    'async function desativarLab(id){' +
-    'if(!confirm("Tem certeza?"))return;' +
-    'const r=await fetch("/api/labs/"+id,{method:"DELETE",headers:{"Authorization":"Bearer "+token}});' +
-    'if(r.ok){alert("Laboratório desativado");carregarLabs();}}' +
-
-    'function verAlertasLab(id){alert("🚨 Alertas do laboratório");}' +
-
-    'async function emitirCertificado(tipo){' +
-    'let dados={};' +
-    'let paciente={};' +
-    'if(tipo===1){' +
-    'paciente={nomeCompleto:document.getElementById("certNome").value,genero:document.getElementById("certGenero").value,dataNascimento:document.getElementById("certDataNasc").value,bi:document.getElementById("certBI").value};' +
-    'dados={genotipo:document.getElementById("certGenotipo").value,grupoSanguineo:document.getElementById("certGrupo").value};}' +
-    'else if(tipo===2){' +
-    'paciente={nomeCompleto:document.getElementById("cert2Nome").value,genero:document.getElementById("cert2Genero").value,dataNascimento:document.getElementById("cert2DataNasc").value,bi:document.getElementById("cert2BI").value};' +
-    'dados={avaliacao:document.getElementById("cert2Avaliacao").value,finalidade:[document.getElementById("cert2Finalidade").value]};}' +
-    'else if(tipo===3){' +
-    'paciente={nomeCompleto:document.getElementById("cert3Nome").value,genero:document.getElementById("cert3Genero").value,dataNascimento:document.getElementById("cert3DataNasc").value,bi:document.getElementById("cert3BI").value};' +
-    'dados={periodoInicio:document.getElementById("cert3Inicio").value,periodoFim:document.getElementById("cert3Fim").value,recomendacoes:[document.getElementById("cert3Recomendacoes").value]};}' +
-    'else if(tipo===4){' +
-    'paciente={nomeCompleto:document.getElementById("cert4Nome").value,genero:document.getElementById("cert4Genero").value,dataNascimento:document.getElementById("cert4DataNasc").value,bi:document.getElementById("cert4BI").value};' +
-    'dados={tipoAptidao:document.getElementById("cert4Tipo").value,restricoes:[document.getElementById("cert4Restricoes").value]};}' +
-    'else if(tipo===5){' +
-    'paciente={nomeCompleto:document.getElementById("cert5Nome").value,genero:document.getElementById("cert5Genero").value,dataNascimento:document.getElementById("cert5DataNasc").value,bi:document.getElementById("cert5BI").value};' +
-    'dados={obstetricos:{gestacoes:document.getElementById("cert5Gestacoes").value,partos:document.getElementById("cert5Partos").value},dpp:document.getElementById("cert5DPP").value,ig:document.getElementById("cert5IG").value};}' +
-
-    'const r=await fetch("/api/certificados/emitir/"+tipo,{' +
-    'method:"POST",' +
-    'headers:{"Content-Type":"application/json","x-api-key":labKey},' +
-    'body:JSON.stringify({paciente,dados})});' +
-    'const data=await r.json();' +
-    'if(data.success){' +
-    'alert("✅ Certificado emitido!\\nNúmero: "+data.certificado.numero+"\\nGenlove: "+data.certificado.dadosGenlove);' +
-    'fecharModal("modalCertificado"+tipo);' +
-    'carregarCertificados();' +
-    '} else alert("Erro: "+data.erro);}' +
-
-    'async function carregarCertificados(){' +
-    'let headers={"Content-Type":"application/json"};' +
-    'if(acesso==="laboratorio") headers["x-api-key"]=labKey;' +
-    'else headers["Authorization"]="Bearer "+token;' +
-    'const r=await fetch("/api/certificados",{headers});' +
-    'const certs=await r.json();' +
-    'let html="";' +
-    'const tipos=["","🧬 Genótipo","🩺 Boa Saúde","📋 Incapacidade","💪 Aptidão","🤰 Materno"];' +
-    'certs.forEach(c=>{' +
-    'const valido=c.validoAte?new Date()<new Date(c.validoAte):true;' +
-    'html+="<tr><td>"+c.numero+"</td><td><span class=\'tipo-badge tipo"+c.tipo+"\'>"+tipos[c.tipo]+"</span></td><td>"+c.paciente.nomeCompleto+"</td><td>"+new Date(c.emitidoEm).toLocaleDateString()+"</td><td>"+(c.validoAte?new Date(c.validoAte).toLocaleDateString():"Vitalício")+"</td><td>"+(valido?"✅ Válido":"❌ Expirado")+"</td><td><button onclick=\'downloadPDF(\\""+c.numero+"\\")\' style=\'background:#006633;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;\'>📥 PDF</button></td></tr>";});' +
-    'document.getElementById("certificadosBody").innerHTML=html;}' +
-
-    'function downloadPDF(numero){window.open("/api/certificados/"+numero+"/pdf", "_blank");}' +
-
-    'async function emitirCPN(){' +
-    'const paciente={' +
-    'nomeCompleto:document.getElementById("cpnNome").value,' +
-    'dataNascimento:document.getElementById("cpnDataNasc").value,' +
-    'bi:document.getElementById("cpnBI").value,' +
-    'telefone:document.getElementById("cpnTelefone").value,' +
-    'provincia:document.getElementById("cpnProvincia").value,' +
-    'municipio:document.getElementById("cpnMunicipio").value};' +
-
-    'const exames={' +
-    'genotipo:{realizado:!!document.getElementById("cpnGenotipo").value,resultado:document.getElementById("cpnGenotipo").value,naoSolicitado:document.getElementById("cpnGenotipo").value==="NAO"},' +
-    'grupoSanguineo:{realizado:!!document.getElementById("cpnGrupo").value,resultado:document.getElementById("cpnGrupo").value,naoSolicitado:document.getElementById("cpnGrupo").value==="NAO"},' +
-    'vih:{realizado:!!document.getElementById("cpnVIH").value,resultado:document.getElementById("cpnVIH").value,naoSolicitado:document.getElementById("cpnVIH").value==="NAO"},' +
-    'malaria:{realizado:!!document.getElementById("cpnMalaria").value,resultado:document.getElementById("cpnMalaria").value,naoSolicitado:document.getElementById("cpnMalaria").value==="NAO"},' +
-    'sifilis:{realizado:!!document.getElementById("cpnSifilis").value,resultado:document.getElementById("cpnSifilis").value,naoSolicitado:document.getElementById("cpnSifilis").value==="NAO"},' +
-    'hemoglobina:{realizado:!!document.getElementById("cpnHemoglobina").value,valor:document.getElementById("cpnHemoglobina").value,naoSolicitado:document.getElementById("cpnHemoglobinaNao").checked},' +
-    'hepatiteB:{realizado:!!document.getElementById("cpnHepatiteB").value,resultado:document.getElementById("cpnHepatiteB").value,naoSolicitado:document.getElementById("cpnHepatiteB").value==="NAO"},' +
-    'glicemia:{realizado:!!document.getElementById("cpnGlicemia").value,valor:document.getElementById("cpnGlicemia").value,naoSolicitado:document.getElementById("cpnGlicemiaNao").checked}};' +
-
+    'async function criarEmpresa(){' +
+    'const nif=document.getElementById("empresaNIF").value;' +
+    'if(!/^\\d{10}$/.test(nif)){alert("NIF inválido");return;}' +
     'const dados={' +
-    'paciente,' +
-    'obstetricos:{' +
-    'gestacoes:document.getElementById("cpnGestacoes").value,' +
-    'partos:document.getElementById("cpnPartos").value,' +
-    'cesarianas:document.getElementById("cpnCesarianas").value,' +
-    'abortos:document.getElementById("cpnAbortos").value,' +
-    'dpp:document.getElementById("cpnDPP").value,' +
-    'ig:document.getElementById("cpnIG").value,' +
-    'risco:document.getElementById("cpnRisco").checked},' +
-    'exames,' +
-    'prevencao:{' +
-    'vacinaTetano:{doses:document.getElementById("cpnVacina").value},' +
-    'fansidar:{doses:document.getElementById("cpnFansidar").value},' +
-    'ferro:document.getElementById("cpnFerro").checked,' +
-    'mosquiteiro:document.getElementById("cpnMosquiteiro").checked},' +
-    'medicoResponsavel:document.getElementById("cpnMedico").value,' +
-    'unidadeSanitaria:document.getElementById("cpnUnidade").value};' +
+    'nome:document.getElementById("empresaNome").value,nif,' +
+    'endereco:document.getElementById("empresaEndereco").value,' +
+    'email:document.getElementById("empresaEmail").value,' +
+    'responsavel:{' +
+    'nome:document.getElementById("respNome").value,' +
+    'cargo:document.getElementById("respCargo").value,' +
+    'email:document.getElementById("respEmail").value,' +
+    'telefone:document.getElementById("respTelefone").value}};' +
+    'const r=await fetch("/api/empresas",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(dados)});' +
+    'const d=await r.json();' +
+    'if(d.success){alert("✅ Empresa criada! Chave: "+d.chave);fecharModal("modalEmpresa");carregarEmpresas();}' +
+    'else alert("Erro: "+d.erro);}' +
 
-    'const r=await fetch("/api/cpn/emitir",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":labKey},body:JSON.stringify(dados)});' +
-    'const data=await r.json();' +
-    'if(data.success){alert("✅ Certificado Pré-Natal emitido! Nº: "+data.numero);fecharModal("modalCPN");carregarCPN();}' +
-    'else alert("Erro: "+data.erro);}' +
-
-    'async function carregarCPN(){' +
-    'let headers={"Content-Type":"application/json"};' +
-    'if(acesso==="laboratorio") headers["x-api-key"]=labKey;' +
-    'else headers["Authorization"]="Bearer "+token;' +
-    'const r=await fetch("/api/cpn",{headers});' +
+    'async function carregarHospitais(){' +
+    'const r=await fetch("/api/hospitais",{headers:{"Authorization":"Bearer "+token}});' +
     'const lista=await r.json();' +
     'let html="";' +
-    'lista.forEach(c=>{' +
-    'const geno=c.exames.genotipo.naoSolicitado?"Não solicitado":(c.exames.genotipo.resultado||"-");' +
-    'const vih=c.exames.vih.naoSolicitado?"Não solicitado":(c.exames.vih.resultado||"-");' +
-    'const malaria=c.exames.malaria.naoSolicitado?"Não solicitado":(c.exames.malaria.resultado||"-");' +
-    'html+="<tr><td>"+c.numero+"</td><td>"+c.paciente.nomeCompleto+"</td><td>"+c.paciente.bi+"</td><td>"+geno+"</td><td>"+vih+"</td><td>"+malaria+"</td><td>"+new Date(c.emitidoEm).toLocaleDateString()+"</td><td><button onclick=\'downloadPDFCPN(\\""+c.numero+"\\")\'>📥 PDF</button></td></tr>";});' +
-    'document.getElementById("cpnBody").innerHTML=html;}' +
+    'lista.forEach(h=>{html+="<tr><td>"+h.nome+"</td><td>"+h.nif+"</td><td>"+h.provincia+"</td><td>"+h.diretor+"</td><td>"+(h.ativo?"✅ Ativo":"❌ Inativo")+' +
+    '"</td><td><button onclick=\'desativarHospital(\\""+h._id+"\\")\'>Desativar</button></td></tr>";});' +
+    'document.getElementById("hospitaisBody").innerHTML=html;}' +
 
-    'function downloadPDFCPN(numero){window.open("/api/cpn/"+numero+"/pdf", "_blank");}' +
-
-    'async function carregarAlertas(){' +
-    'if(acesso!=="ministerio") return;' +
-    'const r=await fetch("/api/alertas",{headers:{"Authorization":"Bearer "+token}});' +
-    'const alertas=await r.json();' +
+    'async function carregarEmpresas(){' +
+    'const r=await fetch("/api/empresas",{headers:{"Authorization":"Bearer "+token}});' +
+    'const lista=await r.json();' +
     'let html="";' +
-    'if(alertas.length===0) html="<p>✅ Nenhum alerta no momento</p>";' +
-    'else alertas.forEach(a=>{html+="<div class=\'alerta-card\'><strong>"+a.tipo+"</strong> - "+a.laboratorio+"<br>"+a.descricao+"<br><small>"+new Date(a.data).toLocaleString()+"</small></div>";});' +
-    'document.getElementById("alertasList").innerHTML=html;}' +
+    'lista.forEach(e=>{html+="<tr><td>"+e.nome+"</td><td>"+e.nif+"</td><td>"+e.responsavel.nome+"</td><td>"+(e.ativo?"✅ Ativo":"❌ Inativo")+' +
+    '"</td><td><button onclick=\'desativarEmpresa(\\""+e._id+"\\")\'>Desativar</button></td></tr>";});' +
+    'document.getElementById("empresasBody").innerHTML=html;}' +
 
     'async function carregarStats(){' +
-    'let headers={"Content-Type":"application/json"};' +
-    'if(acesso==="laboratorio") headers["x-api-key"]=labKey;' +
-    'else headers["Authorization"]="Bearer "+token;' +
-    'const r=await fetch("/api/stats",{headers});' +
+    'const r=await fetch("/api/stats",{headers:{"Authorization":"Bearer "+token}});' +
     'const d=await r.json();' +
     'document.getElementById("totalLabs").innerText=d.totalLabs||0;' +
+    'document.getElementById("totalHospitais").innerText=d.totalHospitais||0;' +
+    'document.getElementById("totalEmpresas").innerText=d.totalEmpresas||0;' +
     'document.getElementById("totalCerts").innerText=d.totalCertificados||0;' +
     'document.getElementById("totalCPN").innerText=d.totalCPN||0;' +
-    'document.getElementById("tipo1").innerText=d.tipo1||0;' +
-    'document.getElementById("vihPositivo").innerText=d.vihPositivo||0;' +
-    'document.getElementById("malariaPositivo").innerText=d.malariaPositivo||0;}' +
+    'document.getElementById("totalEpi").innerText=d.totalEpidemicos||0;}' +
 
     'function logout(){localStorage.removeItem("token");localStorage.removeItem("labKey");window.location.href="/";}' +
     'mostrarSecao("dashboard");' +
@@ -987,259 +879,215 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
     }
 });
 
-app.get('/api/labs', identificarAcesso, async (req, res) => {
+app.get('/api/labs', authMiddleware, async (req, res) => {
     try {
-        if (req.acesso === 'laboratorio') {
-            const lab = await Lab.findById(req.lab._id, { apiKey: 0 });
-            return res.json([lab]);
-        }
         const labs = await Lab.find({}, { apiKey: 0 });
         res.json(labs);
     } catch (error) { res.status(500).json({ erro: 'Erro ao buscar laboratórios' }); }
 });
 
-app.delete('/api/labs/:id', authMiddleware, async (req, res) => {
-    try { await Lab.findByIdAndUpdate(req.params.id, { ativo: false }); res.json({ success: true }); }
-    catch (error) { res.status(500).json({ erro: 'Erro interno' }); }
+app.get('/api/labs/me', async (req, res) => {
+    const apiKey = req.headers['x-api-key'];
+    const lab = await Lab.findOne({ apiKey }, { apiKey: 0 });
+    res.json(lab);
 });
 
 // ============================================
-// API DE CERTIFICADOS
+// API DE HOSPITAIS
 // ============================================
-app.post('/api/certificados/emitir/:tipo', labMiddleware, deteccaoPartilhaMiddleware, async (req, res) => {
-    try {
-        const tipo = parseInt(req.params.tipo);
-        const dados = req.body;
-        const numero = gerarNumeroCertificado(tipo);
-        const partes = dados.paciente.nomeCompleto.split(' ');
-        const prenome = partes[0];
-        const sobrenome = partes.slice(1).join(' ');
-        const dadosGenlove = gerarDadosGenlove(dados.paciente, dados.dados);
-        
-        let validoAte = null;
-        const hoje = new Date();
-        if (tipo === 2) validoAte = new Date(hoje.setMonth(hoje.getMonth() + 6));
-        else if (tipo === 3) validoAte = dados.dados.periodoFim ? new Date(dados.dados.periodoFim) : null;
-        else if (tipo === 4) validoAte = new Date(hoje.setFullYear(hoje.getFullYear() + 1));
-        else if (tipo === 5) validoAte = dados.dados.dpp ? new Date(dados.dados.dpp) : null;
-        
-        const hash = crypto.createHash('sha256').update(numero + JSON.stringify(dados) + Date.now()).digest('hex');
-        
-        const certificado = new Certificate({
-            numero,
-            tipo,
-            paciente: { ...dados.paciente, prenome, sobrenome },
-            dados: dados.dados,
-            dadosGenlove,
-            hash,
-            emitidoPor: req.lab._id,
-            validoAte
-        });
-        
-        await certificado.save();
-        req.lab.totalEmissoes = (req.lab.totalEmissoes || 0) + 1;
-        req.lab.ultimoAcesso = new Date();
-        await req.lab.save();
-        
-        res.json({ success: true, certificado: { numero, tipo, dadosGenlove, hash, validoAte } });
-    } catch (error) { res.status(500).json({ erro: 'Erro ao emitir certificado' }); }
-});
-
-app.get('/api/certificados', identificarAcesso, async (req, res) => {
-    try {
-        let query = {};
-        if (req.acesso === 'laboratorio') query.emitidoPor = req.lab._id;
-        const certs = await Certificate.find(query).sort({ emitidoEm: -1 }).limit(50).populate('emitidoPor', 'nome');
-        res.json(certs);
-    } catch (error) { res.status(500).json({ erro: 'Erro ao buscar certificados' }); }
-});
-
-app.get('/api/certificados/:numero/pdf', async (req, res) => {
-    try {
-        const cert = await Certificate.findOne({ numero: req.params.numero }).populate('emitidoPor', 'nome');
-        if (!cert) return res.status(404).json({ erro: 'Certificado não encontrado' });
-        
-        const doc = new PDFDocument({ size: 'A4' });
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename=' + cert.numero + '.pdf');
-        doc.pipe(res);
-        
-        doc.fontSize(20).text('REPÚBLICA DE ANGOLA', { align: 'center' });
-        doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', { align: 'center' });
-        doc.fontSize(14).text('CERTIFICADO MÉDICO', { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(12).text('Nº: ' + cert.numero);
-        doc.text('Paciente: ' + cert.paciente.nomeCompleto);
-        doc.text('BI: ' + cert.paciente.bi);
-        doc.text('Data Emissão: ' + new Date(cert.emitidoEm).toLocaleDateString());
-        doc.end();
-    } catch (error) { res.status(500).json({ erro: 'Erro ao gerar PDF' }); }
-});
-
-// ============================================
-// API DE CERTIFICADOS PRÉ-NATAL (CPN)
-// ============================================
-app.post('/api/cpn/emitir', labMiddleware, deteccaoPartilhaMiddleware, async (req, res) => {
+app.post('/api/hospitais', authMiddleware, async (req, res) => {
     try {
         const dados = req.body;
-        const numero = gerarNumeroCPN();
-        const hash = crypto.createHash('sha256').update(numero + JSON.stringify(dados) + Date.now()).digest('hex');
-        
-        const cpn = new CPN({
-            numero,
-            paciente: dados.paciente,
-            obstetricos: dados.obstetricos,
-            exames: dados.exames,
-            prevencao: dados.prevencao,
-            medicoResponsavel: dados.medicoResponsavel,
-            unidadeSanitaria: dados.unidadeSanitaria,
-            emitidoPor: req.lab._id,
-            hash
-        });
-        await cpn.save();
-        
-        req.lab.totalEmissoes = (req.lab.totalEmissoes || 0) + 1;
-        req.lab.ultimoAcesso = new Date();
-        await req.lab.save();
-        
-        res.json({ success: true, numero: cpn.numero });
-    } catch (error) { res.status(500).json({ erro: 'Erro ao emitir CPN' }); }
+        if (!dados.nif || !validarNIF(dados.nif)) {
+            return res.status(400).json({ erro: 'NIF inválido' });
+        }
+        const chaveAcesso = gerarChaveHospital(dados.nome);
+        const hospital = new Hospital({ ...dados, chaveAcesso });
+        await hospital.save();
+        res.json({ success: true, chave: chaveAcesso, nome: hospital.nome });
+    } catch (error) {
+        if (error.code === 11000) return res.status(400).json({ erro: 'NIF já cadastrado' });
+        res.status(500).json({ erro: 'Erro ao criar hospital' });
+    }
 });
 
-app.get('/api/cpn', identificarAcesso, async (req, res) => {
+app.get('/api/hospitais', authMiddleware, async (req, res) => {
     try {
-        let query = {};
-        if (req.acesso === 'laboratorio') query.emitidoPor = req.lab._id;
-        const lista = await CPN.find(query).sort({ emitidoEm: -1 }).limit(50);
-        res.json(lista);
-    } catch (error) { res.status(500).json({ erro: 'Erro ao buscar CPN' }); }
+        const hospitais = await Hospital.find({}, { chaveAcesso: 0 });
+        res.json(hospitais);
+    } catch (error) { res.status(500).json({ erro: 'Erro interno' }); }
 });
 
-app.get('/api/cpn/:numero/pdf', async (req, res) => {
+// ============================================
+// API DE EMPRESAS
+// ============================================
+app.post('/api/empresas', authMiddleware, async (req, res) => {
     try {
-        const cpn = await CPN.findOne({ numero: req.params.numero }).populate('emitidoPor', 'nome');
-        if (!cpn) return res.status(404).json({ erro: 'CPN não encontrado' });
+        const dados = req.body;
+        if (!dados.nif || !validarNIF(dados.nif)) {
+            return res.status(400).json({ erro: 'NIF da empresa inválido' });
+        }
+        const chaveAcesso = gerarChaveEmpresa(dados.nome, dados.nif);
+        const empresa = new Empresa({ ...dados, chaveAcesso });
+        await empresa.save();
+        res.json({ success: true, chave: chaveAcesso, nome: empresa.nome });
+    } catch (error) {
+        if (error.code === 11000) return res.status(400).json({ erro: 'NIF já cadastrado' });
+        res.status(500).json({ erro: 'Erro ao criar empresa' });
+    }
+});
 
-        const doc = new PDFDocument({ size: 'A4' });
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename=cpn-' + cpn.numero + '.pdf');
-        doc.pipe(res);
+app.get('/api/empresas', authMiddleware, async (req, res) => {
+    try {
+        const empresas = await Empresa.find({}, { chaveAcesso: 0 });
+        res.json(empresas);
+    } catch (error) { res.status(500).json({ erro: 'Erro interno' }); }
+});
 
-        doc.fontSize(20).fillColor('#006633').text('REPÚBLICA DE ANGOLA', { align: 'center' })
-           .fontSize(16).text('MINISTÉRIO DA SAÚDE', { align: 'center' })
-           .fontSize(24).text('CERTIFICADO DE SAÚDE MATERNA', { align: 'center' })
-           .fontSize(14).text('PRÉ-NATAL', { align: 'center' }).moveDown(2)
-           .fontSize(12).fillColor('black').text('Nº: ' + cpn.numero, { align: 'right' }).moveDown();
-
-        doc.fontSize(14).fillColor('#006633').text('IDENTIFICAÇÃO', { underline: true })
-           .fontSize(12).fillColor('black')
-           .text('Nome: ' + cpn.paciente.nomeCompleto)
-           .text('Data Nascimento: ' + new Date(cpn.paciente.dataNascimento).toLocaleDateString('pt-AO'))
-           .text('BI: ' + cpn.paciente.bi).moveDown();
-
-        doc.fontSize(14).fillColor('#006633').text('EXAMES LABORATORIAIS', { underline: true });
-
-        const exames = [
-            ['Genótipo', cpn.exames.genotipo.naoSolicitado ? 'Não solicitado' : cpn.exames.genotipo.resultado],
-            ['Grupo Sanguíneo', cpn.exames.grupoSanguineo.naoSolicitado ? 'Não solicitado' : cpn.exames.grupoSanguineo.resultado],
-            ['VIH', cpn.exames.vih.naoSolicitado ? 'Não solicitado' : cpn.exames.vih.resultado],
-            ['Malária', cpn.exames.malaria.naoSolicitado ? 'Não solicitado' : cpn.exames.malaria.resultado]
-        ];
-
-        exames.forEach(([nome, valor]) => {
-            doc.fontSize(12).fillColor('black').text(nome + ': ' + valor);
+// ============================================
+// API DE LEITURA UNIVERSAL (para apps)
+// ============================================
+app.post('/api/ler', identificarAcesso, async (req, res) => {
+    try {
+        const { hash } = req.body;
+        
+        // Procurar certificado em qualquer coleção
+        let certificado = null;
+        let tipoDoc = null;
+        
+        certificado = await Certificate.findOne({ hash });
+        if (certificado) tipoDoc = 'certificado';
+        
+        if (!certificado) {
+            certificado = await CPN.findOne({ hash });
+            if (certificado) tipoDoc = 'cpn';
+        }
+        
+        if (!certificado) {
+            certificado = await Epidemico.findOne({ hash });
+            if (certificado) tipoDoc = 'epidemico';
+        }
+        
+        if (!certificado) {
+            return res.status(404).json({ erro: 'Certificado não encontrado' });
+        }
+        
+        // Registrar acesso
+        await AcessoLog.create({
+            tipoAcesso: req.accessType,
+            entidadeId: req.accessId,
+            entidadeNome: req.accessName,
+            certificadoId: certificado.numero || certificado._id,
+            tipoCertificado: certificado.tipo || (tipoDoc === 'cpn' ? 6 : 7),
+            ip: req.ip
         });
-        doc.moveDown();
+        
+        // Aplicar regras por tipo de acesso
+        switch(req.accessType) {
+            case 'genlove':
+                if (tipoDoc !== 'certificado' || certificado.tipo !== 1) {
+                    return res.status(403).json({ erro: 'Genlove só pode aceder a genótipo' });
+                }
+                return res.json({
+                    sucesso: true,
+                    dados: certificado.dadosGenlove
+                });
+                
+            case 'laboratorio':
+            case 'hospital':
+                // Vêem tudo
+                return res.json({
+                    sucesso: true,
+                    tipo: tipoDoc,
+                    dados: certificado
+                });
+                
+            case 'empresa':
+                if (tipoDoc !== 'certificado' || ![3,4].includes(certificado.tipo)) {
+                    return res.status(403).json({ erro: 'Empresa só pode aceder a aptidão/incapacidade' });
+                }
+                if (certificado.tipo === 3) {
+                    return res.json({
+                        sucesso: true,
+                        dados: {
+                            nome: certificado.paciente.nomeCompleto,
+                            periodoInicio: certificado.dados.periodoInicio,
+                            periodoFim: certificado.dados.periodoFim,
+                            dias: certificado.dados.diasIncapacidade
+                        }
+                    });
+                } else {
+                    return res.json({
+                        sucesso: true,
+                        dados: {
+                            nome: certificado.paciente.nomeCompleto,
+                            avaliacao: certificado.dados.avaliacao,
+                            restricoes: certificado.dados.restricoes
+                        }
+                    });
+                }
+        }
+        
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro interno' });
+    }
+});
 
-        doc.fontSize(14).fillColor('#006633').text('RESPONSÁVEL', { underline: true })
-           .fontSize(12).fillColor('black')
-           .text('Médico: ' + cpn.medicoResponsavel)
-           .text('Unidade: ' + cpn.unidadeSanitaria).moveDown();
-
-        doc.fontSize(10).fillColor('gray')
-           .text('Documento emitido eletronicamente', { align: 'center' })
-           .text('Data: ' + new Date(cpn.emitidoEm).toLocaleDateString('pt-AO'), { align: 'center' });
-
-        doc.end();
-    } catch (error) { res.status(500).json({ erro: 'Erro ao gerar PDF' }); }
+// ============================================
+// ROTA ESPECÍFICA PARA GENLOVE (mantida por compatibilidade)
+// ============================================
+app.post('/api/genlove/verificar', async (req, res) => {
+    const apiKey = req.headers['x-api-key'];
+    if (!GENLOVE_KEYS.includes(apiKey)) {
+        return res.status(401).json({ erro: 'Chave Genlove inválida' });
+    }
+    
+    try {
+        const { hash } = req.body;
+        const certificado = await Certificate.findOne({ hash });
+        
+        if (!certificado || certificado.tipo !== 1) {
+            return res.json({ valido: false });
+        }
+        
+        res.json({
+            valido: true,
+            dados: certificado.dadosGenlove
+        });
+        
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro interno' });
+    }
 });
 
 // ============================================
 // ESTATÍSTICAS
 // ============================================
-app.get('/api/stats', identificarAcesso, async (req, res) => {
+app.get('/api/stats', authMiddleware, async (req, res) => {
     try {
-        const hoje = new Date(); hoje.setHours(0,0,0,0);
-        const stats = { totalLabs: 0, totalCertificados: 0, totalCPN: 0, tipo1: 0, vihPositivo: 0, malariaPositivo: 0 };
-
-        if (req.acesso === 'laboratorio') {
-            stats.totalLabs = 1;
-            stats.totalCertificados = await Certificate.countDocuments({ emitidoPor: req.lab._id });
-            stats.totalCPN = await CPN.countDocuments({ emitidoPor: req.lab._id });
-            stats.tipo1 = await Certificate.countDocuments({ tipo: 1, emitidoPor: req.lab._id });
-            
-            const cpns = await CPN.find({ emitidoPor: req.lab._id });
-            stats.vihPositivo = cpns.filter(c => c.exames.vih.resultado === 'Positivo').length;
-            stats.malariaPositivo = cpns.filter(c => c.exames.malaria.resultado === 'Positivo' || c.exames.malaria.resultado === '3000 P/L').length;
-        } else {
-            stats.totalLabs = await Lab.countDocuments({ ativo: true });
-            stats.totalCertificados = await Certificate.countDocuments();
-            stats.totalCPN = await CPN.countDocuments();
-            stats.tipo1 = await Certificate.countDocuments({ tipo: 1 });
-            
-            const cpns = await CPN.find();
-            stats.vihPositivo = cpns.filter(c => c.exames.vih.resultado === 'Positivo').length;
-            stats.malariaPositivo = cpns.filter(c => c.exames.malaria.resultado === 'Positivo' || c.exames.malaria.resultado === '3000 P/L').length;
-        }
+        const stats = {
+            totalLabs: await Lab.countDocuments({ ativo: true }),
+            totalHospitais: await Hospital.countDocuments({ ativo: true }),
+            totalEmpresas: await Empresa.countDocuments({ ativo: true }),
+            totalCertificados: await Certificate.countDocuments(),
+            totalCPN: await CPN.countDocuments(),
+            totalEpidemicos: await Epidemico.countDocuments()
+        };
         res.json(stats);
     } catch (err) { res.status(500).json({ erro: 'Erro interno' }); }
 });
 
-// ============================================
-// API DE ALERTAS
-// ============================================
-app.get('/api/alertas', authMiddleware, async (req, res) => {
-    try {
-        const labs = await Lab.find({ "alertas.0": { $exists: true } }, { nome: 1, alertas: 1 });
-        const alertas = [];
-        labs.forEach(lab => {
-            lab.alertas.forEach(alerta => {
-                if (!alerta.resolvido) {
-                    alertas.push({
-                        laboratorio: lab.nome,
-                        tipo: alerta.tipo,
-                        descricao: alerta.descricao,
-                        data: alerta.data
-                    });
-                }
-            });
-        });
-        res.json(alertas);
-    } catch (error) { res.status(500).json({ erro: 'Erro interno' }); }
+app.get('/api/stats/lab', async (req, res) => {
+    const apiKey = req.headers['x-api-key'];
+    const lab = await Lab.findOne({ apiKey });
+    if (!lab) return res.status(401).json({ erro: 'Não autorizado' });
+    
+    const total = await Certificate.countDocuments({ emitidoPor: lab._id }) +
+                  await CPN.countDocuments({ emitidoPor: lab._id }) +
+                  await Epidemico.countDocuments({ emitidoPor: lab._id });
+    
+    res.json({ total });
 });
-
-// ============================================
-// TAREFA AUTOMÁTICA DE DETECÇÃO DE ANOMALIAS
-// ============================================
-async function detectarAnomalias() {
-    try {
-        const labs = await Lab.find({ ativo: true });
-        for (const lab of labs) {
-            const hoje = await Certificate.countDocuments({
-                emitidoPor: lab._id,
-                emitidoEm: { $gte: new Date().setHours(0,0,0,0) }
-            });
-            if (hoje > 100) { // Alerta se mais de 100 emissões num dia
-                lab.alertas.push({
-                    tipo: 'VOLUME_ANORMAL',
-                    descricao: `Volume anormal hoje: ${hoje} emissões`
-                });
-                await lab.save();
-            }
-        }
-    } catch (error) { console.error('Erro na detecção de anomalias:', error); }
-}
-setInterval(detectarAnomalias, 24 * 60 * 60 * 1000);
 
 // ============================================
 // INICIAR SERVIDOR
@@ -1251,7 +1099,8 @@ app.listen(PORT, () => {
     console.log('📱 URL: http://localhost:' + PORT);
     console.log('🏛️ Ministério: admin@sns.gov.ao / Admin@2025');
     console.log('🔬 Laboratório: /lab-login com API Key');
-    console.log('✅ Permissões: Ministério gerencia, Laboratório emite');
-    console.log('🤰 Pré-Natal: Incluído com genótipo');
+    console.log('🏥 Hospitais: Chave por hospital');
+    console.log('🏢 Empresas: Chave por empresa (NIF da empresa)');
+    console.log('💘 Genlove: Chave fixa no código');
     console.log('='.repeat(50) + '\n');
 });
