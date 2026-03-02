@@ -996,6 +996,11 @@ app.get('/api/certificados/lab', labMiddleware, async (req, res) => {
   }
 });
 
+// Page du formulaire de certificat
+app.get('/novo-certificado', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/novo-certificado.html'));
+});
+
 app.listen(PORT, () => {
     console.log('\n' + '='.repeat(50));
     console.log('🚀 SNS - SISTEMA NACIONAL DE SAÚDE');
