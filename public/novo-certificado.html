@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Novo Certificado - SNS</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
         body{background:#f5f5f5;padding:20px;}
@@ -22,11 +21,22 @@
         .loading-card{background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;}
         .spinner{border:5px solid #f3f3f3;border-top:5px solid #006633;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;margin:0 auto 20px;}
         @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+        .secao-laboratorio{background:#e8f5e9;padding:20px;border-radius:10px;margin-bottom:20px;border-left:5px solid #006633;}
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Novo Certificado Médico</h2>
+        
+        <!-- SEÇÃO LABORATÓRIO EM DESTAQUE -->
+        <div class="secao-laboratorio">
+            <h3 style="color:#006633; margin-bottom:15px;">🏥 DADOS DO LABORATÓRIO</h3>
+            <div class="form-group">
+                <label>Nome do Laborantin/Técnico Responsável:</label>
+                <input type="text" id="nomeLaborantin" required placeholder="Ex: Dr. António Silva">
+            </div>
+        </div>
+
         <form id="certForm">
             <div class="form-group">
                 <label>Tipo de Certificado:</label>
@@ -61,12 +71,6 @@
             <div class="form-group">
                 <label>Data Nascimento:</label>
                 <input type="date" id="dataNascimento">
-            </div>
-
-            <h3>Dados do Laboratório</h3>
-            <div class="form-group">
-                <label>Nome do Laborantin/Técnico:</label>
-                <input type="text" id="nomeLaborantin" required placeholder="Ex: Dr. António Silva">
             </div>
 
             <!-- Tipo 1: Genótipo -->
@@ -267,6 +271,17 @@
                 setTimeout(() => {
                     const tipos = ['', 'GENÓTIPO', 'BOA SAÚDE', 'INCAPACIDADE', 'APTIDÃO', 'SAÚDE MATERNA', 'PRÉ-NATAL', 'EPIDEMIOLÓGICO'];
                     
+                    // Criar dados para QR Code (URL da API QuickChart)
+                    const qrData = `CERTIFICADO SNS
+NÚMERO: ${numero}
+LAB: ${laboratorio}
+TÉC: ${laborantin}
+PAC: ${dados.paciente.nomeCompleto}
+BI: ${dados.paciente.bi}`;
+                    
+                    // URL do QR Code via QuickChart (garantido)
+                    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(qrData)}&size=200&ecLevel=H&dark=006633`;
+                    
                     const win = window.open('', '_blank');
                     
                     let html = `
@@ -289,16 +304,15 @@
                                 .assinatura { margin-top: 50px; display: flex; justify-content: space-between; }
                                 .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 20px; }
                                 .qr { text-align: center; margin: 30px 0; padding: 20px; background: white; }
-                                #qrcode { display: inline-block; padding: 10px; background: white; border: 1px solid #006633; border-radius: 5px; }
+                                .qr img { border: 2px solid #006633; border-radius: 5px; padding: 5px; background: white; }
                                 .btn-print { background: #006633; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 20px 0; }
                                 .btn-download { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; margin-left: 10px; }
                             </style>
-                            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
                         </head>
                         <body>
                             <div style="text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 10px;">
                                 <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
-                                <button class="btn-download" onclick="downloadPDF()">📥 Download PDF</button>
+                                <button class="btn-download" onclick="window.print()">📥 Download PDF</button>
                             </div>
                             
                             <div id="certificado">
@@ -374,9 +388,9 @@
                                     </table>
                                 </div>
                                 
-                                <div class="qr" id="qrcode-container" style="text-align: center; margin: 40px 0;">
+                                <div class="qr" style="text-align: center; margin: 40px 0;">
                                     <h3 style="color:#006633; margin-bottom: 15px;">🔑 CÓDIGO DE VALIDAÇÃO</h3>
-                                    <div id="qrcode"></div>
+                                    <img src="${qrUrl}" alt="QR Code" style="width:200px; height:200px; border:2px solid #006633; border-radius:5px; padding:5px;">
                                     <p style="font-size: 13px; color: #006633; margin-top: 15px;">Aponte a câmara para validar</p>
                                 </div>
                                 
@@ -400,33 +414,12 @@
                             </div>
                             
                             <script>
-                                function downloadPDF() {
-                                    window.print();
-                                }
-                            
-                                const qrData = \`CERTIFICADO SNS
-NÚMERO: ${numero}
-LABORATÓRIO: ${laboratorio}
-TÉCNICO: ${laborantin}
-PACIENTE: ${dados.paciente.nomeCompleto}
-BI: ${dados.paciente.bi}
-TIPO: ${tipos[tipo]}
-DATA: ${new Date().toLocaleDateString()}\`;
-                                
-                                window.onload = function() {
-                                    const qrElement = document.getElementById("qrcode");
-                                    if(qrElement) {
-                                        qrElement.innerHTML = '';
-                                        new QRCode(qrElement, {
-                                            text: qrData,
-                                            width: 200,
-                                            height: 200,
-                                            colorDark: "#006633",
-                                            colorLight: "#ffffff",
-                                            correctLevel: QRCode.CorrectLevel.H
-                                        });
+                                // Attendre que l'image QR soit chargée avant d'imprimer
+                                setTimeout(function() {
+                                    if(confirm('✅ Certificado gerado! Deseja imprimir/salvar em PDF agora?')) {
+                                        window.print();
                                     }
-                                };
+                                }, 1000);
                             <\/script>
                         </body>
                         </html>
