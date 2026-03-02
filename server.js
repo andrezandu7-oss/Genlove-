@@ -10,6 +10,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
 const path = require('path');
 require('dotenv').config();
 
@@ -55,6 +56,17 @@ function gerarDadosGenlove(paciente, dados) {
     return prenom + '|' + nom + '|' + genre + '|' + genotype + '|' + groupe;
 }
 
+// Função para validar NIF angolano (10 dígitos)
+function validarNIF(nif) {
+    return /^\d{10}$/.test(nif);
+}
+
+// Função para enviar email (mock)
+async function enviarEmail(destinatario, assunto, mensagem) {
+    console.log(`📧 Email enviado para ${destinatario}: ${assunto}`);
+    // Implementar envio real com nodemailer se necessário
+}
+
 // ============================================
 // MODELOS DE DADOS
 // ============================================
@@ -65,9 +77,11 @@ const userSchema = new mongoose.Schema({
     role: { type: String, default: 'admin' }
 });
 
+// LABORATÓRIO COM NIF E SISTEMA DE DETECÇÃO
 const labSchema = new mongoose.Schema({
     labId: { type: String, unique: true },
     nome: { type: String, required: true },
+    nif: { type: String, required: true, unique: true }, // NIF obrigatório e único
     tipo: { 
         type: String, 
         enum: ['laboratorio', 'hospital', 'clinica'],
@@ -81,7 +95,34 @@ const labSchema = new mongoose.Schema({
     apiKey: { type: String, unique: true },
     ativo: { type: Boolean, default: true },
     totalEmissoes: { type: Number, default: 0 },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    ultimoAcesso: Date,
+    
+    // SISTEMA DE DETECÇÃO DE PARTILHA DE CHAVES
+    dispositivos: [{
+        ip: String,
+        userAgent: String,
+        primeiroAcesso: Date,
+        ultimoAcesso: Date,
+        totalEmissoesNesteDispositivo: { type: Number, default: 0 }
+    }],
+    
+    padraoEmissao: {
+        horarioMaisComum: String,
+        diasDaSemana: [Number],
+        mediaPorHora: Number,
+        desvioPadrao: Number
+    },
+    
+    alertas: [{
+        tipo: { 
+            type: String, 
+            enum: ['MULTIPLOS_IPS', 'HORARIO_ATIPICO', 'VOLUME_ANORMAL', 'NIF_DUPLICADO']
+        },
+        data: { type: Date, default: Date.now },
+        descricao: String,
+        resolvido: { type: Boolean, default: false }
+    }]
 });
 
 const certificateSchema = new mongoose.Schema({
@@ -132,7 +173,6 @@ const Certificate = mongoose.model('Certificate', certificateSchema);
 
 // Middleware para identificar tipo de acesso
 const identificarAcesso = async (req, res, next) => {
-    // Verificar se é laboratório (via API Key)
     const apiKey = req.headers['x-api-key'];
     if (apiKey) {
         const lab = await Lab.findOne({ apiKey, ativo: true });
@@ -143,7 +183,6 @@ const identificarAcesso = async (req, res, next) => {
         }
     }
     
-    // Verificar se é ministério (via token JWT)
     const token = req.headers['authorization']?.split(' ')[1];
     if (token) {
         try {
@@ -160,7 +199,67 @@ const identificarAcesso = async (req, res, next) => {
     res.status(401).json({ erro: 'Não autorizado' });
 };
 
-// Middleware para emissão de certificados (laboratório)
+// Middleware para detecção de partilha de chaves
+const deteccaoPartilhaMiddleware = async (req, res, next) => {
+    const apiKey = req.headers['x-api-key'];
+    if (apiKey) {
+        const lab = await Lab.findOne({ apiKey, ativo: true });
+        if (lab) {
+            const ip = req.ip || req.connection.remoteAddress;
+            const userAgent = req.headers['user-agent'];
+            const agora = new Date();
+            const hora = agora.getHours();
+            const dia = agora.getDay();
+
+            // Verificar se este dispositivo já é conhecido
+            const dispositivoExistente = lab.dispositivos.find(
+                d => d.ip === ip && d.userAgent === userAgent
+            );
+
+            if (!dispositivoExistente) {
+                // Novo dispositivo detectado
+                lab.dispositivos.push({
+                    ip,
+                    userAgent,
+                    primeiroAcesso: agora,
+                    ultimoAcesso: agora,
+                    totalEmissoesNesteDispositivo: 1
+                });
+
+                // ALERTA: Múltiplos dispositivos (partilha de chave)
+                if (lab.dispositivos.length >= 3) {
+                    lab.alertas.push({
+                        tipo: 'MULTIPLOS_IPS',
+                        descricao: `Chave utilizada em ${lab.dispositivos.length} dispositivos diferentes. Possível partilha de chave.`
+                    });
+                    
+                    // Enviar email para o ministério
+                    enviarEmail('ministerio@saude.gov.ao', '🚨 Alerta de Segurança - Partilha de Chave',
+                        `Laboratório ${lab.nome} (NIF: ${lab.nif}) está a usar a chave em ${lab.dispositivos.length} dispositivos.`);
+                }
+            } else {
+                // Atualizar dispositivo existente
+                dispositivoExistente.ultimoAcesso = agora;
+                dispositivoExistente.totalEmissoesNesteDispositivo++;
+            }
+
+            // ALERTA: Horário atípico
+            const horarioNormal = (dia >= 1 && dia <= 5 && hora >= 8 && hora <= 18);
+            if (!horarioNormal) {
+                lab.alertas.push({
+                    tipo: 'HORARIO_ATIPICO',
+                    descricao: `Emissão em horário atípico: ${hora}h, dia ${dia === 0 ? 'domingo' : 'sábado'}`
+                });
+            }
+
+            lab.ultimoAcesso = agora;
+            await lab.save();
+        }
+    }
+    next();
+};
+
+// Middleware para laboratório (emissão)
 const labMiddleware = async (req, res, next) => {
     const apiKey = req.headers['x-api-key'];
     if (!apiKey) return res.status(401).json({ erro: 'API Key não fornecida' });
@@ -190,7 +289,6 @@ const authMiddleware = (req, res, next) => {
 // ROTAS PÚBLICAS
 // ============================================
 
-// Página principal (login ministério)
 app.get('/', (req, res) => {
     res.send('<!DOCTYPE html>' +
     '<html lang="pt">' +
@@ -229,7 +327,6 @@ app.get('/', (req, res) => {
     '</body></html>');
 });
 
-// Página de login para laboratório
 app.get('/lab-login', (req, res) => {
     res.send('<!DOCTYPE html>' +
     '<html><head><meta charset="UTF-8"><title>Login Laboratório</title>' +
@@ -265,7 +362,7 @@ app.get('/lab-login', (req, res) => {
 });
 
 // ============================================
-// DASHBOARD (UNIFICADO MAS COM VISÃO DIFERENTE)
+// DASHBOARD
 // ============================================
 app.get('/dashboard', (req, res) => {
     res.send('<!DOCTYPE html>' +
@@ -299,6 +396,7 @@ app.get('/dashboard', (req, res) => {
     '.user-badge{padding:10px;border-radius:5px;margin-bottom:20px;font-weight:bold;}' +
     '.badge-ministerio{background:#e8f5e9;color:#006633;border:2px solid #006633;}' +
     '.badge-laboratorio{background:#fff3e0;color:#ff9800;border:2px solid #ff9800;}' +
+    '.alerta-card{background:#fff3e0;border-left:5px solid #ff9800;padding:15px;margin-bottom:10px;border-radius:5px;}' +
     '</style>' +
     '</head>' +
     '<body>' +
@@ -308,9 +406,32 @@ app.get('/dashboard', (req, res) => {
     '<a href="#" onclick="mostrarSecao(\'dashboard\')">📊 Dashboard</a>' +
     '<a href="#" onclick="mostrarSecao(\'labs\')">🏥 Laboratórios</a>' +
     '<a href="#" onclick="mostrarSecao(\'certificados\')">📋 Certificados</a>' +
+    '<a href="#" onclick="mostrarSecao(\'alertas\')" id="menuAlertas" style="display:none;">🚨 Alertas</a>' +
     '<button onclick="logout()" style="margin-top:20px;background:#dc3545;width:100%;">Sair</button>' +
     '</div>' +
     '<div class="main">' +
+
+    // BANNER DE BOAS-VINDAS PARA LABORATÓRIO
+    '<div id="welcomeBanner" style="background:linear-gradient(135deg,#f5f5f5,#ffffff);border-radius:10px;padding:0;margin-bottom:25px;box-shadow:0 4px 15px rgba(0,102,51,0.1);border-left:5px solid #006633;overflow:hidden;display:none;">' +
+    '<div style="display:flex;align-items:center;">' +
+    '<div style="background:#006633;padding:25px;color:white;font-size:48px;">🔬</div>' +
+    '<div style="flex:1;padding:20px;">' +
+    '<h3 style="color:#006633;margin-bottom:5px;font-size:20px;" id="welcomeLabName"></h3>' +
+    '<div style="display:flex;gap:20px;margin-top:10px;flex-wrap:wrap;">' +
+    '<div><span style="color:#666;">📍</span> <span id="welcomeLabProvincia"></span></div>' +
+    '<div><span style="color:#666;">🏷️</span> <span id="welcomeLabTipo"></span></div>' +
+    '<div><span style="color:#666;">🆔</span> <span id="welcomeLabNIF"></span></div>' +
+    '<div><span style="color:#666;">🔑</span> <span id="welcomeLabKey"></span></div>' +
+    '</div>' +
+    '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ddd;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">' +
+    '<div><span style="color:#666;">⏱️</span> <span id="welcomeLabLastAccess"></span></div>' +
+    '<div><span style="color:#666;">📊</span> <span id="welcomeLabStats"></span></div>' +
+    '</div>' +
+    '</div>' +
+    '<button onclick="fecharWelcome()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;margin-right:20px;padding:10px;" title="Fechar">✕</button>' +
+    '</div>' +
+    '</div>' +
+
     '<div id="secaoDashboard">' +
     '<h1>Dashboard</h1>' +
     '<div class="stats">' +
@@ -326,12 +447,14 @@ app.get('/dashboard', (req, res) => {
     '<div class="stat-card"><h3>🤰 Materno</h3><div class="value" id="tipo5">0</div></div>' +
     '</div>' +
     '</div>' +
+
     '<div id="secaoLabs" style="display:none;">' +
     '<h1>Laboratórios</h1>' +
     '<button class="btn-criar" id="criarLabBtn" onclick="mostrarModalLab()">+ Novo Laboratório</button>' +
-    '<table><thead><tr><th>ID</th><th>Nome</th><th>Tipo</th><th>Província</th><th>Status</th><th>Ações</th></tr></thead>' +
+    '<table><thead><tr><th>ID</th><th>Nome</th><th>NIF</th><th>Tipo</th><th>Província</th><th>Status</th><th>Ações</th></tr></thead>' +
     '<tbody id="labsBody"></tbody></table>' +
     '</div>' +
+
     '<div id="secaoCertificados" style="display:none;">' +
     '<h1>Certificados</h1>' +
     '<div style="margin-bottom:20px;">' +
@@ -347,25 +470,33 @@ app.get('/dashboard', (req, res) => {
     '<table><thead><tr><th>Número</th><th>Tipo</th><th>Paciente</th><th>Emissão</th><th>Validade</th><th>Status</th><th>Ações</th></tr></thead>' +
     '<tbody id="certificadosBody"></tbody></table>' +
     '</div>' +
+
+    '<div id="secaoAlertas" style="display:none;">' +
+    '<h1>🚨 Alertas de Segurança</h1>' +
+    '<div id="alertasList"></div>' +
+    '</div>' +
     '</div>' +
 
-    // Modal Laboratório
+    // MODAL LABORATÓRIO (COM NIF)
     '<div id="modalLab" class="modal">' +
     '<div class="modal-content">' +
     '<h2>Novo Laboratório</h2>' +
     '<input type="text" id="labNome" placeholder="Nome do laboratório">' +
+    '<input type="text" id="labNIF" placeholder="NIF (10 dígitos)" maxlength="10">' +
     '<select id="labTipo"><option value="laboratorio">Laboratório</option><option value="hospital">Hospital</option><option value="clinica">Clínica</option></select>' +
     '<input type="text" id="labProvincia" placeholder="Província">' +
     '<input type="text" id="labMunicipio" placeholder="Município">' +
     '<input type="email" id="labEmail" placeholder="Email">' +
+    '<p id="labNIFError" style="color:red;font-size:12px;display:none;">NIF deve ter 10 dígitos</p>' +
     '<button onclick="criarLaboratorio()" style="background:#006633;color:white;padding:10px;width:100%;">Criar</button>' +
     '<button onclick="fecharModal(\'modalLab\')" style="margin-top:10px;">Cancelar</button>' +
     '</div>' +
     '</div>' +
 
-    // Modais de Certificados (5 tipos)
+    // MODAIS DE CERTIFICADOS
     '<div id="modalCertificado1" class="modal">' +
     '<div class="modal-content">' +
+    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir"></p>' +
     '<h2>🧬 Genótipo</h2>' +
     '<input type="text" id="certNome" placeholder="Nome completo">' +
     '<select id="certGenero"><option value="M">Masculino</option><option value="F">Feminino</option></select>' +
@@ -379,6 +510,7 @@ app.get('/dashboard', (req, res) => {
 
     '<div id="modalCertificado2" class="modal">' +
     '<div class="modal-content">' +
+    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir2"></p>' +
     '<h2>🩺 Boa Saúde</h2>' +
     '<input type="text" id="cert2Nome" placeholder="Nome completo">' +
     '<select id="cert2Genero"><option value="M">Masculino</option><option value="F">Feminino</option></select>' +
@@ -392,6 +524,7 @@ app.get('/dashboard', (req, res) => {
 
     '<div id="modalCertificado3" class="modal">' +
     '<div class="modal-content">' +
+    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir3"></p>' +
     '<h2>📋 Incapacidade</h2>' +
     '<input type="text" id="cert3Nome" placeholder="Nome completo">' +
     '<select id="cert3Genero"><option value="M">Masculino</option><option value="F">Feminino</option></select>' +
@@ -406,6 +539,7 @@ app.get('/dashboard', (req, res) => {
 
     '<div id="modalCertificado4" class="modal">' +
     '<div class="modal-content">' +
+    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir4"></p>' +
     '<h2>💪 Aptidão</h2>' +
     '<input type="text" id="cert4Nome" placeholder="Nome completo">' +
     '<select id="cert4Genero"><option value="M">Masculino</option><option value="F">Feminino</option></select>' +
@@ -419,6 +553,7 @@ app.get('/dashboard', (req, res) => {
 
     '<div id="modalCertificado5" class="modal">' +
     '<div class="modal-content">' +
+    '<p style="color:#006633;font-size:14px;margin-bottom:15px;" id="labInfoEmitir5"></p>' +
     '<h2>🤰 Saúde Materna</h2>' +
     '<input type="text" id="cert5Nome" placeholder="Nome completo">' +
     '<input type="date" id="cert5DataNasc" placeholder="Data nascimento">' +
@@ -441,34 +576,49 @@ app.get('/dashboard', (req, res) => {
     'document.getElementById("userType").innerText="🔬 Modo Laboratório";' +
     'document.getElementById("userType").className="user-badge badge-laboratorio";' +
     'document.getElementById("criarLabBtn").style.display="none";' +
+    'document.getElementById("menuAlertas").style.display="none";' +
     '} else if(token){' +
     'acesso="ministerio";' +
     'document.getElementById("userType").innerText="🏛️ Modo Ministério";' +
     'document.getElementById("userType").className="user-badge badge-ministerio";' +
+    'document.getElementById("menuAlertas").style.display="block";' +
     '} else window.location.href="/";' +
     
-    // Funções gerais
     'function mostrarSecao(s){' +
     'document.getElementById("secaoDashboard").style.display="none";' +
     'document.getElementById("secaoLabs").style.display="none";' +
     'document.getElementById("secaoCertificados").style.display="none";' +
+    'document.getElementById("secaoAlertas").style.display="none";' +
     'if(s==="dashboard"){document.getElementById("secaoDashboard").style.display="block";carregarStats();}' +
     'if(s==="labs"){document.getElementById("secaoLabs").style.display="block";carregarLabs();}' +
-    'if(s==="certificados"){document.getElementById("secaoCertificados").style.display="block";carregarCertificados();}}' +
+    'if(s==="certificados"){document.getElementById("secaoCertificados").style.display="block";carregarCertificados();}' +
+    'if(s==="alertas"){document.getElementById("secaoAlertas").style.display="block";carregarAlertas();}}' +
 
     'function mostrarModalLab(){document.getElementById("modalLab").style.display="flex";}' +
     'function mostrarModalCertificado(){' +
     'const tipo=document.getElementById("tipoCertificado").value;' +
     'fecharTodosModais();' +
-    'document.getElementById("modalCertificado"+tipo).style.display="flex";}' +
+    'document.getElementById("modalCertificado"+tipo).style.display="flex";' +
+    'if(acesso==="laboratorio" && labInfo){' +
+    'for(let i=1;i<=5;i++){' +
+    'if(document.getElementById("labInfoEmitir"+ (i===1?"":i)))' +
+    'document.getElementById("labInfoEmitir"+ (i===1?"":i)).innerHTML="🔬 Emitindo como: " + labInfo.nome;' +
+    '}}}' +
+
     'function fecharModal(id){document.getElementById(id).style.display="none";}' +
     'function fecharTodosModais(){' +
     'for(let i=1;i<=5;i++)document.getElementById("modalCertificado"+i).style.display="none";' +
     'document.getElementById("modalLab").style.display="none";}' +
 
-    // Laboratórios
+    'function fecharWelcome(){document.getElementById("welcomeBanner").style.display="none";}' +
+
+    // LABORATÓRIOS
     'async function criarLaboratorio(){' +
-    'const lab={nome:document.getElementById("labNome").value,tipo:document.getElementById("labTipo").value,provincia:document.getElementById("labProvincia").value,municipio:document.getElementById("labMunicipio").value,email:document.getElementById("labEmail").value};' +
+    'const nif=document.getElementById("labNIF").value;' +
+    'if(!/^\\d{10}$/.test(nif)){' +
+    'document.getElementById("labNIFError").style.display="block";' +
+    'return;}' +
+    'const lab={nome:document.getElementById("labNome").value,nif, tipo:document.getElementById("labTipo").value,provincia:document.getElementById("labProvincia").value,municipio:document.getElementById("labMunicipio").value,email:document.getElementById("labEmail").value};' +
     'const r=await fetch("/api/labs",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(lab)});' +
     'const d=await r.json();' +
     'if(d.success){alert("✅ Laboratório criado! API Key: "+d.lab.apiKey);fecharModal("modalLab");carregarLabs();}' +
@@ -481,16 +631,46 @@ app.get('/dashboard', (req, res) => {
     'const r=await fetch("/api/labs",{headers});' +
     'const labs=await r.json();' +
     'let html="";' +
-    'labs.forEach(l=>{html+="<tr><td>"+(l.labId||"-")+"</td><td>"+l.nome+"</td><td>"+l.tipo+"</td><td>"+l.provincia+"</td><td>"+(l.ativo?"✅ Ativo":"❌ Inativo")+' +
-    '"</td><td>"+(acesso==="ministerio"?\'<button onclick="desativarLab(\\""+l._id+"\\")">Desativar</button>\':"🔬 Meu Lab")+"</td></tr>";});' +
-    'document.getElementById("labsBody").innerHTML=html;}' +
+    'if(acesso==="laboratorio" && labs.length>0){' +
+    'labInfo=labs[0];' +
+    'mostrarWelcomeLab(labs[0]);' +
+    '}' +
+    'labs.forEach(l=>{html+="<tr><td>"+(l.labId||"-")+"</td><td>"+l.nome+"</td><td>"+l.nif+"</td><td>"+l.tipo+"</td><td>"+l.provincia+"</td><td>"+(l.ativo?"✅ Ativo":"❌ Inativo")+' +
+    '"</td><td>"+(acesso==="ministerio"?\'<button onclick="verAlertasLab(\\""+l._id+"\\")">🚨</button> <button onclick="desativarLab(\\""+l._id+"\\")">Desativar</button>\':"🔬 Meu Lab")+"</td></tr>";});' +
+    'document.getElementById("labsBody").innerHTML=html;' +
+    '}' +
+
+    'function mostrarWelcomeLab(lab){' +
+    'document.getElementById("welcomeBanner").style.display="block";' +
+    'document.getElementById("welcomeLabName").innerHTML="🔬 " + lab.nome;' +
+    'document.getElementById("welcomeLabProvincia").innerHTML=lab.provincia;' +
+    'document.getElementById("welcomeLabTipo").innerHTML=lab.tipo;' +
+    'document.getElementById("welcomeLabNIF").innerHTML=lab.nif;' +
+    'document.getElementById("welcomeLabKey").innerHTML=lab.apiKey ? lab.apiKey.substring(0,15)+"..." : "N/A";' +
+    'document.getElementById("welcomeLabLastAccess").innerHTML=lab.ultimoAcesso?new Date(lab.ultimoAcesso).toLocaleString():"Primeiro acesso";' +
+    'fetch("/api/stats",{headers:{"x-api-key":labKey}}).then(r=>r.json()).then(stats=>{' +
+    'document.getElementById("welcomeLabStats").innerHTML=stats.totalCertificados+" certificados emitidos";' +
+    '}).catch(()=>{document.getElementById("welcomeLabStats").innerHTML="0 certificados";});}' +
 
     'async function desativarLab(id){' +
     'if(!confirm("Tem certeza?"))return;' +
     'const r=await fetch("/api/labs/"+id,{method:"DELETE",headers:{"Authorization":"Bearer "+token}});' +
     'if(r.ok){alert("Laboratório desativado");carregarLabs();}}' +
 
-    // Certificados
+    // ALERTAS
+    'async function carregarAlertas(){' +
+    'const r=await fetch("/api/alertas",{headers:{"Authorization":"Bearer "+token}});' +
+    'const alertas=await r.json();' +
+    'let html="";' +
+    'if(alertas.length===0) html="<p>✅ Nenhum alerta no momento</p>";' +
+    'else alertas.forEach(a=>{' +
+    'html+="<div class=\'alerta-card\'><strong>"+a.tipo+"</strong> - "+a.laboratorio+"<br>"+a.descricao+"<br><small>"+new Date(a.data).toLocaleString()+"</small></div>";});' +
+    'document.getElementById("alertasList").innerHTML=html;}' +
+
+    'function verAlertasLab(id){' +
+    'alert("🚨 Funcionalidade em desenvolvimento");}' +
+
+    // CERTIFICADOS
     'async function emitirCertificado(tipo){' +
     'let dados={};' +
     'let paciente={};' +
@@ -539,7 +719,7 @@ app.get('/dashboard', (req, res) => {
     'window.open("/api/certificados/"+numero+"/pdf", "_blank");' +
     '}' +
 
-    // Estatísticas
+    // ESTATÍSTICAS
     'async function carregarStats(){' +
     'let headers={"Content-Type":"application/json"};' +
     'if(acesso==="laboratorio") headers["x-api-key"]=labKey;' +
@@ -563,7 +743,7 @@ app.get('/dashboard', (req, res) => {
 });
 
 // ============================================
-// API DE LOGIN (MINISTÉRIO)
+// API DE LOGIN
 // ============================================
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
@@ -601,19 +781,28 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/labs', authMiddleware, async (req, res) => {
     try {
         const dados = req.body;
+        
+        // Validar NIF
+        if (!dados.nif || !validarNIF(dados.nif)) {
+            return res.status(400).json({ erro: 'NIF inválido. Deve ter 10 dígitos.' });
+        }
+        
         const labId = 'LAB-' + Date.now();
         const apiKey = gerarApiKey();
         
         const lab = new Lab({ ...dados, labId, apiKey });
         await lab.save();
         
-        res.json({ success: true, lab: { labId: lab.labId, nome: lab.nome, apiKey: lab.apiKey } });
+        res.json({ success: true, lab: { labId: lab.labId, nome: lab.nome, nif: lab.nif, apiKey: lab.apiKey } });
     } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({ erro: 'NIF já cadastrado para outro laboratório' });
+        }
         res.status(500).json({ erro: 'Erro ao criar laboratório' });
     }
 });
 
-// Listar laboratórios (com filtro por acesso)
+// Listar laboratórios
 app.get('/api/labs', identificarAcesso, async (req, res) => {
     try {
         if (req.acesso === 'laboratorio') {
@@ -628,7 +817,7 @@ app.get('/api/labs', identificarAcesso, async (req, res) => {
     }
 });
 
-// Desativar laboratório (só ministério)
+// Desativar laboratório
 app.delete('/api/labs/:id', authMiddleware, async (req, res) => {
     try {
         await Lab.findByIdAndUpdate(req.params.id, { ativo: false });
@@ -638,12 +827,28 @@ app.delete('/api/labs/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// Bloquear laboratório por suspeita
+app.post('/api/labs/:id/bloquear', authMiddleware, async (req, res) => {
+    try {
+        const lab = await Lab.findById(req.params.id);
+        lab.ativo = false;
+        await lab.save();
+        
+        enviarEmail(lab.email, '🔐 Clé API bloquée', 
+            `Votre clé API a été bloquée suite à une activité suspecte. Contactez le ministère.`);
+        
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro interno' });
+    }
+});
+
 // ============================================
-// API DE CERTIFICADOS
+// API DE CERTIFICADOS (COM DETECÇÃO DE PARTILHA)
 // ============================================
 
-// Emitir certificado (só laboratório)
-app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
+// Emitir certificado (com middleware de detecção)
+app.post('/api/certificados/emitir/:tipo', labMiddleware, deteccaoPartilhaMiddleware, async (req, res) => {
     try {
         const tipo = parseInt(req.params.tipo);
         const dados = req.body;
@@ -696,7 +901,7 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
     }
 });
 
-// Listar certificados (com filtro)
+// Listar certificados
 app.get('/api/certificados', identificarAcesso, async (req, res) => {
     try {
         let query = {};
@@ -726,7 +931,7 @@ app.get('/api/certificados/:numero', async (req, res) => {
     }
 });
 
-// Gerar PDF
+// Gerar PDF com QR code real
 app.get('/api/certificados/:numero/pdf', async (req, res) => {
     try {
         const certificado = await Certificate.findOne({ numero: req.params.numero })
@@ -735,6 +940,18 @@ app.get('/api/certificados/:numero/pdf', async (req, res) => {
         if (!certificado) {
             return res.status(404).json({ erro: 'Certificado não encontrado' });
         }
+
+        const qrCodeDataUrl = await QRCode.toDataURL(certificado.hash, {
+            errorCorrectionLevel: 'H',
+            margin: 1,
+            width: 200,
+            color: {
+                dark: '#006633',
+                light: '#ffffff'
+            }
+        });
+
+        const qrCodeBase64 = qrCodeDataUrl.split(',')[1];
 
         const doc = new PDFDocument({
             size: 'A4',
@@ -815,13 +1032,27 @@ app.get('/api/certificados/:numero/pdf', async (req, res) => {
            .text('Validade: ' + (certificado.validoAte ? new Date(certificado.validoAte).toLocaleDateString('pt-AO') : 'Vitalício'))
            .moveDown();
 
+        const yPos = doc.y;
         doc.fontSize(14)
            .fillColor('#006633')
-           .text('QR CODE PARA VERIFICAÇÃO', { underline: true })
-           .fontSize(10)
-           .fillColor('black')
-           .text('Hash: ' + certificado.hash)
-           .text('Use o aplicativo Genlove ou o site do ministério para verificar')
+           .text('QR CODE PARA VERIFICAÇÃO', { align: 'center', underline: true })
+           .moveDown();
+
+        const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+        const qrSize = 150;
+        const qrX = (pageWidth - qrSize) / 2 + doc.page.margins.left;
+
+        doc.image(Buffer.from(qrCodeBase64, 'base64'), qrX, doc.y, {
+            fit: [qrSize, qrSize],
+            align: 'center'
+        });
+
+        doc.moveDown(8);
+
+        doc.fontSize(8)
+           .fillColor('gray')
+           .text('Hash: ' + certificado.hash, { align: 'center' })
+           .text('Use o aplicativo Genlove ou o portal do ministério para verificar', { align: 'center' })
            .moveDown();
 
         doc.strokeColor('#006633')
@@ -841,7 +1072,9 @@ app.get('/api/certificados/:numero/pdf', async (req, res) => {
     }
 });
 
-// Verificação pública
+// ============================================
+// VERIFICAÇÃO PÚBLICA
+// ============================================
 app.post('/api/verificar', async (req, res) => {
     try {
         const { numero } = req.body;
@@ -864,7 +1097,9 @@ app.post('/api/verificar', async (req, res) => {
     }
 });
 
-// API Genlove
+// ============================================
+// API GENLOVE
+// ============================================
 app.post('/api/genlove/verificar', async (req, res) => {
     try {
         const { hash } = req.body;
@@ -932,6 +1167,71 @@ app.get('/api/stats', identificarAcesso, async (req, res) => {
 });
 
 // ============================================
+// API DE ALERTAS
+// ============================================
+app.get('/api/alertas', authMiddleware, async (req, res) => {
+    try {
+        const labs = await Lab.find({ "alertas.0": { $exists: true } }, { nome: 1, alertas: 1 });
+        
+        const alertas = [];
+        labs.forEach(lab => {
+            lab.alertas.forEach(alerta => {
+                if (!alerta.resolvido) {
+                    alertas.push({
+                        laboratorio: lab.nome,
+                        tipo: alerta.tipo,
+                        descricao: alerta.descricao,
+                        data: alerta.data
+                    });
+                }
+            });
+        });
+        
+        res.json(alertas);
+    } catch (error) {
+        res.status(500).json({ erro: 'Erro interno' });
+    }
+});
+
+// ============================================
+// TAREFA AUTOMÁTICA DE DETECÇÃO DE ANOMALIAS
+// ============================================
+async function detectarAnomalias() {
+    try {
+        const labs = await Lab.find({ ativo: true });
+        
+        for (const lab of labs) {
+            const trintaDias = await Certificate.aggregate([
+                { $match: { emitidoPor: lab._id, emitidoEm: { $gte: new Date(Date.now() - 30*24*60*60*1000) } } },
+                { $group: { _id: { $dayOfWeek: "$emitidoEm" }, count: { $sum: 1 } } }
+            ]);
+            
+            const total = trintaDias.reduce((acc, d) => acc + d.count, 0);
+            const moyenne = total / 30;
+            
+            const hoje = await Certificate.countDocuments({
+                emitidoPor: lab._id,
+                emitidoEm: { $gte: new Date().setHours(0,0,0,0) }
+            });
+            
+            if (hoje > moyenne * 3 && moyenne > 5) {
+                lab.alertas.push({
+                    tipo: 'VOLUME_ANORMAL',
+                    descricao: `Volume anormal hoje: ${hoje} emissões (média: ${Math.round(moyenne)})`
+                });
+                await lab.save();
+            }
+        }
+        console.log('✅ Detecção de anomalias concluída');
+    } catch (error) {
+        console.error('Erro na detecção de anomalias:', error);
+    }
+}
+
+// Executar todos os dias à meia-noite
+setInterval(detectarAnomalias, 24 * 60 * 60 * 1000);
+
+// ============================================
 // INICIAR SERVIDOR
 // ============================================
 app.listen(PORT, () => {
@@ -941,5 +1241,7 @@ app.listen(PORT, () => {
     console.log('📱 URL: http://localhost:' + PORT);
     console.log('🏛️  Ministério: admin@sns.gov.ao / Admin@2025');
     console.log('🔬 Laboratório: Acesse /lab-login com API Key');
+    console.log('🔐 Detecção de partilha de chaves: ATIVADA');
+    console.log('📊 QR Code real nos PDFs: ATIVADO');
     console.log('='.repeat(50) + '\n');
 });
