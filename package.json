@@ -1,7 +1,7 @@
 {
-  "name": "sns-completo",
-  "version": "2.0.0",
-  "description": "SNS - Sistema Nacional de Saúde com detecção de fraudes",
+  "name": "sns-final",
+  "version": "3.0.0",
+  "description": "SNS - Sistema Nacional de Saúde com Pré-Natal",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
