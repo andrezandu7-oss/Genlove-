@@ -271,16 +271,59 @@
                 setTimeout(() => {
                     const tipos = ['', 'GENÓTIPO', 'BOA SAÚDE', 'INCAPACIDADE', 'APTIDÃO', 'SAÚDE MATERNA', 'PRÉ-NATAL', 'EPIDEMIOLÓGICO'];
                     
-                    // Criar dados para QR Code (URL da API QuickChart)
-                    const qrData = `CERTIFICADO SNS
-NÚMERO: ${numero}
-LAB: ${laboratorio}
-TÉC: ${laborantin}
-PAC: ${dados.paciente.nomeCompleto}
-BI: ${dados.paciente.bi}`;
-                    
-                    // URL do QR Code via QuickChart (garantido)
-                    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(qrData)}&size=200&ecLevel=H&dark=006633`;
+                    // ===========================================
+                    // CONSTRUCTION DES DONNÉES POUR LE QR CODE
+                    // ===========================================
+                    let dadosQR = `CERTIFICADO SNS
+Número: ${numero}
+Laboratório: ${laboratorio}
+Técnico: ${laborantin}`;
+
+                    // SEULEMENT pour le type 1 (Genótipo) - format spécial avec ;
+                    if (tipo === '1' && dados.dados) {
+                        // Découper le nom complet
+                        const nomeParts = dados.paciente.nomeCompleto.split(' ');
+                        const prenom = nomeParts[0] || '';
+                        const nom = nomeParts.slice(1).join(' ') || '';
+                        const genre = dados.paciente.genero === 'M' ? 'MASC' : 'FEM';
+                        
+                        // Format spécial pour Genótipo
+                        dadosQR += `\nDADOS: ${prenom};${nom};${genre};${dados.dados.genotipo || 'N/A'};${dados.dados.grupoSanguineo || 'N/A'}`;
+                    } 
+                    else {
+                        // Pour TOUS les autres types (2,3,4,5,6,7) - format normal
+                        dadosQR += `\nPaciente: ${dados.paciente.nomeCompleto}`;
+                        dadosQR += `\nBI: ${dados.paciente.bi}`;
+                        dadosQR += `\nTipo: ${tipos[tipo]}`;
+                        
+                        // Ajouter les résultats spécifiques selon le type...
+                        if (tipo === '2' && dados.dados) {
+                            dadosQR += `\nAvaliação: ${dados.dados.avaliacao || 'N/A'}`;
+                        }
+                        else if (tipo === '3' && dados.dados) {
+                            dadosQR += `\nIncapacidade: ${dados.dados.periodoInicio || '___'} a ${dados.dados.periodoFim || '___'}`;
+                            dadosQR += `\nCID: ${dados.dados.cid || 'N/A'}`;
+                        }
+                        else if (tipo === '4' && dados.dados) {
+                            dadosQR += `\nAptidão: ${dados.dados.tipoAptidao || 'N/A'}`;
+                        }
+                        else if (tipo === '5' && dados.dados) {
+                            dadosQR += `\nGestações: ${dados.dados.gestacoes || '0'}`;
+                            dadosQR += `\nPartos: ${dados.dados.partos || '0'}`;
+                        }
+                        else if (tipo === '6' && dados.dados && dados.dados.examesCPN) {
+                            dadosQR += `\nGenótipo: ${dados.dados.examesCPN.genotipo || 'N/A'}`;
+                            dadosQR += `\nVIH: ${dados.dados.examesCPN.vih || 'N/A'}`;
+                            dadosQR += `\nMalária: ${dados.dados.examesCPN.malaria || 'N/A'}`;
+                        }
+                        else if (tipo === '7' && dados.dados) {
+                            if(dados.dados.doenca1) dadosQR += `\nDoença: ${dados.dados.doenca1} - ${dados.dados.resultado1}`;
+                            if(dados.dados.doenca2) dadosQR += `\nDoença: ${dados.dados.doenca2} - ${dados.dados.resultado2}`;
+                        }
+                    }
+
+                    // URL du QR Code via QuickChart
+                    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(dadosQR)}&size=200&ecLevel=H&dark=006633`;
                     
                     const win = window.open('', '_blank');
                     
