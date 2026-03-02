@@ -1256,6 +1256,22 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
 // ============================================
 // INICIAR SERVIDOR
 // ============================================
+// Adicione antes do app.listen
+app.get('/criar-admin', async (req, res) => {
+    try {
+        const senhaHash = await bcrypt.hash('Admin@2025', 10);
+        await User.deleteMany({ email: 'admin@sns.gov.ao' });
+        await User.create({
+            nome: 'Administrador',
+            email: 'admin@sns.gov.ao',
+            password: senhaHash,
+            role: 'admin'
+        });
+        res.send('✅ Admin recriado com sucesso!');
+    } catch (e) {
+        res.send('Erro: ' + e.message);
+    }
+});
 app.listen(PORT, () => {
     console.log('\n' + '='.repeat(50));
     console.log('🚀 SNS - SISTEMA NACIONAL DE SAÚDE');
