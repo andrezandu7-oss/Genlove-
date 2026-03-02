@@ -63,6 +63,16 @@
                 <input type="date" id="dataNascimento">
             </div>
 
+            <h3>Dados do Laboratório</h3>
+            <div class="form-group">
+                <label>Nome do Laboratório:</label>
+                <input type="text" id="nomeLaboratorio" required placeholder="Ex: Lab Central Luanda">
+            </div>
+            <div class="form-group">
+                <label>Nome do Laborantin/Técnico:</label>
+                <input type="text" id="nomeLaborantin" required placeholder="Ex: Dr. António Silva">
+            </div>
+
             <!-- Tipo 1: Genótipo -->
             <div id="tipo1" class="tipo-specific">
                 <h4>Dados do Genótipo</h4>
@@ -250,7 +260,7 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
 
-        function gerarPDF(dados, numero, tipo) {
+        function gerarPDF(dados, numero, tipo, laboratorio, laborantin) {
             return new Promise((resolve) => {
                 setTimeout(() => {
                     const tipos = ['', 'GENÓTIPO', 'BOA SAÚDE', 'INCAPACIDADE', 'APTIDÃO', 'SAÚDE MATERNA', 'PRÉ-NATAL', 'EPIDEMIOLÓGICO'];
@@ -270,12 +280,14 @@
                                 .numero { text-align: right; font-size: 14px; margin: 20px 0; color: #666; }
                                 .paciente { background: #f0f8f0; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #006633; }
                                 .dados { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
+                                .laboratorio { background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: center; border: 1px solid #006633; }
                                 table { width: 100%; border-collapse: collapse; }
                                 td { padding: 12px; border-bottom: 1px solid #eee; }
                                 td:first-child { font-weight: bold; width: 40%; }
                                 .assinatura { margin-top: 50px; display: flex; justify-content: space-between; }
                                 .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 20px; }
-                                .qr { text-align: center; margin: 30px 0; }
+                                .qr { text-align: center; margin: 30px 0; padding: 20px; background: white; }
+                                #qrcode { display: inline-block; padding: 10px; background: white; border: 1px solid #ddd; }
                                 .btn-print { background: #006633; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 20px 0; }
                             </style>
                             <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
@@ -299,14 +311,20 @@
                                 <div style="text-align: center; margin: 20px 0;">
                                     <span style="background: #006633; color: white; padding: 10px 30px; border-radius: 50px; font-size: 18px; font-weight: bold;">${tipos[tipo]}</span>
                                 </div>
+
+                                <div class="laboratorio">
+                                    <h3 style="color:#006633; margin-bottom: 10px;">🏥 LABORATÓRIO EMISSOR</h3>
+                                    <p style="font-size: 18px; margin: 5px 0;"><strong>${laboratorio}</strong></p>
+                                    <p style="font-size: 16px; color: #333;">Técnico Responsável: <strong>${laborantin}</strong></p>
+                                </div>
                                 
                                 <div class="paciente">
                                     <h3 style="color:#006633; margin-bottom: 15px;">📋 DADOS DO PACIENTE</h3>
                                     <table>
-                                        <tr><td>Nome Completo:</td><td>${dados.paciente.nomeCompleto}</td></tr>
-                                        <tr><td>Nº do BI:</td><td>${dados.paciente.bi}</td></tr>
-                                        <tr><td>Gênero:</td><td>${dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino'}</td></tr>
-                                        <tr><td>Data de Nascimento:</td><td>${dados.paciente.dataNascimento ? new Date(dados.paciente.dataNascimento).toLocaleDateString() : 'Não informada'}</td></tr>
+                                        <tr><td>Nome Completo:</td><td><strong>${dados.paciente.nomeCompleto}</strong></td></tr>
+                                        <tr><td>Nº do BI:</td><td><strong>${dados.paciente.bi}</strong></td></tr>
+                                        <tr><td>Gênero:</td><td><strong>${dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino'}</strong></td></tr>
+                                        <tr><td>Data de Nascimento:</td><td><strong>${dados.paciente.dataNascimento ? new Date(dados.paciente.dataNascimento).toLocaleDateString() : 'Não informada'}</strong></td></tr>
                                     </table>
                                 </div>
                                 
@@ -349,47 +367,81 @@
                                 </div>
                                 
                                 <div class="qr" id="qrcode-container" style="text-align: center; margin: 40px 0;">
+                                    <h3 style="color:#006633; margin-bottom: 15px;">🔑 CÓDIGO DE VALIDAÇÃO</h3>
                                     <div id="qrcode"></div>
-                                    <p style="font-size: 12px; color: #666; margin-top: 10px;">Use este código para validar o certificado</p>
+                                    <p style="font-size: 13px; color: #006633; margin-top: 15px;">Aponte a câmara para validar</p>
+                                    <p style="font-size: 11px; color: #666;">Este código contém todos os dados do certificado</p>
                                 </div>
                                 
                                 <div class="assinatura">
                                     <div style="text-align: center; width: 45%;">
-                                        <div style="border-top: 1px solid #000; width: 100%; margin-bottom: 5px;"></div>
-                                        <p>Assinatura do Médico</p>
+                                        <div style="border-top: 2px solid #006633; width: 100%; margin-bottom: 8px;"></div>
+                                        <p style="font-size: 16px; font-weight: bold;">${laborantin}</p>
+                                        <p style="font-size: 12px; color: #666;">Assinatura do Técnico</p>
                                     </div>
                                     <div style="text-align: center; width: 45%;">
-                                        <div style="border-top: 1px solid #000; width: 100%; margin-bottom: 5px;"></div>
-                                        <p>Carimbo da Unidade</p>
+                                        <div style="border-top: 2px solid #006633; width: 100%; margin-bottom: 8px;"></div>
+                                        <p style="font-size: 16px; font-weight: bold;">${laboratorio}</p>
+                                        <p style="font-size: 12px; color: #666;">Carimbo da Unidade</p>
                                     </div>
                                 </div>
                                 
                                 <div class="footer">
                                     <p>Documento emitido eletronicamente em ${new Date().toLocaleString()}</p>
-                                    <p>Certificado válido em todo território nacional</p>
+                                    <p style="font-size: 10px;">Certificado válido em todo território nacional - Lei nº 12/2023</p>
                                 </div>
                             </div>
                             
                             <script>
+                                // Dados completos para o QR Code
                                 const qrData = \`CERTIFICADO SNS
-Número: ${numero}
-Paciente: ${dados.paciente.nomeCompleto}
+NÚMERO: ${numero}
+LABORATÓRIO: ${laboratorio}
+TÉCNICO: ${laborantin}
+PACIENTE: ${dados.paciente.nomeCompleto}
 BI: ${dados.paciente.bi}
-Tipo: ${tipos[tipo]}
-Data: ${new Date().toLocaleDateString()}\`;
+TIPO: ${tipos[tipo]}
+DATA: ${new Date().toLocaleDateString()}
+EMISSÃO: ${new Date().toLocaleString()}\`;
                                 
-                                new QRCode(document.getElementById("qrcode"), {
-                                    text: qrData,
-                                    width: 180,
-                                    height: 180,
-                                    colorDark: "#006633"
-                                });
-                                
-                                setTimeout(() => {
-                                    if(confirm('Deseja imprimir/salvar o certificado agora?')) {
-                                        window.print();
+                                // Garantir que o elemento existe
+                                window.onload = function() {
+                                    const qrElement = document.getElementById("qrcode");
+                                    if(qrElement) {
+                                        // Limpar qualquer conteúdo anterior
+                                        qrElement.innerHTML = '';
+                                        
+                                        // Criar o QR Code
+                                        new QRCode(qrElement, {
+                                            text: qrData,
+                                            width: 200,
+                                            height: 200,
+                                            colorDark: "#006633",
+                                            colorLight: "#ffffff",
+                                            correctLevel: QRCode.CorrectLevel.H
+                                        });
+                                        
+                                        // Mostrar confirmação
+                                        setTimeout(() => {
+                                            if(confirm('✅ Certificado gerado! Deseja imprimir/salvar em PDF agora?')) {
+                                                window.print();
+                                            }
+                                        }, 500);
                                     }
-                                }, 1000);
+                                };
+                                
+                                // Fallback caso onload não dispare
+                                if(document.readyState === 'complete') {
+                                    const qrElement = document.getElementById("qrcode");
+                                    if(qrElement && qrElement.innerHTML === '') {
+                                        new QRCode(qrElement, {
+                                            text: qrData,
+                                            width: 200,
+                                            height: 200,
+                                            colorDark: "#006633"
+                                        });
+                                    }
+                                }
                             <\/script>
                         </body>
                         </html>
@@ -404,6 +456,8 @@ Data: ${new Date().toLocaleDateString()}\`;
                         numero: numero,
                         tipo: tipo,
                         paciente: dados.paciente.nomeCompleto,
+                        laboratorio: laboratorio,
+                        laborantin: laborantin,
                         data: new Date().toISOString()
                     });
                     localStorage.setItem('certificados_emitidos', JSON.stringify(historico));
@@ -417,6 +471,14 @@ Data: ${new Date().toLocaleDateString()}\`;
             const tipo = document.getElementById('tipo').value;
             if(!tipo) {
                 alert('Selecione o tipo de certificado');
+                return;
+            }
+
+            const laboratorio = document.getElementById('nomeLaboratorio').value;
+            const laborantin = document.getElementById('nomeLaborantin').value;
+
+            if(!laboratorio || !laborantin) {
+                alert('Nome do laboratório e do laborantin são obrigatórios');
                 return;
             }
 
@@ -498,7 +560,7 @@ Data: ${new Date().toLocaleDateString()}\`;
                 
                 if(result.success) {
                     mostrarLoading('Gerando certificado oficial...');
-                    await gerarPDF(dados, result.numero, tipo);
+                    await gerarPDF(dados, result.numero, tipo, laboratorio, laborantin);
                     esconderLoading();
                 } else {
                     esconderLoading();
