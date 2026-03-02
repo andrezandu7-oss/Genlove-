@@ -22,7 +22,6 @@
         .loading-card{background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;}
         .spinner{border:5px solid #f3f3f3;border-top:5px solid #006633;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;margin:0 auto 20px;}
         @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
-        .qrcode{display:flex;justify-content:center;margin:20px 0;}
     </style>
 </head>
 <body>
@@ -254,135 +253,163 @@
         function gerarPDF(dados, numero, tipo) {
             return new Promise((resolve) => {
                 setTimeout(() => {
-                    // Criar conteúdo do PDF
                     const tipos = ['', 'GENÓTIPO', 'BOA SAÚDE', 'INCAPACIDADE', 'APTIDÃO', 'SAÚDE MATERNA', 'PRÉ-NATAL', 'EPIDEMIOLÓGICO'];
                     
-                    // Dados para QR Code
-                    const qrData = `CERTIFICADO SNS
-Número: ${numero}
-Paciente: ${dados.paciente.nomeCompleto}
-BI: ${dados.paciente.bi}
-Tipo: ${tipos[tipo]}
-Data: ${new Date().toLocaleDateString()}`;
-
-                    // Criar div temporária para QR Code
-                    const qrDiv = document.createElement('div');
-                    qrDiv.id = 'tempQR';
-                    document.body.appendChild(qrDiv);
+                    const win = window.open('', '_blank');
                     
-                    new QRCode(qrDiv, {
-                        text: qrData,
-                        width: 150,
-                        height: 150
-                    });
-
-                    // Esperar QR Code gerar
-                    setTimeout(() => {
-                        const qrCanvas = qrDiv.querySelector('canvas');
-                        const qrImage = qrCanvas ? qrCanvas.toDataURL('image/png') : '';
-
-                        // Montar HTML do PDF
-                        let html = `
-                            <html>
-                            <head>
-                                <style>
-                                    body { font-family: Arial; padding: 40px; }
-                                    .header { text-align: center; color: #006633; }
-                                    h1 { font-size: 24px; }
-                                    h2 { font-size: 18px; }
-                                    .numero { text-align: right; font-size: 12px; margin-bottom: 30px; }
-                                    .dados { margin: 30px 0; }
-                                    .paciente { background: #f5f5f5; padding: 15px; border-radius: 5px; }
-                                    .footer { margin-top: 50px; font-size: 10px; color: #666; text-align: center; }
-                                    table { width: 100%; border-collapse: collapse; }
-                                    td { padding: 8px; border-bottom: 1px solid #ddd; }
-                                    .qr { text-align: center; margin: 30px 0; }
-                                </style>
-                            </head>
-                            <body>
+                    let html = `
+                        <html>
+                        <head>
+                            <title>Certificado ${numero}</title>
+                            <style>
+                                @media print { body { margin: 0; padding: 20px; } }
+                                body { font-family: Arial; padding: 40px; max-width: 800px; margin: 0 auto; }
+                                .header { text-align: center; color: #006633; border-bottom: 2px solid #006633; padding-bottom: 20px; }
+                                h1 { font-size: 24px; margin: 5px 0; }
+                                h2 { font-size: 18px; margin: 5px 0; }
+                                .numero { text-align: right; font-size: 14px; margin: 20px 0; color: #666; }
+                                .paciente { background: #f0f8f0; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #006633; }
+                                .dados { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 10px; }
+                                table { width: 100%; border-collapse: collapse; }
+                                td { padding: 12px; border-bottom: 1px solid #eee; }
+                                td:first-child { font-weight: bold; width: 40%; }
+                                .assinatura { margin-top: 50px; display: flex; justify-content: space-between; }
+                                .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 20px; }
+                                .qr { text-align: center; margin: 30px 0; }
+                                .btn-print { background: #006633; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 20px 0; }
+                            </style>
+                            <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+                        </head>
+                        <body>
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+                            </div>
+                            
+                            <div id="certificado">
                                 <div class="header">
                                     <h1>REPÚBLICA DE ANGOLA</h1>
                                     <h2>MINISTÉRIO DA SAÚDE</h2>
                                     <h3>SISTEMA NACIONAL DE SAÚDE</h3>
                                 </div>
+                                
                                 <div class="numero">
                                     <strong>Nº ${numero}</strong>
                                 </div>
+                                
+                                <div style="text-align: center; margin: 20px 0;">
+                                    <span style="background: #006633; color: white; padding: 10px 30px; border-radius: 50px; font-size: 18px; font-weight: bold;">${tipos[tipo]}</span>
+                                </div>
+                                
+                                <div class="paciente">
+                                    <h3 style="color:#006633; margin-bottom: 15px;">📋 DADOS DO PACIENTE</h3>
+                                    <table>
+                                        <tr><td>Nome Completo:</td><td>${dados.paciente.nomeCompleto}</td></tr>
+                                        <tr><td>Nº do BI:</td><td>${dados.paciente.bi}</td></tr>
+                                        <tr><td>Gênero:</td><td>${dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino'}</td></tr>
+                                        <tr><td>Data de Nascimento:</td><td>${dados.paciente.dataNascimento ? new Date(dados.paciente.dataNascimento).toLocaleDateString() : 'Não informada'}</td></tr>
+                                    </table>
+                                </div>
+                                
                                 <div class="dados">
-                                    <h3 style="color:#006633;">${tipos[tipo]}</h3>
-                                    <div class="paciente">
-                                        <h4>Dados do Paciente</h4>
-                                        <table>
-                                            <tr><td><strong>Nome:</strong></td><td>${dados.paciente.nomeCompleto}</td></tr>
-                                            <tr><td><strong>BI:</strong></td><td>${dados.paciente.bi}</td></tr>
-                                            <tr><td><strong>Gênero:</strong></td><td>${dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino'}</td></tr>
-                                            <tr><td><strong>Data Nascimento:</strong></td><td>${dados.paciente.dataNascimento || 'Não informada'}</td></tr>
-                                        </table>
+                                    <h3 style="color:#006633; margin-bottom: 15px;">🔬 RESULTADO DO EXAME</h3>
+                                    <table>
+                    `;
+                    
+                    if (tipo === '1' && dados.dados) {
+                        html += `<tr><td>Genótipo:</td><td><strong>${dados.dados.genotipo || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Grupo Sanguíneo:</td><td><strong>${dados.dados.grupoSanguineo || 'N/A'}</strong></td></tr>`;
+                    } else if (tipo === '2' && dados.dados) {
+                        html += `<tr><td>Avaliação:</td><td><strong>${dados.dados.avaliacao || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Finalidade:</td><td><strong>${dados.dados.finalidade || 'N/A'}</strong></td></tr>`;
+                    } else if (tipo === '3' && dados.dados) {
+                        html += `<tr><td>Período de Incapacidade:</td><td><strong>${dados.dados.periodoInicio || '___'} a ${dados.dados.periodoFim || '___'}</strong></td></tr>`;
+                        html += `<tr><td>CID:</td><td><strong>${dados.dados.cid || 'N/A'}</strong></td></tr>`;
+                    } else if (tipo === '4' && dados.dados) {
+                        html += `<tr><td>Aptidão:</td><td><strong>${dados.dados.tipoAptidao || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Restrições:</td><td><strong>${dados.dados.restricoes || 'Nenhuma'}</strong></td></tr>`;
+                    } else if (tipo === '5' && dados.dados) {
+                        html += `<tr><td>Nº de Gestações:</td><td><strong>${dados.dados.gestacoes || '0'}</strong></td></tr>`;
+                        html += `<tr><td>Nº de Partos:</td><td><strong>${dados.dados.partos || '0'}</strong></td></tr>`;
+                        html += `<tr><td>Data Provável do Parto:</td><td><strong>${dados.dados.dpp ? new Date(dados.dados.dpp).toLocaleDateString() : 'N/A'}</strong></td></tr>`;
+                    } else if (tipo === '6' && dados.dados) {
+                        html += `<tr><td>Consultas Realizadas:</td><td><strong>${dados.dados.consultas || '0'}</strong></td></tr>`;
+                        html += `<tr><td>Genótipo (CPN):</td><td><strong>${dados.dados.examesCPN?.genotipo || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>VIH:</td><td><strong>${dados.dados.examesCPN?.vih || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Malária:</td><td><strong>${dados.dados.examesCPN?.malaria || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Hemoglobina:</td><td><strong>${dados.dados.examesCPN?.hemoglobinia || 'N/A'} g/dL</strong></td></tr>`;
+                    } else if (tipo === '7' && dados.dados) {
+                        html += `<tr><td>Doença:</td><td><strong>${dados.dados.doenca || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Data do Exame:</td><td><strong>${dados.dados.dataExame ? new Date(dados.dados.dataExame).toLocaleDateString() : 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Método:</td><td><strong>${dados.dados.metodo || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Resultado:</td><td><strong>${dados.dados.resultado || 'N/A'}</strong></td></tr>`;
+                    }
+                    
+                    html += `
+                                    </table>
+                                </div>
+                                
+                                <div class="qr" id="qrcode-container" style="text-align: center; margin: 40px 0;">
+                                    <div id="qrcode"></div>
+                                    <p style="font-size: 12px; color: #666; margin-top: 10px;">Use este código para validar o certificado</p>
+                                </div>
+                                
+                                <div class="assinatura">
+                                    <div style="text-align: center; width: 45%;">
+                                        <div style="border-top: 1px solid #000; width: 100%; margin-bottom: 5px;"></div>
+                                        <p>Assinatura do Médico</p>
                                     </div>
-                                    <div style="margin-top:20px;">
-                                        <h4>Dados do Certificado</h4>
-                                        <table>
-                        `;
-
-                        // Adicionar dados específicos do tipo
-                        if (tipo === '1' && dados.dados) {
-                            html += `<tr><td><strong>Genótipo:</strong></td><td>${dados.dados.genotipo || 'N/A'}</td></tr>`;
-                            html += `<tr><td><strong>Grupo Sanguíneo:</strong></td><td>${dados.dados.grupoSanguineo || 'N/A'}</td></tr>`;
-                        } else if (tipo === '2' && dados.dados) {
-                            html += `<tr><td><strong>Avaliação:</strong></td><td>${dados.dados.avaliacao || 'N/A'}</td></tr>`;
-                            html += `<tr><td><strong>Finalidade:</strong></td><td>${dados.dados.finalidade || 'N/A'}</td></tr>`;
-                        } else if (tipo === '3' && dados.dados) {
-                            html += `<tr><td><strong>Período:</strong></td><td>${dados.dados.periodoInicio || ''} a ${dados.dados.periodoFim || ''}</td></tr>`;
-                            html += `<tr><td><strong>CID:</strong></td><td>${dados.dados.cid || 'N/A'}</td></tr>`;
-                        } else if (tipo === '4' && dados.dados) {
-                            html += `<tr><td><strong>Aptidão:</strong></td><td>${dados.dados.tipoAptidao || 'N/A'}</td></tr>`;
-                            html += `<tr><td><strong>Restrições:</strong></td><td>${dados.dados.restricoes || 'Nenhuma'}</td></tr>`;
-                        } else if (tipo === '5' && dados.dados) {
-                            html += `<tr><td><strong>Gestações:</strong></td><td>${dados.dados.gestacoes || '0'}</td></tr>`;
-                            html += `<tr><td><strong>Partos:</strong></td><td>${dados.dados.partos || '0'}</td></tr>`;
-                            html += `<tr><td><strong>DPP:</strong></td><td>${dados.dados.dpp || 'N/A'}</td></tr>`;
-                        } else if (tipo === '6' && dados.dados) {
-                            html += `<tr><td><strong>Consultas:</strong></td><td>${dados.dados.consultas || '0'}</td></tr>`;
-                            html += `<tr><td><strong>Genótipo:</strong></td><td>${dados.dados.examesCPN?.genotipo || 'N/A'}</td></tr>`;
-                            html += `<tr><td><strong>VIH:</strong></td><td>${dados.dados.examesCPN?.vih || 'N/A'}</td></tr>`;
-                            html += `<tr><td><strong>Malária:</strong></td><td>${dados.dados.examesCPN?.malaria || 'N/A'}</td></tr>`;
-                            html += `<tr><td><strong>Hemoglobina:</strong></td><td>${dados.dados.examesCPN?.hemoglobinia || 'N/A'}</td></tr>`;
-                        } else if (tipo === '7' && dados.dados) {
-                            html += `<tr><td><strong>Doença:</strong></td><td>${dados.dados.doenca || 'N/A'}</td></tr>`;
-                            html += `<tr><td><strong>Data Exame:</strong></td><td>${dados.dados.dataExame || 'N/A'}</td></tr>`;
-                            html += `<tr><td><strong>Método:</strong></td><td>${dados.dados.metodo || 'N/A'}</td></tr>`;
-                            html += `<tr><td><strong>Resultado:</strong></td><td>${dados.dados.resultado || 'N/A'}</td></tr>`;
-                        }
-
-                        html += `
-                                        </table>
+                                    <div style="text-align: center; width: 45%;">
+                                        <div style="border-top: 1px solid #000; width: 100%; margin-bottom: 5px;"></div>
+                                        <p>Carimbo da Unidade</p>
                                     </div>
                                 </div>
-                                <div class="qr">
-                                    <img src="${qrImage}" style="width:150px;height:150px;">
-                                    <p>Scan para validar certificado</p>
-                                </div>
+                                
                                 <div class="footer">
-                                    <p>Documento emitido em ${new Date().toLocaleString()}</p>
+                                    <p>Documento emitido eletronicamente em ${new Date().toLocaleString()}</p>
                                     <p>Certificado válido em todo território nacional</p>
                                 </div>
-                            </body>
-                            </html>
-                        `;
-
-                        // Criar blob e download
-                        const blob = new Blob([html], { type: 'text/html' });
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `certificado_${numero}.html`;
-                        a.click();
-
-                        // Limpar
-                        document.body.removeChild(qrDiv);
-                        resolve();
-                    }, 300);
-                }, 5000); // 5 segundos de loading
+                            </div>
+                            
+                            <script>
+                                const qrData = \`CERTIFICADO SNS
+Número: ${numero}
+Paciente: ${dados.paciente.nomeCompleto}
+BI: ${dados.paciente.bi}
+Tipo: ${tipos[tipo]}
+Data: ${new Date().toLocaleDateString()}\`;
+                                
+                                new QRCode(document.getElementById("qrcode"), {
+                                    text: qrData,
+                                    width: 180,
+                                    height: 180,
+                                    colorDark: "#006633"
+                                });
+                                
+                                setTimeout(() => {
+                                    if(confirm('Deseja imprimir/salvar o certificado agora?')) {
+                                        window.print();
+                                    }
+                                }, 1000);
+                            <\/script>
+                        </body>
+                        </html>
+                    `;
+                    
+                    win.document.write(html);
+                    win.document.close();
+                    
+                    // Salvar no histórico
+                    let historico = JSON.parse(localStorage.getItem('certificados_emitidos') || '[]');
+                    historico.push({
+                        numero: numero,
+                        tipo: tipo,
+                        paciente: dados.paciente.nomeCompleto,
+                        data: new Date().toISOString()
+                    });
+                    localStorage.setItem('certificados_emitidos', JSON.stringify(historico));
+                    
+                    resolve();
+                }, 5000);
             });
         }
 
@@ -408,7 +435,6 @@ Data: ${new Date().toLocaleDateString()}`;
                 return;
             }
 
-            // Coletar dados específicos
             if(tipo === '1') {
                 dados.dados = {
                     genotipo: document.getElementById('genotipo').value,
@@ -455,7 +481,6 @@ Data: ${new Date().toLocaleDateString()}`;
                 };
             }
 
-            // Loading passo 1
             mostrarLoading('Preparando dados do paciente...');
             
             try {
@@ -472,15 +497,9 @@ Data: ${new Date().toLocaleDateString()}`;
                 const result = await response.json();
                 
                 if(result.success) {
-                    // Loading passo 2
                     mostrarLoading('Gerando certificado oficial...');
-                    
-                    // Gerar PDF com loading de 5 segundos
                     await gerarPDF(dados, result.numero, tipo);
-                    
                     esconderLoading();
-                    alert('✅ Certificado emitido com sucesso!\nNúmero: ' + result.numero);
-                    window.location.href = '/lab-dashboard';
                 } else {
                     esconderLoading();
                     alert('❌ Erro: ' + result.erro);
