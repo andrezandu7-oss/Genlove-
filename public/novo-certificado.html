@@ -63,16 +63,6 @@
                 <input type="date" id="dataNascimento">
             </div>
 
-            <h3>Dados do Laboratório</h3>
-            <div class="form-group">
-                <label>Nome do Laboratório:</label>
-                <input type="text" id="nomeLaboratorio" required placeholder="Ex: Lab Central Luanda">
-            </div>
-            <div class="form-group">
-                <label>Nome do Laborantin/Técnico:</label>
-                <input type="text" id="nomeLaborantin" required placeholder="Ex: Dr. António Silva">
-            </div>
-
             <!-- Tipo 1: Genótipo -->
             <div id="tipo1" class="tipo-specific">
                 <h4>Dados do Genótipo</h4>
@@ -287,14 +277,16 @@
                                 .assinatura { margin-top: 50px; display: flex; justify-content: space-between; }
                                 .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 20px; }
                                 .qr { text-align: center; margin: 30px 0; padding: 20px; background: white; }
-                                #qrcode { display: inline-block; padding: 10px; background: white; border: 1px solid #ddd; }
+                                #qrcode { display: inline-block; padding: 10px; background: white; border: 1px solid #006633; border-radius: 5px; }
                                 .btn-print { background: #006633; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 20px 0; }
+                                .btn-download { background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; margin-left: 10px; }
                             </style>
                             <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
                         </head>
                         <body>
-                            <div style="text-align: center; margin-bottom: 20px;">
-                                <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+                            <div style="text-align: center; margin-bottom: 20px; display: flex; justify-content: center; gap: 10px;">
+                                <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>
+                                <button class="btn-download" onclick="downloadPDF()">📥 Download PDF</button>
                             </div>
                             
                             <div id="certificado">
@@ -370,7 +362,6 @@
                                     <h3 style="color:#006633; margin-bottom: 15px;">🔑 CÓDIGO DE VALIDAÇÃO</h3>
                                     <div id="qrcode"></div>
                                     <p style="font-size: 13px; color: #006633; margin-top: 15px;">Aponte a câmara para validar</p>
-                                    <p style="font-size: 11px; color: #666;">Este código contém todos os dados do certificado</p>
                                 </div>
                                 
                                 <div class="assinatura">
@@ -388,11 +379,15 @@
                                 
                                 <div class="footer">
                                     <p>Documento emitido eletronicamente em ${new Date().toLocaleString()}</p>
-                                    <p style="font-size: 10px;">Certificado válido em todo território nacional - Lei nº 12/2023</p>
+                                    <p style="font-size: 10px;">Certificado válido em todo território nacional</p>
                                 </div>
                             </div>
                             
                             <script>
+                                function downloadPDF() {
+                                    window.print();
+                                }
+                            
                                 // Dados completos para o QR Code
                                 const qrData = \`CERTIFICADO SNS
 NÚMERO: ${numero}
@@ -401,46 +396,31 @@ TÉCNICO: ${laborantin}
 PACIENTE: ${dados.paciente.nomeCompleto}
 BI: ${dados.paciente.bi}
 TIPO: ${tipos[tipo]}
-DATA: ${new Date().toLocaleDateString()}
-EMISSÃO: ${new Date().toLocaleString()}\`;
+DATA: ${new Date().toLocaleDateString()}\`;
                                 
-                                // Garantir que o elemento existe
+                                // Garantir que o QR Code aparece
                                 window.onload = function() {
                                     const qrElement = document.getElementById("qrcode");
                                     if(qrElement) {
-                                        // Limpar qualquer conteúdo anterior
                                         qrElement.innerHTML = '';
-                                        
-                                        // Criar o QR Code
-                                        new QRCode(qrElement, {
-                                            text: qrData,
-                                            width: 200,
-                                            height: 200,
-                                            colorDark: "#006633",
-                                            colorLight: "#ffffff",
-                                            correctLevel: QRCode.CorrectLevel.H
-                                        });
-                                        
-                                        // Mostrar confirmação
-                                        setTimeout(() => {
-                                            if(confirm('✅ Certificado gerado! Deseja imprimir/salvar em PDF agora?')) {
-                                                window.print();
-                                            }
-                                        }, 500);
+                                        try {
+                                            new QRCode(qrElement, {
+                                                text: qrData,
+                                                width: 200,
+                                                height: 200,
+                                                colorDark: "#006633",
+                                                colorLight: "#ffffff",
+                                                correctLevel: QRCode.CorrectLevel.H
+                                            });
+                                        } catch(e) {
+                                            qrElement.innerHTML = '<div style="padding:20px; border:2px solid #006633; border-radius:5px;">QR Code: SNS Angola</div>';
+                                        }
                                     }
                                 };
                                 
-                                // Fallback caso onload não dispare
+                                // Fallback
                                 if(document.readyState === 'complete') {
-                                    const qrElement = document.getElementById("qrcode");
-                                    if(qrElement && qrElement.innerHTML === '') {
-                                        new QRCode(qrElement, {
-                                            text: qrData,
-                                            width: 200,
-                                            height: 200,
-                                            colorDark: "#006633"
-                                        });
-                                    }
+                                    window.onload();
                                 }
                             <\/script>
                         </body>
@@ -449,18 +429,6 @@ EMISSÃO: ${new Date().toLocaleString()}\`;
                     
                     win.document.write(html);
                     win.document.close();
-                    
-                    // Salvar no histórico
-                    let historico = JSON.parse(localStorage.getItem('certificados_emitidos') || '[]');
-                    historico.push({
-                        numero: numero,
-                        tipo: tipo,
-                        paciente: dados.paciente.nomeCompleto,
-                        laboratorio: laboratorio,
-                        laborantin: laborantin,
-                        data: new Date().toISOString()
-                    });
-                    localStorage.setItem('certificados_emitidos', JSON.stringify(historico));
                     
                     resolve();
                 }, 5000);
@@ -474,12 +442,22 @@ EMISSÃO: ${new Date().toLocaleString()}\`;
                 return;
             }
 
-            const laboratorio = document.getElementById('nomeLaboratorio').value;
-            const laborantin = document.getElementById('nomeLaborantin').value;
-
-            if(!laboratorio || !laborantin) {
-                alert('Nome do laboratório e do laborantin são obrigatórios');
-                return;
+            // Buscar dados do laboratório automaticamente
+            let laboratorio = "Laboratório Nacional de Saúde";
+            let laborantin = "Técnico de Serviço";
+            
+            try {
+                const key = localStorage.getItem('labKey');
+                const labResponse = await fetch('/api/labs/me', {
+                    headers: { 'x-api-key': key }
+                });
+                const labData = await labResponse.json();
+                if(labData && labData.nome) {
+                    laboratorio = labData.nome;
+                    laborantin = labData.diretor || labData.responsavel || "Técnico de Serviço";
+                }
+            } catch(e) {
+                console.log('Usando dados padrão do laboratório');
             }
 
             const dados = {
