@@ -99,6 +99,120 @@
                 </div>
             </div>
 
+            <!-- Tipo 3: Incapacidade -->
+            <div id="tipo3" class="tipo-specific">
+                <h4>Dados de Incapacidade</h4>
+                <div class="form-group">
+                    <label>Data Início:</label>
+                    <input type="date" id="periodoInicio">
+                </div>
+                <div class="form-group">
+                    <label>Data Fim:</label>
+                    <input type="date" id="periodoFim">
+                </div>
+                <div class="form-group">
+                    <label>CID (Código da doença):</label>
+                    <input type="text" id="cid" placeholder="Ex: A09">
+                </div>
+            </div>
+
+            <!-- Tipo 4: Aptidão -->
+            <div id="tipo4" class="tipo-specific">
+                <h4>Dados de Aptidão</h4>
+                <div class="form-group">
+                    <label>Tipo de Aptidão:</label>
+                    <select id="tipoAptidao">
+                        <option value="Apto">Apto</option>
+                        <option value="Apto com restrições">Apto com restrições</option>
+                        <option value="Inapto temporário">Inapto temporário</option>
+                        <option value="Inapto permanente">Inapto permanente</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Restrições:</label>
+                    <textarea id="restricoes" rows="2">Nenhuma</textarea>
+                </div>
+            </div>
+
+            <!-- Tipo 5: Saúde Materna -->
+            <div id="tipo5" class="tipo-specific">
+                <h4>Saúde Materna</h4>
+                <div class="form-group">
+                    <label>Número de gestações:</label>
+                    <input type="number" id="gestacoes" value="1" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Número de partos:</label>
+                    <input type="number" id="partos" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Data Provável do Parto (DPP):</label>
+                    <input type="date" id="dpp">
+                </div>
+            </div>
+
+            <!-- Tipo 6: Pré-Natal (CPN) -->
+            <div id="tipo6" class="tipo-specific">
+                <h4>Pré-Natal Completo</h4>
+                <div class="form-group">
+                    <label>Número de consultas:</label>
+                    <input type="number" id="consultas" value="1" min="0">
+                </div>
+                <h4>Exames CPN</h4>
+                <div class="form-group">
+                    <label>Genótipo:</label>
+                    <select id="exameGenotipo">
+                        <option value="AA">AA</option>
+                        <option value="AS">AS</option>
+                        <option value="SS">SS</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>VIH:</label>
+                    <select id="vih">
+                        <option value="Não reagente">Não reagente</option>
+                        <option value="Reagente">Reagente</option>
+                        <option value="Em tratamento">Em tratamento</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Malária:</label>
+                    <select id="malaria">
+                        <option value="Negativo">Negativo</option>
+                        <option value="Positivo">Positivo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Hemoglobina (g/dL):</label>
+                    <input type="number" id="hemoglobina" step="0.1" value="12.0">
+                </div>
+            </div>
+
+            <!-- Tipo 7: Epidemiológico -->
+            <div id="tipo7" class="tipo-specific">
+                <h4>Dados Epidemiológicos</h4>
+                <div class="form-group">
+                    <label>Doença:</label>
+                    <input type="text" id="doenca" placeholder="Ex: Malária, Tuberculose...">
+                </div>
+                <div class="form-group">
+                    <label>Data do Exame:</label>
+                    <input type="date" id="dataExame">
+                </div>
+                <div class="form-group">
+                    <label>Método:</label>
+                    <input type="text" id="metodo" placeholder="Ex: Teste rápido, PCR...">
+                </div>
+                <div class="form-group">
+                    <label>Resultado:</label>
+                    <select id="resultado">
+                        <option value="Positivo">Positivo</option>
+                        <option value="Negativo">Negativo</option>
+                        <option value="Inconclusivo">Inconclusivo</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Botões -->
             <div style="margin-top:30px;">
                 <button type="button" onclick="emitirCertificado()">Emitir Certificado</button>
@@ -146,6 +260,40 @@
                 dados.dados = {
                     avaliacao: document.getElementById('avaliacao').value,
                     finalidade: document.getElementById('finalidade').value
+                };
+            } else if(tipo === '3') {
+                dados.dados = {
+                    periodoInicio: document.getElementById('periodoInicio').value,
+                    periodoFim: document.getElementById('periodoFim').value,
+                    cid: document.getElementById('cid').value
+                };
+            } else if(tipo === '4') {
+                dados.dados = {
+                    tipoAptidao: document.getElementById('tipoAptidao').value,
+                    restricoes: document.getElementById('restricoes').value
+                };
+            } else if(tipo === '5') {
+                dados.dados = {
+                    gestacoes: document.getElementById('gestacoes').value,
+                    partos: document.getElementById('partos').value,
+                    dpp: document.getElementById('dpp').value
+                };
+            } else if(tipo === '6') {
+                dados.dados = {
+                    consultas: document.getElementById('consultas').value,
+                    examesCPN: {
+                        genotipo: document.getElementById('exameGenotipo').value,
+                        vih: document.getElementById('vih').value,
+                        malaria: document.getElementById('malaria').value,
+                        hemoglobinia: document.getElementById('hemoglobina').value
+                    }
+                };
+            } else if(tipo === '7') {
+                dados.dados = {
+                    doenca: document.getElementById('doenca').value,
+                    dataExame: document.getElementById('dataExame').value,
+                    metodo: document.getElementById('metodo').value,
+                    resultado: document.getElementById('resultado').value
                 };
             }
 
