@@ -1,7 +1,7 @@
 {
   "name": "sns-completo",
-  "version": "1.0.0",
-  "description": "SNS - Sistema Nacional de Saúde",
+  "version": "2.0.0",
+  "description": "SNS - Sistema Nacional de Saúde com detecção de fraudes",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -14,6 +14,7 @@
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "pdfkit": "^0.14.0",
+    "qrcode": "^1.5.3",
     "dotenv": "^16.3.1"
   }
 }
