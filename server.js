@@ -112,42 +112,25 @@ const empresaSchema = new mongoose.Schema({
 });
 
 const certificateSchema = new mongoose.Schema({
-  numero: { type: String, unique: true },
-  tipo: { type: Number, required: true, enum: [1, 2, 3, 4, 5, 6, 7] },
-  paciente: {
-    nomeCompleto: { type: String, required: true },
-    genero: { type: String, enum: ['M', 'F'] },
-    dataNascimento: Date,
-    bi: { type: String, required: true }
-  },
-  dados: {
-    genotipo: String,
-    grupoSanguineo: String,
-    avaliacao: String,
-    finalidade: String,
-    periodoInicio: Date,
-    periodoFim: Date,
-    cid: String,
-    tipoAptidao: String,
-    restricoes: String,
-    gestacoes: Number,
-    partos: Number,
-    dpp: Date,
-    consultas: Number,
-    examesCPN: {
-      genotipo: String,
-      vih: String,
-      malaria: String,
-      hemoglobinia: Number
+    numero: { type: String, unique: true },
+    tipo: Number,
+    paciente: {
+        nomeCompleto: String,
+        bi: String,
+        dataNascimento: Date,
+        genero: String,
+        telefone: String
     },
-    doenca: String,
-    dataExame: Date,
-    metodo: String,
-    resultado: String
-  },
-  hash: { type: String, unique: true },
-  emitidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab' },
-  emitidoEm: { type: Date, default: Date.now }
+    laborantin: {  // NOUVEAU - AJOUTEZ CES 3 LIGNES
+        nome: String,
+        registro: String
+    },
+    dados: {  // Vos champs existants pour les données médicales
+        // ... tout ce qui est déjà là, ne changez rien ...
+    },
+    hash: { type: String, unique: true },
+    emitidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab' },
+    emitidoEm: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model('User', userSchema);
