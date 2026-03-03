@@ -6,22 +6,26 @@
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
         body{background:#f5f5f5;padding:20px;}
-        .container{max-width:800px;margin:0 auto;background:white;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+        .container{max-width:900px;margin:0 auto;background:white;padding:30px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
         h2{color:#006633;margin-bottom:20px;}
-        .form-group{margin-bottom:15px;}
-        label{display:block;margin-bottom:5px;font-weight:bold;}
-        input, select, textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;}
-        button{padding:12px 25px;background:#006633;color:white;border:none;border-radius:5px;cursor:pointer;margin-right:10px;}
+        h4{color:#006633;margin:15px 0 10px 0;}
+        h5{color:#333;margin:10px 0 5px 0;font-size:14px;}
+        .form-group{margin-bottom:12px;}
+        label{display:block;margin-bottom:5px;font-weight:bold;font-size:13px;}
+        input, select, textarea{width:100%;padding:8px;border:1px solid #ddd;border-radius:5px;font-size:14px;}
+        button{padding:12px 25px;background:#006633;color:white;border:none;border-radius:5px;cursor:pointer;margin-right:10px;font-size:16px;}
         button:hover{background:#004d26;}
         .btn-secondary{background:#6c757d;}
         .btn-secondary:hover{background:#5a6268;}
-        .tipo-specific{display:none;padding:15px;background:#f8f9fa;border-radius:5px;margin-top:15px;}
+        .tipo-specific{display:none;padding:15px;background:#f8f9fa;border-radius:10px;margin-top:15px;border:1px solid #ddd;}
         .error{color:#dc3545;margin:10px 0;}
         .loading-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;z-index:1000;}
         .loading-card{background:white;padding:30px;border-radius:10px;text-align:center;max-width:300px;}
         .spinner{border:5px solid #f3f3f3;border-top:5px solid #006633;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;margin:0 auto 20px;}
         @keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
         .secao-laboratorio{background:#e8f5e9;padding:20px;border-radius:10px;margin-bottom:20px;border-left:5px solid #006633;}
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+        .obs{font-size:12px;color:#666;margin-top:15px;font-style:italic;background:#fff3cd;padding:10px;border-radius:5px;}
     </style>
 </head>
 <body>
@@ -47,7 +51,7 @@
                     <option value="3">Incapacidade</option>
                     <option value="4">Aptidão</option>
                     <option value="5">Saúde Materna</option>
-                    <option value="6">Pré-Natal (CPN)</option>
+                    <option value="6">Pré-Natal (CPN) - Exames</option>
                     <option value="7">Epidemiológico</option>
                 </select>
             </div>
@@ -166,34 +170,167 @@
                 </div>
             </div>
 
-            <!-- Tipo 6: Pré-Natal -->
+            <!-- Tipo 6: Pré-Natal (EXAMES LABORATORIAIS) -->
             <div id="tipo6" class="tipo-specific">
-                <h4>Exames Realizados - Pré-Natal</h4>
-                <div class="form-group">
-                    <label>Genótipo:</label>
-                    <select id="exameGenotipo">
-                        <option value="AA">AA</option>
-                        <option value="AS">AS</option>
-                        <option value="SS">SS</option>
-                    </select>
+                <h4 style="color:#006633; margin-bottom:15px;">🔬 EXAMES LABORATORIAIS - PRÉ-NATAL</h4>
+                
+                <div class="grid-2">
+                    <!-- Coluna 1 -->
+                    <div>
+                        <h5>Hematologia e Imunologia</h5>
+                        <div class="form-group">
+                            <label>Grupo Sanguíneo:</label>
+                            <select id="grupoSanguineo6">
+                                <option value="">Selecione...</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Genótipo:</label>
+                            <select id="genotipo6">
+                                <option value="">Selecione...</option>
+                                <option value="AA">AA</option>
+                                <option value="AS">AS</option>
+                                <option value="SS">SS</option>
+                                <option value="AC">AC</option>
+                                <option value="CC">CC</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Falciformação:</label>
+                            <select id="falciformacao">
+                                <option value="">Selecione...</option>
+                                <option value="Presente">Presente</option>
+                                <option value="Ausente">Ausente</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Hemoglobina (Hb g/dL):</label>
+                            <input type="number" id="hemoglobina6" step="0.1" placeholder="Ex: 12.5">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Teste de Coombs:</label>
+                            <select id="coombs">
+                                <option value="">Selecione...</option>
+                                <option value="Negativo">Negativo</option>
+                                <option value="Positivo">Positivo</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Coluna 2 -->
+                    <div>
+                        <h5>Doenças Infecciosas</h5>
+                        <div class="form-group">
+                            <label>VIH:</label>
+                            <select id="vih6">
+                                <option value="">Selecione...</option>
+                                <option value="Não reagente">Não reagente</option>
+                                <option value="Reagente">Reagente</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>VDRL (Sífilis):</label>
+                            <select id="vdrl">
+                                <option value="">Selecione...</option>
+                                <option value="Negativo">Negativo</option>
+                                <option value="Positivo">Positivo</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Hepatite B (Ag Hbs):</label>
+                            <select id="hepatiteB">
+                                <option value="">Selecione...</option>
+                                <option value="Negativo">Negativo</option>
+                                <option value="Positivo">Positivo</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Toxoplasmose:</label>
+                            <select id="toxoplasmose">
+                                <option value="">Selecione...</option>
+                                <option value="Negativo">Negativo</option>
+                                <option value="Positivo">Positivo</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Rubéola:</label>
+                            <select id="rubéola">
+                                <option value="">Selecione...</option>
+                                <option value="Negativo">Negativo</option>
+                                <option value="Positivo">Positivo</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Citomegalovírus:</label>
+                            <select id="citomegalovirus">
+                                <option value="">Selecione...</option>
+                                <option value="Negativo">Negativo</option>
+                                <option value="Positivo">Positivo</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>VIH:</label>
-                    <select id="vih">
-                        <option value="Não reagente">Não reagente</option>
-                        <option value="Reagente">Reagente</option>
-                    </select>
+                
+                <h5 style="margin-top:20px;">Parasitologia e Bioquímica</h5>
+                <div class="grid-2">
+                    <div>
+                        <div class="form-group">
+                            <label>Malária (Pesquisa de Plasmodium):</label>
+                            <select id="malaria6">
+                                <option value="">Selecione...</option>
+                                <option value="Negativo">Negativo</option>
+                                <option value="Positivo">Positivo</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Glicemia (mg/dL):</label>
+                            <input type="number" id="glicemia" placeholder="Ex: 85">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Proteinúria urinária:</label>
+                            <input type="text" id="proteinuria" placeholder="Ex: Negativo / + / ++">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="form-group">
+                            <label>Urina Tipo II:</label>
+                            <textarea id="urina" rows="2" placeholder="Ex: Leucócitos: 10/campo, Nitritos: Negativo"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Exsudado vaginal:</label>
+                            <textarea id="exsudado" rows="2" placeholder="Ex: Flora normal / Leveduras"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Outros exames:</label>
+                            <textarea id="outrosExames" rows="2" placeholder="Outros resultados relevantes"></textarea>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Malária:</label>
-                    <select id="malaria">
-                        <option value="Negativo">Negativo</option>
-                        <option value="Positivo">Positivo</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Hemoglobina:</label>
-                    <input type="number" id="hemoglobina" step="0.1" value="12.0">
+                
+                <div class="obs">
+                    ⚠️ Apenas resultados laboratoriais. O médico preencherá manualmente o caderno de suporte (vacinas, Fansidar, sinais vitais, etc.)
                 </div>
             </div>
 
@@ -271,9 +408,7 @@
                 setTimeout(() => {
                     const tipos = ['', 'GENÓTIPO', 'BOA SAÚDE', 'INCAPACIDADE', 'APTIDÃO', 'SAÚDE MATERNA', 'PRÉ-NATAL', 'EPIDEMIOLÓGICO'];
                     
-                    // ===========================================
                     // CONSTRUCTION DES DONNÉES POUR LE QR CODE
-                    // ===========================================
                     let dadosQR = `CERTIFICADO SNS
 Número: ${numero}
 Laboratório: ${laboratorio}
@@ -281,22 +416,18 @@ Técnico: ${laborantin}`;
 
                     // SEULEMENT pour le type 1 (Genótipo) - format spécial avec || pour Genlove
                     if (tipo === '1' && dados.dados) {
-                        // Découper le nom complet
                         const nomeParts = dados.paciente.nomeCompleto.split(' ');
                         const prenom = nomeParts[0] || '';
                         const nom = nomeParts.slice(1).join(' ') || '';
                         const genre = dados.paciente.genero === 'M' ? 'MASC' : 'FEM';
                         
-                        // Format avec || pour Genlove
                         dadosQR += `\nDADOS: ${prenom}||${nom}||${genre}||${dados.dados.genotipo || 'N/A'}||${dados.dados.grupoSanguineo || 'N/A'}`;
                     } 
                     else {
-                        // Pour TOUS les autres types (2,3,4,5,6,7) - format normal
                         dadosQR += `\nPaciente: ${dados.paciente.nomeCompleto}`;
                         dadosQR += `\nBI: ${dados.paciente.bi}`;
                         dadosQR += `\nTipo: ${tipos[tipo]}`;
                         
-                        // Ajouter les résultats spécifiques selon le type...
                         if (tipo === '2' && dados.dados) {
                             dadosQR += `\nAvaliação: ${dados.dados.avaliacao || 'N/A'}`;
                         }
@@ -311,10 +442,19 @@ Técnico: ${laborantin}`;
                             dadosQR += `\nGestações: ${dados.dados.gestacoes || '0'}`;
                             dadosQR += `\nPartos: ${dados.dados.partos || '0'}`;
                         }
-                        else if (tipo === '6' && dados.dados && dados.dados.examesCPN) {
-                            dadosQR += `\nGenótipo: ${dados.dados.examesCPN.genotipo || 'N/A'}`;
-                            dadosQR += `\nVIH: ${dados.dados.examesCPN.vih || 'N/A'}`;
-                            dadosQR += `\nMalária: ${dados.dados.examesCPN.malaria || 'N/A'}`;
+                        else if (tipo === '6' && dados.dados) {
+                            dadosQR += `\nGrupo Sanguíneo: ${dados.dados.grupoSanguineo || 'N/A'}`;
+                            dadosQR += `\nGenótipo: ${dados.dados.genotipo || 'N/A'}`;
+                            dadosQR += `\nFalciformação: ${dados.dados.falciformacao || 'N/A'}`;
+                            dadosQR += `\nHemoglobina: ${dados.dados.hemoglobina || 'N/A'} g/dL`;
+                            dadosQR += `\nVIH: ${dados.dados.vih || 'N/A'}`;
+                            dadosQR += `\nVDRL: ${dados.dados.vdrl || 'N/A'}`;
+                            dadosQR += `\nHepatite B: ${dados.dados.hepatiteB || 'N/A'}`;
+                            dadosQR += `\nToxoplasmose: ${dados.dados.toxoplasmose || 'N/A'}`;
+                            dadosQR += `\nRubéola: ${dados.dados.rubéola || 'N/A'}`;
+                            dadosQR += `\nCitomegalovírus: ${dados.dados.citomegalovirus || 'N/A'}`;
+                            dadosQR += `\nMalária: ${dados.dados.malaria || 'N/A'}`;
+                            dadosQR += `\nGlicemia: ${dados.dados.glicemia || 'N/A'} mg/dL`;
                         }
                         else if (tipo === '7' && dados.dados) {
                             if(dados.dados.doenca1) dadosQR += `\nDoença: ${dados.dados.doenca1} - ${dados.dados.resultado1}`;
@@ -322,7 +462,6 @@ Técnico: ${laborantin}`;
                         }
                     }
 
-                    // URL du QR Code via QuickChart
                     const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(dadosQR)}&size=200&ecLevel=H&dark=006633`;
                     
                     const win = window.open('', '_blank');
@@ -412,10 +551,23 @@ Técnico: ${laborantin}`;
                         html += `<tr><td>Nº de Partos:</td><td><strong>${dados.dados.partos || '0'}</strong></td></tr>`;
                         html += `<tr><td>Data Provável do Parto:</td><td><strong>${dados.dados.dpp ? new Date(dados.dados.dpp).toLocaleDateString() : 'N/A'}</strong></td></tr>`;
                     } else if (tipo === '6' && dados.dados) {
-                        html += `<tr><td>Genótipo:</td><td><strong>${dados.dados.examesCPN?.genotipo || 'N/A'}</strong></td></tr>`;
-                        html += `<tr><td>VIH:</td><td><strong>${dados.dados.examesCPN?.vih || 'N/A'}</strong></td></tr>`;
-                        html += `<tr><td>Malária:</td><td><strong>${dados.dados.examesCPN?.malaria || 'N/A'}</strong></td></tr>`;
-                        html += `<tr><td>Hemoglobina:</td><td><strong>${dados.dados.examesCPN?.hemoglobinia || 'N/A'} g/dL</strong></td></tr>`;
+                        html += `<tr><td>Grupo Sanguíneo:</td><td><strong>${dados.dados.grupoSanguineo || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Genótipo:</td><td><strong>${dados.dados.genotipo || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Falciformação:</td><td><strong>${dados.dados.falciformacao || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Hemoglobina:</td><td><strong>${dados.dados.hemoglobina || 'N/A'} g/dL</strong></td></tr>`;
+                        html += `<tr><td>Teste de Coombs:</td><td><strong>${dados.dados.coombs || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>VIH:</td><td><strong>${dados.dados.vih || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>VDRL:</td><td><strong>${dados.dados.vdrl || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Hepatite B:</td><td><strong>${dados.dados.hepatiteB || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Toxoplasmose:</td><td><strong>${dados.dados.toxoplasmose || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Rubéola:</td><td><strong>${dados.dados.rubéola || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Citomegalovírus:</td><td><strong>${dados.dados.citomegalovirus || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Malária:</td><td><strong>${dados.dados.malaria || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Glicemia:</td><td><strong>${dados.dados.glicemia || 'N/A'} mg/dL</strong></td></tr>`;
+                        html += `<tr><td>Proteinúria:</td><td><strong>${dados.dados.proteinuria || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Urina Tipo II:</td><td><strong>${dados.dados.urina || 'N/A'}</strong></td></tr>`;
+                        html += `<tr><td>Exsudado vaginal:</td><td><strong>${dados.dados.exsudado || 'N/A'}</strong></td></tr>`;
+                        if(dados.dados.outrosExames) html += `<tr><td>Outros exames:</td><td><strong>${dados.dados.outrosExames}</strong></td></tr>`;
                     } else if (tipo === '7' && dados.dados) {
                         if(dados.dados.doenca1 && dados.dados.resultado1) {
                             html += `<tr><td>Doença testada: ${dados.dados.doenca1}</td><td><strong>${dados.dados.resultado1}</strong></td></tr>`;
@@ -457,7 +609,6 @@ Técnico: ${laborantin}`;
                             </div>
                             
                             <script>
-                                // Attendre que l'image QR soit chargée avant d'imprimer
                                 setTimeout(function() {
                                     if(confirm('✅ Certificado gerado! Deseja imprimir/salvar em PDF agora?')) {
                                         window.print();
@@ -489,7 +640,6 @@ Técnico: ${laborantin}`;
                 return;
             }
 
-            // Buscar dados do laboratório automaticamente
             let laboratorio = "Laboratório Nacional de Saúde";
             let endereco = "Endereço não informado";
             
@@ -551,12 +701,23 @@ Técnico: ${laborantin}`;
                 };
             } else if(tipo === '6') {
                 dados.dados = {
-                    examesCPN: {
-                        genotipo: document.getElementById('exameGenotipo').value,
-                        vih: document.getElementById('vih').value,
-                        malaria: document.getElementById('malaria').value,
-                        hemoglobinia: document.getElementById('hemoglobina').value
-                    }
+                    grupoSanguineo: document.getElementById('grupoSanguineo6').value,
+                    genotipo: document.getElementById('genotipo6').value,
+                    falciformacao: document.getElementById('falciformacao').value,
+                    hemoglobina: document.getElementById('hemoglobina6').value,
+                    coombs: document.getElementById('coombs').value,
+                    vih: document.getElementById('vih6').value,
+                    vdrl: document.getElementById('vdrl').value,
+                    hepatiteB: document.getElementById('hepatiteB').value,
+                    toxoplasmose: document.getElementById('toxoplasmose').value,
+                    rubéola: document.getElementById('rubéola').value,
+                    citomegalovirus: document.getElementById('citomegalovirus').value,
+                    malaria: document.getElementById('malaria6').value,
+                    glicemia: document.getElementById('glicemia').value,
+                    proteinuria: document.getElementById('proteinuria').value,
+                    urina: document.getElementById('urina').value,
+                    exsudado: document.getElementById('exsudado').value,
+                    outrosExames: document.getElementById('outrosExames').value
                 };
             } else if(tipo === '7') {
                 dados.dados = {
