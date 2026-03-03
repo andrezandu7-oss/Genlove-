@@ -316,7 +316,7 @@
             <div id="camposMedicos"></div>
         </div>
         
-        <!-- Responsável pela Emissão (À LA FIN, AVANT LES BOUTONS) -->
+        <!-- Responsável pela Emissão (À LA FIN) -->
         <div class="form-section" id="sectionLaborantin">
             <h2>Responsável pela Emissão</h2>
             <div class="form-group">
@@ -367,61 +367,137 @@
         let dadosAtuais = {};
         let tipoAtual = '';
         
-        // Configuration des champs médicaux par type
+        // Configuration des champs médicaux par type (VERSION COMPLÈTE)
         const camposPorTipo = {
-            
-                1: [ // GENÓTIPO - Com todas as cases necessárias
-    { id: 'grupoSanguineo', label: 'Grupo Sanguíneo', type: 'select', options: ['A', 'B', 'AB', 'O'] },
-    { id: 'fatorRh', label: 'Fator Rh', type: 'select', options: ['Positivo (+)', 'Negativo (-)'] },
-    { id: 'genotipo', label: 'Genótipo (Hemoglobina)', type: 'select', options: ['AA', 'AS', 'SS', 'AC', 'CC', 'Outro'] },
-    { id: 'hemoglobina', label: 'Hemoglobina (g/dL)', type: 'number', step: '0.1', min: '0', max: '20' },
-    { id: 'hematocrito', label: 'Hematócrito (%)', type: 'number', step: '0.1', min: '0', max: '60' },
-    { id: 'contagem_reticulocitos', label: 'Contagem de Reticulócitos', type: 'text', placeholder: 'Ex: 0.5%' },
-    { id: 'eletroforese', label: 'Eletroforese de Hemoglobina', type: 'textarea', placeholder: 'Resultado detalhado' },
-    { id: 'observacoes', label: 'Observações', type: 'textarea' }
-]
-            2: [ // BOA SAÚDE
-                { id: 'pressaoArterial', label: 'Pressão Arterial', type: 'text', placeholder: '120/80' },
-                { id: 'peso', label: 'Peso (kg)', type: 'number', step: '0.1' },
-                { id: 'altura', label: 'Altura (m)', type: 'number', step: '0.01' },
-                { id: 'imc', label: 'IMC', type: 'text', readonly: true }
-            ],
-            3: [ // INCAPACIDADE
-                { id: 'tipoIncapacidade', label: 'Tipo de Incapacidade', type: 'select', 
-                  options: ['Física', 'Visual', 'Auditiva', 'Mental', 'Múltipla'] },
-                { id: 'grau', label: 'Grau (%)', type: 'number', min: 0, max: 100 },
-                { id: 'descricao', label: 'Descrição', type: 'textarea' }
-            ],
-            4: [ // APTIDÃO
-                { id: 'tipoAptidao', label: 'Tipo de Aptidão', type: 'select',
-                  options: ['Física', 'Mental', 'Profissional', 'Desportiva'] },
-                { id: 'validade', label: 'Validade (dias)', type: 'number', value: 365 },
+            1: [ // GENÓTIPO - Com todas as cases necessárias
+                { id: 'grupoSanguineo', label: 'Grupo Sanguíneo', type: 'select', options: ['A', 'B', 'AB', 'O'] },
+                { id: 'fatorRh', label: 'Fator Rh', type: 'select', options: ['Positivo (+)', 'Negativo (-)'] },
+                { id: 'genotipo', label: 'Genótipo (Hemoglobina)', type: 'select', options: ['AA', 'AS', 'SS', 'AC', 'CC', 'Outro'] },
+                { id: 'hemoglobina', label: 'Hemoglobina (g/dL)', type: 'number', step: '0.1', min: '0', max: '20' },
+                { id: 'hematocrito', label: 'Hematócrito (%)', type: 'number', step: '0.1', min: '0', max: '60' },
+                { id: 'contagem_reticulocitos', label: 'Contagem de Reticulócitos', type: 'text', placeholder: 'Ex: 0.5%' },
+                { id: 'eletroforese', label: 'Eletroforese de Hemoglobina', type: 'textarea', placeholder: 'Resultado detalhado' },
                 { id: 'observacoes', label: 'Observações', type: 'textarea' }
             ],
-            5: [ // SAÚDE MATERNA
-                { id: 'gestacoes', label: 'Nº de Gestações', type: 'number' },
-                { id: 'partos', label: 'Nº de Partos', type: 'number' },
-                { id: 'dpp', label: 'Data Provável do Parto', type: 'date' },
-                { id: 'consultas', label: 'Nº de Consultas', type: 'number' }
+            2: [ // BOA SAÚDE - Check-up completo
+                { id: 'peso', label: 'Peso (kg)', type: 'number', step: '0.1', min: '0', max: '300' },
+                { id: 'altura', label: 'Altura (m)', type: 'number', step: '0.01', min: '0', max: '2.5' },
+                { id: 'imc', label: 'IMC', type: 'text', readonly: true },
+                { id: 'pressaoArterial', label: 'Pressão Arterial', type: 'text', placeholder: '120/80' },
+                { id: 'frequenciaCardiaca', label: 'Frequência Cardíaca (bpm)', type: 'number', min: '40', max: '200' },
+                { id: 'frequenciaRespiratoria', label: 'Frequência Respiratória (irpm)', type: 'number', min: '10', max: '40' },
+                { id: 'temperatura', label: 'Temperatura (°C)', type: 'number', step: '0.1', min: '35', max: '42' },
+                { id: 'saturacaoOxigenio', label: 'Saturação O₂ (%)', type: 'number', min: '70', max: '100' },
+                { id: 'glicemia', label: 'Glicemia (mg/dL)', type: 'number', step: '0.1', placeholder: 'Em jejum' },
+                { id: 'colesterolTotal', label: 'Colesterol Total (mg/dL)', type: 'number', step: '0.1' },
+                { id: 'triglicerideos', label: 'Triglicerídeos (mg/dL)', type: 'number', step: '0.1' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea' }
             ],
-            6: [ // PRÉ-NATAL
-                { id: 'genotipo', label: 'Genótipo', type: 'select', options: ['AA', 'AS', 'SS'] },
-                { id: 'vih', label: 'VIH', type: 'select', options: ['Positivo', 'Negativo', 'Não testado'] },
-                { id: 'malaria', label: 'Malária', type: 'select', options: ['Positivo', 'Negativo', 'Não testado'] },
-                { id: 'hemoglobina', label: 'Hemoglobina', type: 'number', step: '0.1' }
+            3: [ // INCAPACIDADE - Avaliação detalhada
+                { id: 'tipoIncapacidade', label: 'Tipo de Incapacidade', type: 'select', 
+                  options: ['Física', 'Visual', 'Auditiva', 'Mental', 'Intelectual', 'Múltipla'] },
+                { id: 'causa', label: 'Causa da Incapacidade', type: 'select',
+                  options: ['Congênita', 'Adquirida - Acidente', 'Adquirida - Doença', 'Guerra', 'Outra'] },
+                { id: 'grau', label: 'Grau (%)', type: 'number', min: '0', max: '100', step: '5' },
+                { id: 'dataInicio', label: 'Data de Início', type: 'date' },
+                { id: 'partesAfetadas', label: 'Partes do Corpo Afetadas', type: 'textarea', placeholder: 'Ex: Membros inferiores, visão...' },
+                { id: 'limitacoes', label: 'Limitações Funcionais', type: 'textarea' },
+                { id: 'necessitaAcompanhante', label: 'Necessita Acompanhante?', type: 'select', options: ['Sim', 'Não'] },
+                { id: 'observacoes', label: 'Observações', type: 'textarea' }
             ],
-            7: [ // EPIDEMIOLÓGICO
-                { id: 'doenca', label: 'Doença', type: 'text' },
-                { id: 'dataExame', label: 'Data do Exame', type: 'date' },
-                { id: 'metodo', label: 'Método', type: 'text' },
-                { id: 'resultado', label: 'Resultado', type: 'select', options: ['Positivo', 'Negativo', 'Inconclusivo'] }
+            4: [ // APTIDÃO - Avaliação para atividades específicas
+                { id: 'tipoAptidao', label: 'Tipo de Aptidão', type: 'select',
+                  options: ['Física', 'Mental', 'Profissional', 'Desportiva', 'Condução', 'Porte de Arma'] },
+                { id: 'modalidade', label: 'Modalidade / Função', type: 'text', placeholder: 'Ex: Futebol, Motorista, etc.' },
+                { id: 'resultado', label: 'Resultado', type: 'select',
+                  options: ['Apto', 'Apto com Restrições', 'Inapto'] },
+                { id: 'restricoes', label: 'Restrições (se aplicável)', type: 'textarea' },
+                { id: 'validade', label: 'Validade (dias)', type: 'number', value: '365', min: '1', max: '3650' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea' }
             ],
-            8: [ // CSD - Certificado de Saúde para Deslocação
-                { id: 'destino', label: 'País de Destino', type: 'text', placeholder: 'Ex: Portugal, Brasil, etc.' },
-                { id: 'motivoViagem', label: 'Motivo da Viagem', type: 'text', placeholder: 'Ex: Turismo, Trabalho, etc.' },
+            5: [ // SAÚDE MATERNA - Acompanhamento completo COM EXAMES
+                { id: 'gestacoes', label: 'Nº de Gestações', type: 'number', min: '0', max: '20' },
+                { id: 'partos', label: 'Nº de Partos', type: 'number', min: '0', max: '20' },
+                { id: 'abortos', label: 'Nº de Abortos', type: 'number', min: '0', max: '20' },
+                { id: 'nascidosVivos', label: 'Nº de Nascidos Vivos', type: 'number', min: '0' },
+                { id: 'dum', label: 'Data da Última Menstruação (DUM)', type: 'date' },
+                { id: 'dpp', label: 'Data Provável do Parto (DPP)', type: 'date' },
+                { id: 'idadeGestacional', label: 'Idade Gestacional (semanas)', type: 'number', step: '0.5', min: '0', max: '42' },
+                { id: 'consultasCPN', label: 'Nº de Consultas Pré-Natal', type: 'number', min: '0' },
+                { id: 'hemograma', label: 'Hemograma', type: 'textarea', placeholder: 'Resultado' },
+                { id: 'gotaEspessa', label: 'Gota Espessa', type: 'select', options: ['Positivo', 'Negativo'] },
+                { id: 'hiv', label: 'HIV', type: 'select', options: ['Positivo', 'Negativo'] },
+                { id: 'vdrl', label: 'VDRL', type: 'select', options: ['Reagente', 'Não Reagente'] },
+                { id: 'hbs', label: 'HBsAg', type: 'select', options: ['Positivo', 'Negativo'] },
+                { id: 'glicemia', label: 'Glicemia', type: 'number', step: '0.1', placeholder: 'mg/dL' },
+                { id: 'creatinina', label: 'Creatinina', type: 'number', step: '0.1', placeholder: 'mg/dL' },
+                { id: 'ureia', label: 'Ureia', type: 'number', step: '0.1', placeholder: 'mg/dL' },
+                { id: 'tgo', label: 'TGO', type: 'number', step: '0.1', placeholder: 'U/L' },
+                { id: 'grupoSanguineo', label: 'Grupo Sanguíneo', type: 'select', options: ['A', 'B', 'AB', 'O'] },
+                { id: 'fatorRh', label: 'Fator Rh', type: 'select', options: ['Positivo', 'Negativo'] },
+                { id: 'exsudadoVaginal', label: 'Exsudado Vaginal', type: 'textarea', placeholder: 'Resultado' },
+                { id: 'pesoAtual', label: 'Peso Atual (kg)', type: 'number', step: '0.1' },
+                { id: 'alturaUterina', label: 'Altura Uterina (cm)', type: 'number', step: '0.5' },
+                { id: 'batimentosCardiacosFeto', label: 'BCF (batimentos/min)', type: 'number', min: '100', max: '200' },
+                { id: 'movimentosFetais', label: 'Movimentos Fetais', type: 'select', options: ['Presentes', 'Ausentes', 'Diminuídos'] },
+                { id: 'edema', label: 'Edema', type: 'select', options: ['Ausente', '+', '++', '+++'] },
+                { id: 'proteinuria', label: 'Proteinúria', type: 'select', options: ['Negativa', '+', '++', '+++'] },
+                { id: 'observacoes', label: 'Observações', type: 'textarea' }
+            ],
+            6: [ // PRÉ-NATAL - Exames laboratoriais COMPLETOS
+                { id: 'grupoSanguineo', label: 'Grupo Sanguíneo', type: 'select', options: ['A', 'B', 'AB', 'O'] },
+                { id: 'fatorRh', label: 'Fator Rh', type: 'select', options: ['Positivo', 'Negativo'] },
+                { id: 'hemograma', label: 'Hemograma Completo', type: 'textarea', placeholder: 'Resultado completo' },
+                { id: 'gotaEspessa', label: 'Gota Espessa', type: 'select', options: ['Positivo', 'Negativo', 'Não realizado'] },
+                { id: 'hiv', label: 'HIV', type: 'select', options: ['Positivo', 'Negativo', 'Não testado'] },
+                { id: 'vdrl', label: 'VDRL (Sífilis)', type: 'select', options: ['Reagente', 'Não Reagente', 'Não testado'] },
+                { id: 'hbs', label: 'HBsAg (Hepatite B)', type: 'select', options: ['Positivo', 'Negativo', 'Não testado'] },
+                { id: 'vidal', label: 'Vidal (Febre Tifoide)', type: 'text', placeholder: 'Resultado' },
+                { id: 'glicemia', label: 'Glicemia (mg/dL)', type: 'number', step: '0.1' },
+                { id: 'creatinina', label: 'Creatinina (mg/dL)', type: 'number', step: '0.1' },
+                { id: 'ureia', label: 'Ureia (mg/dL)', type: 'number', step: '0.1' },
+                { id: 'tgo', label: 'TGO/AST (U/L)', type: 'number', step: '0.1' },
+                { id: 'testeGravidez', label: 'Teste de Gravidez', type: 'select', options: ['Positivo', 'Negativo'] },
+                { id: 'exsudadoVaginal', label: 'Exsudado Vaginal', type: 'textarea', placeholder: 'Resultado da bacterioscopia' },
+                { id: 'vs', label: 'V.S. (Velocidade de Sedimentação)', type: 'number', placeholder: 'mm/h' },
+                { id: 'falsiformacao', label: 'Falsiformação', type: 'select', options: ['Presente', 'Ausente'] },
+                { id: 'observacoes', label: 'Observações', type: 'textarea' }
+            ],
+            7: [ // EPIDEMIOLÓGICO - Doenças de notificação
+                { id: 'doenca', label: 'Doença / Agravo', type: 'select',
+                  options: ['Malária', 'Tuberculose', 'HIV/SIDA', 'COVID-19', 'Febre Amarela', 'Dengue', 'Cólera', 'Sarampo', 'Meningite', 'Hepatite', 'Outra'] },
+                { id: 'outraDoenca', label: 'Se outra, especifique:', type: 'text' },
+                { id: 'dataInicioSintomas', label: 'Data de Início dos Sintomas', type: 'date' },
+                { id: 'dataDiagnostico', label: 'Data do Diagnóstico', type: 'date' },
+                { id: 'metodoDiagnostico', label: 'Método de Diagnóstico', type: 'select',
+                  options: ['Clínico', 'Laboratorial', 'Imagem', 'Epidemiológico'] },
+                { id: 'tipoExame', label: 'Tipo de Exame', type: 'text', placeholder: 'Ex: PCR, Teste Rápido, Cultura' },
+                { id: 'resultado', label: 'Resultado', type: 'select', options: ['Positivo', 'Negativo', 'Inconclusivo'] },
+                { id: 'tratamento', label: 'Tratamento Instituído', type: 'textarea' },
+                { id: 'internamento', label: 'Internamento', type: 'select', options: ['Sim', 'Não'] },
+                { id: 'dataInternamento', label: 'Data de Internamento', type: 'date' },
+                { id: 'contatos', label: 'Nº de Contatos Identificados', type: 'number', min: '0' },
+                { id: 'observacoes', label: 'Observações Epidemiológicas', type: 'textarea' }
+            ],
+            8: [ // CSD - Certificado de Saúde para Deslocação (VIAGEM)
+                { id: 'destino', label: 'País de Destino', type: 'text', placeholder: 'Ex: Portugal, Brasil, África do Sul' },
+                { id: 'motivoViagem', label: 'Motivo da Viagem', type: 'select',
+                  options: ['Turismo', 'Trabalho', 'Estudos', 'Tratamento Médico', 'Visita Familiar', 'Outro'] },
                 { id: 'dataPartida', label: 'Data Prevista de Partida', type: 'date' },
-                { id: 'vacinas', label: 'Vacinas Administradas', type: 'textarea', placeholder: 'Lista de vacinas' },
-                { id: 'recomendacoes', label: 'Recomendações', type: 'textarea', placeholder: 'Recomendações para a viagem' }
+                { id: 'dataRetorno', label: 'Data Prevista de Retorno', type: 'date' },
+                { id: 'vacinaFebreAmarela', label: 'Vacina Febre Amarela', type: 'select', options: ['Sim', 'Não'] },
+                { id: 'dataVacinaFebreAmarela', label: 'Data da Vacina Febre Amarela', type: 'date' },
+                { id: 'loteVacinaFebreAmarela', label: 'Lote da Vacina', type: 'text' },
+                { id: 'vacinaCovid19', label: 'Vacina COVID-19', type: 'select', options: ['Sim', 'Não'] },
+                { id: 'dosesCovid', label: 'Doses COVID-19', type: 'number', min: '1', max: '4' },
+                { id: 'testeCovid', label: 'Teste COVID-19 Realizado', type: 'select', options: ['Sim', 'Não'] },
+                { id: 'tipoTesteCovid', label: 'Tipo de Teste COVID-19', type: 'select', options: ['PCR', 'Antigénio', 'Anticorpos'] },
+                { id: 'dataTesteCovid', label: 'Data do Teste', type: 'date' },
+                { id: 'resultadoTesteCovid', label: 'Resultado', type: 'select', options: ['Negativo', 'Positivo'] },
+                { id: 'outrasVacinas', label: 'Outras Vacinas', type: 'textarea', placeholder: 'Hepatite, Tétano, etc.' },
+                { id: 'medicamentos', label: 'Medicamentos em Uso', type: 'textarea' },
+                { id: 'condicoesEspeciais', label: 'Condições Especiais de Saúde', type: 'textarea' },
+                { id: 'recomendacoes', label: 'Recomendações para a Viagem', type: 'textarea' }
             ]
         };
         
