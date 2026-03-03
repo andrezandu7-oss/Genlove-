@@ -422,22 +422,251 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
 
 // FORMULÁRIO NOVO
 app.get('/novo-certificado', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'novo-certificado.html'));
+    res.sendFile(path.join(__dirname, 'public', 'novo-certificado.html'));
 });
 
 // =============================================
-// STATS GLOBAIS (MINISTÉRIO)
+// ROUTE POUR GÉNÉRER LES PDF
 // =============================================
+app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
+    try {
+        const { numero, dados } = req.body;
+        
+        // Récupérer les informations du laboratoire depuis le middleware
+        const lab = req.lab;
+        
+        // Créer un nouveau document PDF
+        const doc = new PDFDocument({
+            size: 'A4',
+            margin: 50,
+            info: {
+                Title: `Certificado ${numero}`,
+                Author: lab.nome,
+                Subject: 'Certificado Médico SNS Angola'
+            }
+        });
+        
+        // Configurer la réponse
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=certificado-${numero}.pdf`);
+        
+        // Pipe le PDF vers la réponse
+        doc.pipe(res);
+        
+        // =========================================
+        // EN-TÊTE DU DOCUMENT
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(20)
+            .text('REPÚBLICA DE ANGOLA', 50, 50)
+            .fontSize(16)
+            .text('MINISTÉRIO DA SAÚDE', 50, 75)
+            .fontSize(24)
+            .text('SISTEMA NACIONAL DE SAÚDE', 50, 100);
+        
+        // Ligne de séparation
+        doc.strokeColor('#006633')
+            .lineWidth(2)
+            .moveTo(50, 140)
+            .lineTo(550, 140)
+            .stroke();
+        
+        // =========================================
+        // NUMÉRO DU CERTIFICAT
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(14)
+            .text(`CERTIFICADO Nº: ${numero}`, 50, 160)
+            .fontSize(10)
+            .fillColor('#666')
+            .text(`Data de Emissão: ${new Date(dados.dataEmissao).toLocaleDateString('pt-PT')}`, 50, 180);
+        
+        let y = 210;
+        
+        // =========================================
+        // LABORATÓRIO EMISSOR (depuis API Key)
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('LABORATÓRIO EMISSOR:', 50, y);
+        
+        y += 20;
+        doc.fillColor('#000')
+            .fontSize(11)
+            .text(`${lab.nome}`, 70, y);
+        y += 15;
+        doc.text(`NIF: ${lab.nif}`, 70, y);
+        y += 15;
+        doc.text(`Endereço: ${lab.endereco || 'Não informado'}`, 70, y);
+        y += 15;
+        doc.text(`${lab.provincia} - Angola`, 70, y);
+        y += 15;
+        doc.text(`Tel: ${lab.telephone || 'Não informado'}`, 70, y);
+        y += 20;
+        
+        // =========================================
+        // RESPONSÁVEL PELA EMISSÃO
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('RESPONSÁVEL PELA EMISSÃO:', 50, y);
+        
+        y += 20;
+        doc.fillColor('#000')
+            .fontSize(11)
+            .text(`Nome: ${dados.laborantin.nome}`, 70, y);
+        y += 15;
+        
+        if (dados.laborantin.registro) {
+            doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
+            y += 20;
+        } else {
+            y += 5;
+        }
+        
+        // =========================================
+        // DADOS DO PACIENTE
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('DADOS DO PACIENTE:', 50, y);
+        
+        y += 20;
+        doc.fillColor('#000')
+            .fontSize(11)
+            .text(`Nome: ${dados.paciente.nomeCompleto}`, 70, y);
+        y += 15;
+        doc.text(`BI: ${dados.paciente.bi}`, 70, y);
+        y += 15;
+        
+        if (dados.paciente.dataNascimento) {
+            doc.text(`Data Nascimento: ${new Date(dados.paciente.dataNascimento).toLocaleDateString('pt-PT')}`, 70, y);
+            y += 15;
+        }
+        
+        if (dados.paciente.genero) {
+            const genero = dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino';
+            doc.text(`Género: ${genero}`, 70, y);
+            y += 15;
+        }
+        
+        if (dados.paciente.telefone) {
+            doc.text(`Telefone: ${dados.paciente.telefone}`, 70, y);
+            y += 20;
+        }
+        
+        // =========================================
+        // DADOS MÉDICOS
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('DADOS MÉDICOS:', 50, y);
+        
+        y += 20;
+        
+        // Titre du type de certificat
+        const tipos = {
+            1: 'CERTIFICADO DE GENÓTIPO',
+            2: 'CERTIFICADO DE BOA SAÚDE',
+            3: 'CERTIFICADO DE INCAPACIDADE',
+            4: 'CERTIFICADO DE APTIDÃO',
+            5: 'CERTIFICADO DE SAÚDE MATERNA',
+            6: 'CERTIFICADO DE PRÉ-NATAL',
+            7: 'CERTIFICADO EPIDEMIOLÓGICO',
+            8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
+        };
+        
+        doc.fillColor('#333')
+            .fontSize(12)
+            .text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
+        
+        y += 25;
+        
+        // Afficher les données médicales
+        for (let [key, value] of Object.entries(dados.dadosMedicos)) {
+            if (value && value.trim) {
+                // Formater le nom du champ
+                const nomeCampo = key.replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase());
+                
+                doc.fontSize(11)
+                    .fillColor('#000')
+                    .text(`${nomeCampo}: ${value}`, 70, y);
+                
+                y += 20;
+                
+                // Nouvelle page si nécessaire
+                if (y > 750) {
+                    doc.addPage();
+                    y = 50;
+                }
+            }
+        }
+        
+        y += 20;
+        
+        // =========================================
+        // ASSINATURAS
+        // =========================================
+        doc.lineWidth(1)
+            .moveTo(70, y)
+            .lineTo(270, y)
+            .stroke();
+        
+        doc.fontSize(10)
+            .text('Assinatura do Laborantin', 70, y + 5)
+            .text(dados.laborantin.nome, 70, y + 20);
+        
+        doc.lineWidth(1)
+            .moveTo(350, y)
+            .lineTo(550, y)
+            .stroke();
+        
+        doc.fontSize(10)
+            .text('Assinatura do Diretor Clínico', 350, y + 5)
+            .text(lab.diretor || 'Não informado', 350, y + 20);
+        
+        y += 50;
+        
+        // =========================================
+        // CODE DE VERIFICAÇÃO (simule un QR code)
+        // =========================================
+        doc.fontSize(8)
+            .fillColor('#666')
+            .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
+            .fontSize(10)
+            .fillColor('#006633')
+            .text(numero + '-' + Date.now().toString().slice(-6), 50, y + 10)
+            .fontSize(7)
+            .fillColor('#999')
+            .text('Este código único verifica a autenticidade do certificado', 50, y + 25);
+        
+        // =========================================
+        // RODAPÉ
+        // =========================================
+        doc.fontSize(8)
+            .fillColor('#666')
+            .text('Documento válido em todo território nacional', 50, 780, { align: 'center' });
+        
+        // Finaliser le PDF
+        doc.end();
+        
+    } catch (error) {
+        console.error('Erreur PDF:', error);
+        res.status(500).json({ error: 'Erreur lors de la génération du PDF' });
+    }
+});
+
+// STATS GLOBAIS (MINISTÉRIO)
 app.get('/api/stats', authMiddleware, async (req, res) => {
-  const stats = {
+    const stats = {
     labs: await Lab.countDocuments({ ativo: true }),
     hospitais: await Hospital.countDocuments({ ativo: true }),
     empresas: await Empresa.countDocuments({ ativo: true })
-  };
-  res.json(stats);
+    };
+    res.json(stats);
 });
 
 app.listen(PORT, () => {
-  console.log('✅ SNS Online na porta ' + PORT);
+    console.log('✅ SNS Online na porta ' + PORT);
 });
-
