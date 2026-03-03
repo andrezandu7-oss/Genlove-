@@ -155,7 +155,7 @@ certificateSchema.pre('save', function(next) {
         const peso = parseFloat(this.dados.peso);
         const altura = parseFloat(this.dados.altura);
         if (peso && altura && altura > 0) {
-            this.imc = (peso / (altura * altura)).toFixed(2);
+            this.imc = parseFloat((peso / (altura * altura)).toFixed(2));
             
             // Classifier l'IMC
             if (this.imc < 18.5) this.classificacaoIMC = "Abaixo do peso";
@@ -207,10 +207,14 @@ const authMiddleware = (req, res, next) => {
 const labMiddleware = async (req, res, next) => {
     const apiKey = req.headers['x-api-key'];
     if (!apiKey) return res.status(401).json({ erro: 'API Key não fornecida' });
-    const lab = await Lab.findOne({ apiKey, ativo: true });
-    if (!lab) return res.status(401).json({ erro: 'Chave invalida.' });
-    req.lab = lab;
-    next();
+    try {
+        const lab = await Lab.findOne({ apiKey, ativo: true });
+        if (!lab) return res.status(401).json({ erro: 'Chave invalida.' });
+        req.lab = lab;
+        next();
+    } catch (error) {
+        return res.status(500).json({ erro: 'Erro ao validar chave' });
+    }
 };
 
 // ==============================================
@@ -234,25 +238,30 @@ app.get('/lab-login', (req, res) => {
 // API DE AUTENTICACAO
 // ==============================================
 app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
-    if (email === 'admin@sns.gov.ao' && password === 'Admin@2025') {
-        let user = await User.findOne({ email });
-        if (!user) {
-            const senhaHash = await bcrypt.hash(password, 10);
-            user = await User.create({ 
-                nome: 'Administrador', 
-                email, 
-                password: senhaHash, 
-                role: 'admin' 
-            });
+    try {
+        const { email, password } = req.body;
+        if (email === 'admin@sns.gov.ao' && password === 'Admin@2025') {
+            let user = await User.findOne({ email });
+            if (!user) {
+                const senhaHash = await bcrypt.hash(password, 10);
+                user = await User.create({ 
+                    nome: 'Administrador', 
+                    email, 
+                    password: senhaHash, 
+                    role: 'admin' 
+                });
+            }
+            const token = jwt.sign(
+                { id: user._id, email, role: user.role }, 
+                process.env.JWT_SECRET || 'secret-key', 
+                { expiresIn: '8h' }
+            );
+            res.json({ token });
+        } else {
+            res.status(401).json({ error: 'Email ou senha incorretos' });
         }
-        const token = jwt.sign({ id: user._id, email, role: user.role }, 
-            process.env.JWT_SECRET || 'secret-key', 
-            { expiresIn: '8h' }
-        );
-        res.json({ token });
-    } else {
-        res.status(401).json({ error: 'Email ou senha incorretos' });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro no login' });
     }
 });
 
@@ -263,7 +272,7 @@ app.post('/api/labs/verificar', async (req, res) => {
         if (lab) return res.json({ valido: true });
         return res.json({ valido: false, erro: 'Chave invalida ou laboratorio inativo.' });
     } catch (error) {
-        res.status(500).json({ valido: false });
+        res.status(500).json({ valido: false, erro: 'Erro no servidor' });
     }
 });
 
@@ -278,7 +287,7 @@ app.get('/admin-dashboard', (req, res) => {
 // DASHBOARD DO LABORATORIO
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
-    res.send('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laboratório - SNS</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}body{display:flex;background:#f5f5f5;}.sidebar{width:250px;background:#006633;color:white;height:100vh;padding:20px;position:fixed;}.sidebar h2{margin-bottom:30px;}.sidebar a{display:block;color:white;text-decoration:none;padding:12px;margin:5px 0;border-radius:5px;cursor:pointer;}.sidebar a:hover{background:#004d26;}.main{margin-left:270px;padding:30px;width:100%;}.welcome{background:#e8f5e9;padding:20px;border-left:5px solid #006633;margin-bottom:20px;}.btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;}.btn-danger{background:#dc3545;}.secao{display:none;}.secao.ativa{display:block;}.card-container{display:flex;gap:15px;margin-top:20px;margin-bottom:30px;}.card{background:white;padding:20px;border-radius:10px;flex:1;border-top:4px solid #006633;box-shadow:0 2px 5px rgba(0,0,0,0.1);text-align:center;}.card h4{color:#666;font-size:14px;text-transform:uppercase;margin-bottom:10px;}.card p{font-size:28px;font-weight:bold;color:#006633;}table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}th{background:#006633;color:white;padding:12px;text-align:left;}td{padding:12px;border-bottom:1px solid #ddd;}</style></head><body><div class="sidebar"><h2>SNS - Lab</h2><a onclick="mostrar(\'dashboard\')">Relatórios</a><a onclick="mostrar(\'certificados\')">Meus Certificados</a><button onclick="logout()" class="btn btn-danger" style="margin-top:20px;width:100%;">Sair</button></div><div class="main"><div id="welcome" class="welcome"></div><div id="secaoDashboard" class="secao ativa"><h2>Relatórios de Emissão</h2><div class="card-container"><div class="card"><h4>Hoje</h4><p id="statDiario">0</p></div><div class="card"><h4>Este Mês</h4><p id="statMensal">0</p></div><div class="card"><h4>Este Ano</h4><p id="statAnual">0</p></div><div class="card" style="border-top-color:#ffa500;"><h4>Total Geral</h4><p id="statTotal" style="color:#ffa500;">0</p></div></div></div><div id="secaoCertificados" class="secao"><h2>Certificados <button class="btn" style="float:right;" onclick="window.location.href=\'/novo-certificado\'">+ Novo</button></h2><table><thead><tr><th>Número</th><th>Tipo</th><th>Paciente</th><th>Data</th></tr></thead><tbody id="tabela"></tbody></table></div></div><script>const key=localStorage.getItem("labKey");if(!key)window.location.href="/lab-login";const tipos=["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO","CSD"];async function carregarDados(){try{const rMe=await fetch("/api/labs/me",{headers:{"x-api-key":key}});const dMe=await rMe.json();document.getElementById("welcome").innerHTML="<h2>Bem-vindo, "+dMe.nome+"</h2>";const rStats=await fetch("/api/certificados/stats-detalhes",{headers:{"x-api-key":key}});const dStats=await rStats.json();document.getElementById("statDiario").innerText=dStats.diario;document.getElementById("statMensal").innerText=dStats.mensal;document.getElementById("statAnual").innerText=dStats.anual;document.getElementById("statTotal").innerText=dStats.total;const rCert=await fetch("/api/certificados/lab",{headers:{"x-api-key":key}});const lista=await rCert.json();let html="";lista.forEach(c=>{html+="<tr><td>"+c.numero+"</td><td>"+tipos[c.tipo]+"</td><td>"+c.paciente.nomeCompleto+"</td><td>"+new Date(c.emitidoEm).toLocaleDateString()+"</td></tr>";});document.getElementById("tabela").innerHTML=html||"<tr><td colspan='4'>Nenhum certificado.</td></tr>";}catch(e){console.error(e);}}function mostrar(s){document.getElementById("secaoDashboard").classList.remove("ativa");document.getElementById("secaoCertificados").classList.remove("ativa");if(s==="dashboard")document.getElementById("secaoDashboard").classList.add("ativa");if(s==="certificados")document.getElementById("secaoCertificados").classList.add("ativa");}function logout(){localStorage.removeItem("labKey");window.location.href="/";}carregarDados();</script></body></html>');
+    res.send('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laboratório - SNS</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}body{display:flex;background:#f5f5f5;}.sidebar{width:250px;background:#006633;color:white;height:100vh;padding:20px;position:fixed;}.sidebar h2{margin-bottom:30px;}.sidebar a{display:block;color:white;text-decoration:none;padding:12px;margin:5px 0;border-radius:5px;cursor:pointer;}.sidebar a:hover{background:#004d26;}.main{margin-left:270px;padding:30px;width:100%;}.welcome{background:#e8f5e9;padding:20px;border-left:5px solid #006633;margin-bottom:20px;}.btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;}.btn-danger{background:#dc3545;}.secao{display:none;}.secao.ativa{display:block;}.card-container{display:flex;gap:15px;margin-top:20px;margin-bottom:30px;}.card{background:white;padding:20px;border-radius:10px;flex:1;border-top:4px solid #006633;box-shadow:0 2px 5px rgba(0,0,0,0.1);text-align:center;}.card h4{color:#666;font-size:14px;text-transform:uppercase;margin-bottom:10px;}.card p{font-size:28px;font-weight:bold;color:#006633;}table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}th{background:#006633;color:white;padding:12px;text-align:left;}td{padding:12px;border-bottom:1px solid #ddd;}</style></head><body><div class="sidebar"><h2>SNS - Lab</h2><a onclick="mostrar(\'dashboard\')">Relatórios</a><a onclick="mostrar(\'certificados\')">Meus Certificados</a><button onclick="logout()" class="btn btn-danger" style="margin-top:20px;width:100%;">Sair</button></div><div class="main"><div id="welcome" class="welcome"></div><div id="secaoDashboard" class="secao ativa"><h2>Relatórios de Emissão</h2><div class="card-container"><div class="card"><h4>Hoje</h4><p id="statDiario">0</p></div><div class="card"><h4>Este Mês</h4><p id="statMensal">0</p></div><div class="card"><h4>Este Ano</h4><p id="statAnual">0</p></div><div class="card" style="border-top-color:#ffa500;"><h4>Total Geral</h4><p id="statTotal" style="color:#ffa500;">0</p></div></div></div><div id="secaoCertificados" class="secao"><h2>Certificados <button class="btn" style="float:right;" onclick="window.location.href=\'/novo-certificado\'">+ Novo</button></h2><table><thead><tr><th>Número</th><th>Tipo</th><th>Paciente</th><th>Data</th></tr></thead><tbody id="tabela"></tbody></table></div></div><script>const key=localStorage.getItem("labKey");if(!key)window.location.href="/lab-login";const tipos=["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO","CSD"];async function carregarDados(){try{const rMe=await fetch("/api/labs/me",{headers:{"x-api-key":key}});const dMe=await rMe.json();document.getElementById("welcome").innerHTML="<h2>Bem-vindo, "+dMe.nome+"</h2>";const rStats=await fetch("/api/certificados/stats-detalhes",{headers:{"x-api-key":key}});const dStats=await rStats.json();document.getElementById("statDiario").innerText=dStats.diario;document.getElementById("statMensal").innerText=dStats.mensal;document.getElementById("statAnual").innerText=dStats.anual;document.getElementById("statTotal").innerText=dStats.total;const rCert=await fetch("/api/certificados/lab",{headers:{"x-api-key":key}});const lista=await rCert.json();let html="";lista.forEach(c=>{html+="<tr><td>"+c.numero+"</td><td>"+tipos[c.tipo]+"</td><td>"+c.paciente.nomeCompleto+"</td><td>"+new Date(c.emitidoEm).toLocaleDateString()+"</td></tr>";});document.getElementById("tabela").innerHTML=html||"<tr><td colspan=\'4\'>Nenhum certificado.</td></tr>";}catch(e){console.error(e);}}function mostrar(s){document.getElementById("secaoDashboard").classList.remove("ativa");document.getElementById("secaoCertificados").classList.remove("ativa");if(s==="dashboard")document.getElementById("secaoDashboard").classList.add("ativa");if(s==="certificados")document.getElementById("secaoCertificados").classList.add("ativa");}function logout(){localStorage.removeItem("labKey");window.location.href="/";}carregarDados();</script></body></html>');
 });
 
 // ==============================================
@@ -306,8 +315,12 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
 
 // Listar todos os laboratórios (apenas admin)
 app.get('/api/labs', authMiddleware, async (req, res) => {
-    const labs = await Lab.find({}, { apiKey: 0 });
-    res.json(labs);
+    try {
+        const labs = await Lab.find({}, { apiKey: 0 });
+        res.json(labs);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao listar laboratórios' });
+    }
 });
 
 // Stats detalhados para laboratório
@@ -357,9 +370,13 @@ app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
 
 // Listar certificados do laboratório
 app.get('/api/certificados/lab', labMiddleware, async (req, res) => {
-    const certificados = await Certificate.find({ emitidoPor: req.lab._id })
-        .sort({ emitidoEm: -1 });
-    res.json(certificados);
+    try {
+        const certificados = await Certificate.find({ emitidoPor: req.lab._id })
+            .sort({ emitidoEm: -1 });
+        res.json(certificados);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao listar certificados' });
+    }
 });
 
 // Emitir novo certificado
@@ -674,12 +691,16 @@ app.get('/novo-certificado', (req, res) => {
 // STATS GLOBAIS (MINISTÉRIO)
 // =============================================
 app.get('/api/stats', authMiddleware, async (req, res) => {
-    const stats = {
-        labs: await Lab.countDocuments({ ativo: true }),
-        hospitais: await Hospital.countDocuments({ ativo: true }),
-        empresas: await Empresa.countDocuments({ ativo: true })
-    };
-    res.json(stats);
+    try {
+        const stats = {
+            labs: await Lab.countDocuments({ ativo: true }),
+            hospitais: await Hospital.countDocuments({ ativo: true }),
+            empresas: await Empresa.countDocuments({ ativo: true })
+        };
+        res.json(stats);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao carregar estatísticas' });
+    }
 });
 
 // =============================================
