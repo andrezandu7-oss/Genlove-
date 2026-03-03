@@ -234,6 +234,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // =============================================
+// =============================================
 // DASHBOARD DO LABORATORIO - VERSÃO CORRIGIDA
 // =============================================
 app.get('/lab-dashboard', (req, res) => {
