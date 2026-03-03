@@ -518,7 +518,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // =============================================
-// DASHBOARD DO LABORATORIO - VERSÃO COMPLETA E CORRIGIDA
+// DASHBOARD DO LABORATORIO - VERSÃO FUNCIONAL
 // =============================================
 app.get('/lab-dashboard', (req, res) => {
   res.send('<!DOCTYPE html>' +
@@ -569,50 +569,6 @@ app.get('/lab-dashboard', (req, res) => {
     'const key = localStorage.getItem("labKey");' +
     'if(!key) window.location.href = "/lab-login";' +
     
-    // Função para reimprimir PDF (busca no sessionStorage)
-    'function reimprimirPDF(numero) {' +
-    '  const historico = JSON.parse(sessionStorage.getItem("certificados_emitidos") || "[]");' +
-    '  const cert = historico.find(c => c.numero === numero);' +
-    '  if(cert) {' +
-    '    const tipos = ["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO"];' +
-    '    const win = window.open("", "_blank");' +
-    '    let html = `' +
-    '      <html><head><title>Certificado ${cert.numero}</title>' +
-    '      <style>' +
-    '        body{font-family:Arial;padding:40px;max-width:800px;margin:0 auto;}' +
-    '        .header{text-align:center;color:#006633;border-bottom:2px solid #006633;}' +
-    '        h1{font-size:24px;} h2{font-size:18px;}' +
-    '        .info{background:#f0f8f0;padding:20px;border-radius:10px;margin:20px 0;}' +
-    '        .qr{text-align:center;margin:30px 0;}' +
-    '        .btn-print{background:#006633;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;}' +
-    '      </style>' +
-    '      </head><body>' +
-    '      <div class="header"><h1>REPÚBLICA DE ANGOLA</h1><h2>MINISTÉRIO DA SAÚDE</h2></div>' +
-    '      <p><strong>Nº ${cert.numero}</strong></p>' +
-    '      <p><strong>${tipos[cert.tipo]}</strong></p>' +
-    '      <div class="info">' +
-    '        <h3>LABORATÓRIO</h3>' +
-    '        <p>${cert.laboratorio}</p>' +
-    '        <p>Técnico: ${cert.laborantin}</p>' +
-    '      </div>' +
-    '      <div class="info">' +
-    '        <h3>PACIENTE</h3>' +
-    '        <p>Nome: ${cert.paciente}</p>' +
-    '        <p>BI: ${cert.bi || "N/A"}</p>' +
-    '      </div>' +
-    '      <div class="qr">' +
-    '        <img src="https://quickchart.io/qr?text=Certificado%20${cert.numero}&size=200" style="width:200px;">' +
-    '      </div>' +
-    '      <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>' +
-    '      </body></html>' +
-    '    );' +
-    '    win.document.write(html);' +
-    '    win.document.close();' +
-    '  } else {' +
-    '    alert("Certificado não encontrado no histórico");' +
-    '  }' +
-    '}' +
-    
     'async function carregarLab(){' +
     '  try{' +
     '    const r = await fetch("/api/labs/me",{headers:{"x-api-key":key}});' +
@@ -644,7 +600,7 @@ app.get('/lab-dashboard', (req, res) => {
     '    } else {' +
     '      const tipos = ["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO"];' +
     '      lista.forEach(c => {' +
-    '        html += "<tr><td>" + c.numero + "</td><td>" + (tipos[c.tipo] || "Tipo "+c.tipo) + "</td><td>" + (c.paciente?.nomeCompleto || "N/A") + "</td><td>" + new Date(c.emitidoEm).toLocaleDateString() + "</td><td><button class=\'btn-pdf\' onclick=\'reimprimirPDF(\\"" + c.numero + "\\")\'>📄 PDF</button></td></tr>";' +
+    '        html += "<tr><td>" + c.numero + "</td><td>" + (tipos[c.tipo] || "Tipo "+c.tipo) + "</td><td>" + (c.paciente?.nomeCompleto || "N/A") + "</td><td>" + new Date(c.emitidoEm).toLocaleDateString() + "</td><td><button class=\'btn-pdf\' onclick=\'alert(\\"PDF de " + c.numero + "\\")\'>📄 PDF</button></td></tr>";' +
     '      });' +
     '    }' +
     '    document.getElementById("tabela").innerHTML = html;' +
@@ -655,7 +611,6 @@ app.get('/lab-dashboard', (req, res) => {
     
     'function logout(){' +
     '  localStorage.removeItem("labKey");' +
-    '  sessionStorage.removeItem("certificados_emitidos");' +
     '  window.location.href = "/";' +
     '}' +
     
@@ -665,7 +620,6 @@ app.get('/lab-dashboard', (req, res) => {
     '</script>' +
     '</body></html>');
 });
-
 // ================================================
 // API DE LABORATÓRIOS
 // ================================================
