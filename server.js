@@ -684,12 +684,14 @@ app.get('/lab-dashboard', (req, res) => {
     '.btn:hover{background:#004d26;}' +
     '.btn-danger{background:#dc3545;}' +
     '.btn-success{background:#28a745;}' +
+    '.btn-pdf{background:#17a2b8;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;font-size:12px;}' +
+    '.btn-pdf:hover{background:#138496;}' +
     '.secao{display:none;}' +
     '.secao.ativa{display:block;}' +
     'table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}' +
     'th{background:#006633;color:white;padding:10px;text-align:left;}' +
     'td{padding:10px;border-bottom:1px solid #ddd;}' +
-    '.loading{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;}' +
+    '.loading{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:1000;}' +
     '.loading-card{background:white;padding:30px;border-radius:10px;text-align:center;}' +
     '</style>' +
     '</head>' +
@@ -709,12 +711,51 @@ app.get('/lab-dashboard', (req, res) => {
     '<div id="secaoCertificados" class="secao">' +
     '<h2>Certificados</h2>' +
     '<button class="btn" onclick="window.location.href=\'/novo-certificado\'">+ Novo Certificado</button>' +
-    '<table><thead><tr><th>Número</th><th>Tipo</th><th>Paciente</th><th>Data</th></tr></thead><tbody id="tabela"><tr><td colspan="4">Carregando...</td></tr></tbody></table>' +
+    '<table><thead><tr><th>Número</th><th>Tipo</th><th>Paciente</th><th>Data</th><th>Ações</th></tr></thead><tbody id="tabela"><tr><td colspan="5">Carregando...</td></tr></tbody></table>' +
     '</div>' +
     '</div>' +
     '<script>' +
     'const key = localStorage.getItem("labKey");' +
     'if(!key) window.location.href = "/lab-login";' +
+    
+    // Função para reimprimir PDF
+    'function reimprimirPDF(numero) {' +
+    '   const historico = JSON.parse(localStorage.getItem("certificados_emitidos") || "[]");' +
+    '   const cert = historico.find(c => c.numero === numero);' +
+    '   if(cert) {' +
+    '       const tipos = ["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO"];' +
+    '       const dados = {' +
+    '           paciente: {' +
+    '               nomeCompleto: cert.paciente,' +
+    '               bi: cert.bi || "",' +
+    '               genero: cert.genero || "M",' +
+    '               dataNascimento: cert.dataNascimento || ""' +
+    '           },' +
+    '           dados: cert.dados || {}' +
+    '       };' +
+    '       const qrData = `CERTIFICADO SNS\\nNúmero: ${cert.numero}\\nLaboratório: ${cert.laboratorio}\\nTécnico: ${cert.laborantin}`;' +
+    '       const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(qrData)}&size=200&ecLevel=H&dark=006633`;' +
+    '       const win = window.open("", "_blank");' +
+    '       let html = `' +
+    '           <html><head><title>Certificado ${cert.numero}</title>' +
+    '           <style>body{font-family:Arial;padding:40px;}.header{text-align:center;color:#006633;}</style>' +
+    '           </head><body>' +
+    '           <div class="header"><h1>REPÚBLICA DE ANGOLA</h1><h2>MINISTÉRIO DA SAÚDE</h2></div>' +
+    '           <p><strong>Nº ${cert.numero}</strong></p>' +
+    '           <p><strong>${tipos[cert.tipo]}</strong></p>' +
+    '           <p>Laboratório: ${cert.laboratorio}</p>' +
+    '           <p>Técnico: ${cert.laborantin}</p>' +
+    '           <p>Paciente: ${cert.paciente}</p>' +
+    '           <img src="${qrUrl}" style="width:150px;">' +
+    '           <button onclick="window.print()">Imprimir</button>' +
+    '           </body></html>";' +
+    '       win.document.write(html);' +
+    '       win.document.close();' +
+    '   } else {' +
+    '       alert("Certificado não encontrado no histórico");' +
+    '   }' +
+    '}' +
+    
     'async function carregarLab(){' +
     'try{' +
     'const r = await fetch("/api/labs/me",{headers:{"x-api-key":key}});' +
@@ -722,6 +763,7 @@ app.get('/lab-dashboard', (req, res) => {
     'if(d && d.nome){' +
     'document.getElementById("welcome").innerHTML = "<h2>Olá, " + d.nome + "!</h2><p>Pronto para mais um dia de trabalho? Vamos juntos!</p>";' +
     '}}catch(e){}}' +
+    
     'function mostrar(secao){' +
     'document.getElementById("secaoDashboard").classList.remove("ativa");' +
     'document.getElementById("secaoCertificados").classList.remove("ativa");' +
@@ -730,6 +772,7 @@ app.get('/lab-dashboard', (req, res) => {
     'document.getElementById("secaoCertificados").classList.add("ativa");' +
     'carregarCertificados();' +
     '}}' +
+    
     'async function carregarCertificados(){' +
     'try{' +
     'const r = await fetch("/api/certificados/lab",{headers:{"x-api-key":key}});' +
@@ -737,26 +780,29 @@ app.get('/lab-dashboard', (req, res) => {
     'document.getElementById("total").innerText = lista.length;' +
     'let html = "";' +
     'if(lista.length === 0){' +
-    'html = "<tr><td colspan=\'4\'>Nenhum certificado encontrado</td></tr>";' +
+    'html = "<tr><td colspan=\'5\'>Nenhum certificado encontrado</td></tr>";' +
     '} else {' +
     'lista.forEach(c => {' +
     'const tipos = ["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO"];' +
-    'html += "<tr><td>" + c.numero + "</td><td>" + (tipos[c.tipo] || "Tipo "+c.tipo) + "</td><td>" + (c.paciente?.nomeCompleto || "N/A") + "</td><td>" + new Date(c.emitidoEm).toLocaleDateString() + "</td></tr>";' +
+    'html += "<tr><td>" + c.numero + "</td><td>" + (tipos[c.tipo] || "Tipo "+c.tipo) + "</td><td>" + (c.paciente?.nomeCompleto || "N/A") + "</td><td>" + new Date(c.emitidoEm).toLocaleDateString() + "</td><td><button class=\'btn-pdf\' onclick=\'reimprimirPDF(\\"" + c.numero + "\\")\'>📄 PDF</button></td></tr>";' +
     '});}' +
     'document.getElementById("tabela").innerHTML = html;' +
     '}catch(e){' +
-    'document.getElementById("tabela").innerHTML = "<tr><td colspan=\'4\'>Erro ao carregar</td></tr>";' +
+    'document.getElementById("tabela").innerHTML = "<tr><td colspan=\'5\'>Erro ao carregar</td></tr>";' +
     '}}' +
+    
     'function logout(){' +
     'localStorage.removeItem("labKey");' +
     'window.location.href = "/";' +
     '}' +
+    
     'carregarLab();' +
     'carregarCertificados();' +
     'mostrar("dashboard");' +
     '</script>' +
     '</body></html>');
 });
+
 // ============================================
 // API DE LABORATÓRIOS
 // ============================================
