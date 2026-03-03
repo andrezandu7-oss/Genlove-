@@ -1,463 +1,666 @@
 <!DOCTYPE html>
-<html lang="pt-AO">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Novo Certificado - SNS Angola</title>
     <style>
-        :root { --primary: #006633; --secondary: #f4f7f6; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--secondary); margin: 0; padding: 20px; }
-        .container { max-width: 900px; background: white; margin: 0 auto; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        .section-title { background: #e8f5e9; padding: 10px; margin: 25px 0 15px 0; border-left: 5px solid var(--primary); font-weight: bold; color: var(--primary); text-transform: uppercase; font-size: 14px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        .hidden { display: none; }
-        .btn-submit { background: var(--primary); color: white; border: none; padding: 18px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 30px; transition: 0.3s; }
-        .btn-submit:hover { background: #004d26; }
-        .back-link { display: inline-block; margin-bottom: 20px; color: var(--primary); text-decoration: none; font-weight: bold; }
-        .note { font-size: 12px; color: #666; font-style: italic; margin-bottom: 10px; background: #f8f9fa; padding: 8px; border-radius: 5px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #006633;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .form-section h2 {
+            color: #006633;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #006633;
+        }
+        
+        .btn {
+            background: #006633;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .btn:hover {
+            background: #004d26;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        /* Modal de révision */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            position: relative;
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border-radius: 10px;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #006633;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Tableau de révision */
+        .review-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .review-table th,
+        .review-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .review-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #006633;
+        }
+        
+        .edit-btn {
+            background: none;
+            border: none;
+            color: #006633;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+        
+        .edit-btn:hover {
+            color: #004d26;
+        }
+        
+        .section-highlight {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #006633;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #006633;
+            margin: 10px 0;
+        }
+        
+        .success-message {
+            color: #28a745;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .field-error {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <a href="/lab-dashboard" class="back-link">← Voltar ao Painel</a>
-    <h2>🏛️ Emissão de Certificado Oficial</h2>
-    
-    <form id="formCertificado">
-        <div class="form-group">
-            <label>Tipo de Certificado / Atestado</label>
-            <select id="tipo" onchange="alternarCampos()" required>
-                <option value="">Selecione o modelo oficial...</option>
-                <option value="1">1 - Certificado de Genótipo</option>
-                <option value="2">2 - Certificado de Boa Saúde</option>
-                <option value="3">3 - Atestado de Incapacidade</option>
-                <option value="4">4 - Atestado de Aptidão Física</option>
-                <option value="5">5 - Saúde Materna</option>
-                <option value="6">6 - Consulta Pré-Natal (CPN)</option>
-                <option value="7">7 - Boletim Epidemiológico</option>
-            </select>
-        </div>
-
-        <div class="section-title">Identificação do Paciente</div>
-        <div class="form-group">
-            <label>Nome Completo</label>
-            <input type="text" id="nomeCompleto" required placeholder="Ex: Manuel dos Santos">
-        </div>
-        <div class="grid">
+    <div class="container">
+        <h1>🏥 Emitir Novo Certificado</h1>
+        
+        <!-- Type de certificat -->
+        <div class="form-section">
+            <h2>Tipo de Certificado</h2>
             <div class="form-group">
-                <label>Nº Bilhete de Identidade (BI)</label>
-                <input type="text" id="bi" required placeholder="000000000LA000">
+                <label for="tipoCertificado">Selecione o tipo:</label>
+                <select id="tipoCertificado" required>
+                    <option value="">Selecione...</option>
+                    <option value="1">GENÓTIPO</option>
+                    <option value="2">BOA SAÚDE</option>
+                    <option value="3">INCAPACIDADE</option>
+                    <option value="4">APTIDÃO</option>
+                    <option value="5">SAÚDE MATERNA</option>
+                    <option value="6">PRÉ-NATAL</option>
+                    <option value="7">EPIDEMIOLÓGICO</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Informations patient -->
+        <div class="form-section" id="sectionPaciente">
+            <h2>Dados do Paciente</h2>
+            <div class="form-group">
+                <label for="nomeCompleto">Nome Completo *</label>
+                <input type="text" id="nomeCompleto" required>
             </div>
             <div class="form-group">
-                <label>Gênero</label>
-                <select id="genero" required>
+                <label for="bi">Nº do Bilhete de Identidade *</label>
+                <input type="text" id="bi" required>
+            </div>
+            <div class="form-group">
+                <label for="dataNascimento">Data de Nascimento</label>
+                <input type="date" id="dataNascimento">
+            </div>
+            <div class="form-group">
+                <label for="genero">Género</label>
+                <select id="genero">
+                    <option value="">Selecione...</option>
                     <option value="M">Masculino</option>
                     <option value="F">Feminino</option>
                 </select>
             </div>
+            <div class="form-group">
+                <label for="telefone">Telefone</label>
+                <input type="tel" id="telefone">
+            </div>
         </div>
-        <div class="form-group">
-            <label>Data de Nascimento</label>
-            <input type="date" id="dataNascimento" required>
+        
+        <!-- Données médicales - Dynamiques selon le type -->
+        <div class="form-section" id="sectionMedica">
+            <h2>Dados Médicos</h2>
+            <div id="camposMedicos"></div>
         </div>
-
-        <div id="camposDinamicos">
+        
+        <!-- Boutons d'action -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="window.location.href='/lab-dashboard'">Cancelar</button>
+            <button class="btn" onclick="revisarDados()">Pré-visualizar</button>
+        </div>
+    </div>
+    
+    <!-- Modal de révision -->
+    <div id="modalRevisao" class="modal">
+        <div class="modal-content">
+            <h2 style="color: #006633; margin-bottom: 20px;">📋 Revisão do Certificado</h2>
+            <div id="conteudoRevisao"></div>
             
-            <!-- Seção Genótipo (Tipo 1) -->
-            <div id="secaoGenotipo" class="hidden">
-                <div class="section-title">Dados Hematológicos (Genótipo)</div>
-                <div class="grid">
-                    <div class="form-group">
-                        <label>Genótipo (Hb)</label>
-                        <select id="genotipo">
-                            <option value="AA">AA (Normal)</option>
-                            <option value="AS">AS (Traço)</option>
-                            <option value="SS">SS (Anemia Falciforme)</option>
-                            <option value="SC">SC</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Grupo Sanguíneo</label>
-                        <select id="grupoSanguineo">
-                            <option value="A+">A+</option><option value="A-">A-</option>
-                            <option value="B+">B+</option><option value="B-">B-</option>
-                            <option value="O+">O+</option><option value="O-">O-</option>
-                            <option value="AB+">AB+</option><option value="AB-">AB-</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Seção PRÉ-NATAL COMPLETA (Tipo 6) -->
-            <div id="secaoMaterna" class="hidden">
-                <div class="section-title">🧪 EXAMES LABORATORIAIS - PRÉ-NATAL</div>
-                <p class="note">Marque "Não solicitado" se o médico não pediu o exame</p>
-                
-                <div class="grid">
-                    <!-- Coluna 1 -->
-                    <div>
-                        <h4 style="color:#006633;">Hematologia e Imunologia</h4>
-                        
-                        <div class="form-group">
-                            <label>Grupo Sanguíneo:</label>
-                            <select id="grupoSanguineo6">
-                                <option value="">Selecione...</option>
-                                <option value="A+">A+</option><option value="A-">A-</option>
-                                <option value="B+">B+</option><option value="B-">B-</option>
-                                <option value="AB+">AB+</option><option value="AB-">AB-</option>
-                                <option value="O+">O+</option><option value="O-">O-</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Genótipo:</label>
-                            <select id="genotipo6">
-                                <option value="">Selecione...</option>
-                                <option value="AA">AA</option><option value="AS">AS</option>
-                                <option value="SS">SS</option><option value="AC">AC</option>
-                                <option value="CC">CC</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Falciformação:</label>
-                            <select id="falciformacao">
-                                <option value="">Selecione...</option>
-                                <option value="Presente">Presente</option>
-                                <option value="Ausente">Ausente</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Hemoglobina (Hb g/dL):</label>
-                            <input type="number" id="hemoglobina6" step="0.1" placeholder="Ex: 12.5">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Teste de Coombs:</label>
-                            <select id="coombs">
-                                <option value="">Selecione...</option>
-                                <option value="Negativo">Negativo</option>
-                                <option value="Positivo">Positivo</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Ferritina:</label>
-                            <input type="text" id="ferritina" placeholder="Ex: 45 ng/mL">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Vitamina D:</label>
-                            <input type="text" id="vitaminaD" placeholder="Ex: 30 ng/mL">
-                        </div>
-                    </div>
-                    
-                    <!-- Coluna 2 -->
-                    <div>
-                        <h4 style="color:#006633;">Doenças Infecciosas</h4>
-                        
-                        <div class="form-group">
-                            <label>VIH:</label>
-                            <select id="vih6">
-                                <option value="">Selecione...</option>
-                                <option value="Não reagente">Não reagente</option>
-                                <option value="Reagente">Reagente</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>VDRL (Sífilis):</label>
-                            <select id="vdrl">
-                                <option value="">Selecione...</option>
-                                <option value="Negativo">Negativo</option>
-                                <option value="Positivo">Positivo</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Hepatite B:</label>
-                            <select id="hepatiteB">
-                                <option value="">Selecione...</option>
-                                <option value="Negativo">Negativo</option>
-                                <option value="Positivo">Positivo</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Hepatite C:</label>
-                            <select id="hepatiteC">
-                                <option value="">Selecione...</option>
-                                <option value="Negativo">Negativo</option>
-                                <option value="Positivo">Positivo</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Toxoplasmose:</label>
-                            <select id="toxoplasmose">
-                                <option value="">Selecione...</option>
-                                <option value="Negativo">Negativo</option>
-                                <option value="Positivo">Positivo</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Rubéola:</label>
-                            <select id="rubéola">
-                                <option value="">Selecione...</option>
-                                <option value="Negativo">Negativo</option>
-                                <option value="Positivo">Positivo</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Citomegalovírus:</label>
-                            <select id="citomegalovirus">
-                                <option value="">Selecione...</option>
-                                <option value="Negativo">Negativo</option>
-                                <option value="Positivo">Positivo</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Anti-Tetânica (IgG):</label>
-                            <select id="tetanos">
-                                <option value="">Selecione...</option>
-                                <option value="Reagente">Reagente (imune)</option>
-                                <option value="Não reagente">Não reagente</option>
-                                <option value="Indeterminado">Indeterminado</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <h4 style="color:#006633; margin-top:20px;">Parasitologia e Bioquímica</h4>
-                <div class="grid">
-                    <div>
-                        <div class="form-group">
-                            <label>Malária:</label>
-                            <select id="malaria6">
-                                <option value="">Selecione...</option>
-                                <option value="Negativo">Negativo</option>
-                                <option value="Positivo">Positivo</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Glicemia (mg/dL):</label>
-                            <input type="number" id="glicemia" placeholder="Ex: 85">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Proteinúria:</label>
-                            <input type="text" id="proteinuria" placeholder="Ex: Negativo">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>TSH / T4 livre:</label>
-                            <input type="text" id="tsh" placeholder="Ex: TSH 2.5">
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <div class="form-group">
-                            <label>Urina Tipo II:</label>
-                            <textarea id="urina" rows="2" placeholder="Ex: Leucócitos: 10/campo"></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Urocultura:</label>
-                            <input type="text" id="urocultura" placeholder="Ex: >100.000 UFC/mL">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Exsudado vaginal:</label>
-                            <textarea id="exsudado" rows="2" placeholder="Ex: Flora normal"></textarea>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Outros exames:</label>
-                            <textarea id="outrosExames" rows="2" placeholder="Outros resultados"></textarea>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Campos básicos de CPN -->
-                <div class="grid" style="margin-top:20px;">
-                    <div class="form-group"><label>Nº Gestações</label><input type="number" id="gestacoes" value="0"></div>
-                    <div class="form-group"><label>Nº Partos</label><input type="number" id="partos" value="0"></div>
-                </div>
-                <div class="grid">
-                    <div class="form-group"><label>Data Provável Parto (DPP)</label><input type="date" id="dpp"></div>
-                    <div class="form-group"><label>Nº Consultas</label><input type="number" id="consultas" value="0"></div>
-                </div>
-            </div>
-
-            <!-- Seção Aptidão (Tipos 3 e 4) -->
-            <div id="secaoAptidao" class="hidden">
-                <div class="section-title">Aptidão e Diagnóstico</div>
-                <div class="grid">
-                    <div class="form-group"><label>Cód. Doença (CID)</label><input type="text" id="cid" placeholder="Ex: B20"></div>
-                    <div class="form-group"><label>Tipo Aptidão</label><input type="text" id="tipoAptidao" placeholder="Ex: Trabalho"></div>
-                </div>
-                <div class="form-group">
-                    <label>Restrições Médicas</label>
-                    <textarea id="restricoes" rows="2"></textarea>
-                </div>
-            </div>
-
-            <!-- Seção Avaliação Geral (Todos os tipos) -->
-            <div id="secaoGeral" class="hidden">
-                <div class="section-title">Conclusão e Avaliação</div>
-                <div class="form-group">
-                    <label>Avaliação / Resultado Final</label>
-                    <textarea id="resultado" rows="3" placeholder="Descrição clínica final..."></textarea>
-                </div>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="fecharModal()">Voltar</button>
+                <button class="btn" onclick="emitirCertificado()">Confirmar Emissão</button>
             </div>
         </div>
-
-        <button type="submit" class="btn-submit">EMITIR CERTIFICADO OFICIAL</button>
-    </form>
-</div>
-
-<script>
-    const key = localStorage.getItem("labKey");
-    if(!key) window.location.href = "/lab-login";
-
-    function alternarCampos() {
-        const tipo = document.getElementById("tipo").value;
-        const sGen = document.getElementById("secaoGenotipo");
-        const sMat = document.getElementById("secaoMaterna");
-        const sApt = document.getElementById("secaoAptidao");
-        const sGer = document.getElementById("secaoGeral");
-
-        // Reset
-        [sGen, sMat, sApt, sGer].forEach(s => s.classList.add("hidden"));
-
-        if (tipo == "1") {
-            sGen.classList.remove("hidden");
-        }
-        if (tipo == "6") {
-            sMat.classList.remove("hidden");
-        }
-        if (tipo == "5") {
-            sMat.classList.remove("hidden");
-            sGen.classList.remove("hidden");
-        }
-        if (tipo == "3" || tipo == "4") {
-            sApt.classList.remove("hidden");
-        }
-        if (tipo != "") {
-            sGer.classList.remove("hidden");
-        }
-    }
-
-    document.getElementById("formCertificado").onsubmit = async (e) => {
-        e.preventDefault();
-        const tipo = document.getElementById("tipo").value;
-
-        // Payload base
-        const payload = {
-            paciente: {
-                nomeCompleto: document.getElementById("nomeCompleto").value,
-                bi: document.getElementById("bi").value,
-                genero: document.getElementById("genero").value,
-                dataNascimento: document.getElementById("dataNascimento").value
-            },
-            dados: {}
+    </div>
+    
+    <!-- Loading -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <h3>Processando certificado...</h3>
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <div id="timer" class="timer">5s</div>
+        <div id="loadingMessage"></div>
+    </div>
+    
+    <script>
+        const key = localStorage.getItem('labKey');
+        if (!key) window.location.href = '/lab-login';
+        
+        let dadosAtuais = {};
+        let tipoAtual = '';
+        
+        // Configuration des champs médicaux par type
+        const camposPorTipo = {
+            1: [ // GENÓTIPO
+                { id: 'genotipo', label: 'Genótipo', type: 'select', options: ['AA', 'AS', 'SS', 'AC', 'CC'] },
+                { id: 'hemoglobina', label: 'Hemoglobina (g/dL)', type: 'number', step: '0.1' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea' }
+            ],
+            2: [ // BOA SAÚDE
+                { id: 'pressaoArterial', label: 'Pressão Arterial', type: 'text', placeholder: '120/80' },
+                { id: 'peso', label: 'Peso (kg)', type: 'number', step: '0.1' },
+                { id: 'altura', label: 'Altura (m)', type: 'number', step: '0.01' },
+                { id: 'imc', label: 'IMC', type: 'text', readonly: true }
+            ],
+            3: [ // INCAPACIDADE
+                { id: 'tipoIncapacidade', label: 'Tipo de Incapacidade', type: 'select', 
+                  options: ['Física', 'Visual', 'Auditiva', 'Mental', 'Múltipla'] },
+                { id: 'grau', label: 'Grau (%)', type: 'number', min: 0, max: 100 },
+                { id: 'descricao', label: 'Descrição', type: 'textarea' }
+            ],
+            4: [ // APTIDÃO
+                { id: 'tipoAptidao', label: 'Tipo de Aptidão', type: 'select',
+                  options: ['Física', 'Mental', 'Profissional', 'Desportiva'] },
+                { id: 'validade', label: 'Validade (dias)', type: 'number', value: 365 },
+                { id: 'observacoes', label: 'Observações', type: 'textarea' }
+            ],
+            5: [ // SAÚDE MATERNA
+                { id: 'gestacoes', label: 'Nº de Gestações', type: 'number' },
+                { id: 'partos', label: 'Nº de Partos', type: 'number' },
+                { id: 'dpp', label: 'Data Provável do Parto', type: 'date' },
+                { id: 'consultas', label: 'Nº de Consultas', type: 'number' }
+            ],
+            6: [ // PRÉ-NATAL
+                { id: 'genotipo', label: 'Genótipo', type: 'select', options: ['AA', 'AS', 'SS'] },
+                { id: 'vih', label: 'VIH', type: 'select', options: ['Positivo', 'Negativo', 'Não testado'] },
+                { id: 'malaria', label: 'Malária', type: 'select', options: ['Positivo', 'Negativo', 'Não testado'] },
+                { id: 'hemoglobina', label: 'Hemoglobina', type: 'number', step: '0.1' }
+            ],
+            7: [ // EPIDEMIOLÓGICO
+                { id: 'doenca', label: 'Doença', type: 'text' },
+                { id: 'dataExame', label: 'Data do Exame', type: 'date' },
+                { id: 'metodo', label: 'Método', type: 'text' },
+                { id: 'resultado', label: 'Resultado', type: 'select', options: ['Positivo', 'Negativo', 'Inconclusivo'] }
+            ]
         };
-
-        // Preencher dados específicos por tipo
-        if (tipo === "1") {
-            payload.dados = {
-                genotipo: document.getElementById("genotipo").value,
-                grupoSanguineo: document.getElementById("grupoSanguineo").value,
-                resultado: document.getElementById("resultado").value
-            };
-        }
-        else if (tipo === "6") {
-            payload.dados = {
-                grupoSanguineo: document.getElementById("grupoSanguineo6").value,
-                genotipo: document.getElementById("genotipo6").value,
-                falciformacao: document.getElementById("falciformacao").value,
-                hemoglobina: document.getElementById("hemoglobina6").value,
-                coombs: document.getElementById("coombs").value,
-                ferritina: document.getElementById("ferritina").value,
-                vitaminaD: document.getElementById("vitaminaD").value,
-                vih: document.getElementById("vih6").value,
-                vdrl: document.getElementById("vdrl").value,
-                hepatiteB: document.getElementById("hepatiteB").value,
-                hepatiteC: document.getElementById("hepatiteC").value,
-                toxoplasmose: document.getElementById("toxoplasmose").value,
-                rubéola: document.getElementById("rubéola").value,
-                citomegalovirus: document.getElementById("citomegalovirus").value,
-                tetanos: document.getElementById("tetanos").value,
-                malaria: document.getElementById("malaria6").value,
-                glicemia: document.getElementById("glicemia").value,
-                proteinuria: document.getElementById("proteinuria").value,
-                tsh: document.getElementById("tsh").value,
-                urina: document.getElementById("urina").value,
-                urocultura: document.getElementById("urocultura").value,
-                exsudado: document.getElementById("exsudado").value,
-                outrosExames: document.getElementById("outrosExames").value,
-                gestacoes: document.getElementById("gestacoes").value,
-                partos: document.getElementById("partos").value,
-                dpp: document.getElementById("dpp").value,
-                consultas: document.getElementById("consultas").value,
-                resultado: document.getElementById("resultado").value
-            };
-        }
-        else if (tipo === "5") {
-            payload.dados = {
-                genotipo: document.getElementById("genotipo").value,
-                grupoSanguineo: document.getElementById("grupoSanguineo").value,
-                gestacoes: document.getElementById("gestacoes").value,
-                partos: document.getElementById("partos").value,
-                dpp: document.getElementById("dpp").value,
-                consultas: document.getElementById("consultas").value,
-                vih: document.getElementById("vih6").value,
-                malaria: document.getElementById("malaria6").value,
-                resultado: document.getElementById("resultado").value
-            };
-        }
-        else if (tipo === "3" || tipo === "4") {
-            payload.dados = {
-                cid: document.getElementById("cid").value,
-                tipoAptidao: document.getElementById("tipoAptidao").value,
-                restricoes: document.getElementById("restricoes").value,
-                resultado: document.getElementById("resultado").value
-            };
-        }
-        else {
-            payload.dados.resultado = document.getElementById("resultado").value;
-        }
-
-        try {
-            const r = await fetch(`/api/certificados/emitir/${tipo}`, {
-                method: "POST",
-                headers: { 
-                    "Content-Type": "application/json", 
-                    "x-api-key": key 
-                },
-                body: JSON.stringify(payload)
-            });
-            const res = await r.json();
-            if(res.success) {
-                alert("✅ Certificado Emitido com Sucesso! Nº: " + res.numero);
-                window.location.href = "/lab-dashboard";
-            } else {
-                alert("❌ Erro: " + (res.erro || res.error || "Erro desconhecido"));
+        
+        // Mise à jour des champs médicaux selon le type
+        document.getElementById('tipoCertificado').addEventListener('change', function(e) {
+            tipoAtual = e.target.value;
+            if (tipoAtual) {
+                gerarCamposMedicos(tipoAtual);
             }
-        } catch (err) {
-            alert("❌ Erro na conexão com o servidor.");
-            console.error(err);
+        });
+        
+        function gerarCamposMedicos(tipo) {
+            const campos = camposPorTipo[tipo] || [];
+            let html = '';
+            
+            campos.forEach(campo => {
+                if (campo.type === 'select') {
+                    html += `
+                        <div class="form-group">
+                            <label for="${campo.id}">${campo.label}</label>
+                            <select id="${campo.id}">
+                                <option value="">Selecione...</option>
+                                ${campo.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                            </select>
+                        </div>
+                    `;
+                } else if (campo.type === 'textarea') {
+                    html += `
+                        <div class="form-group">
+                            <label for="${campo.id}">${campo.label}</label>
+                            <textarea id="${campo.id}" rows="3"></textarea>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="form-group">
+                            <label for="${campo.id}">${campo.label}</label>
+                            <input type="${campo.type}" id="${campo.id}" 
+                                ${campo.step ? `step="${campo.step}"` : ''}
+                                ${campo.min ? `min="${campo.min}"` : ''}
+                                ${campo.max ? `max="${campo.max}"` : ''}
+                                ${campo.readonly ? 'readonly' : ''}
+                                ${campo.placeholder ? `placeholder="${campo.placeholder}"` : ''}>
+                        </div>
+                    `;
+                }
+            });
+            
+            document.getElementById('camposMedicos').innerHTML = html;
+            
+            // Calcul automatique IMC pour type 2
+            if (tipo === '2') {
+                document.getElementById('peso')?.addEventListener('input', calcularIMC);
+                document.getElementById('altura')?.addEventListener('input', calcularIMC);
+            }
         }
-    };
-</script>
+        
+        function calcularIMC() {
+            const peso = parseFloat(document.getElementById('peso')?.value);
+            const altura = parseFloat(document.getElementById('altura')?.value);
+            const imcField = document.getElementById('imc');
+            
+            if (peso && altura && altura > 0) {
+                const imc = (peso / (altura * altura)).toFixed(1);
+                imcField.value = imc;
+            }
+        }
+        
+        function coletarDados() {
+            const tipo = document.getElementById('tipoCertificado').value;
+            if (!tipo) {
+                alert('Selecione o tipo de certificado');
+                return null;
+            }
+            
+            const paciente = {
+                nomeCompleto: document.getElementById('nomeCompleto').value,
+                bi: document.getElementById('bi').value,
+                dataNascimento: document.getElementById('dataNascimento').value,
+                genero: document.getElementById('genero').value,
+                telefone: document.getElementById('telefone').value
+            };
+            
+            if (!paciente.nomeCompleto || !paciente.bi) {
+                alert('Preencha os dados obrigatórios do paciente');
+                return null;
+            }
+            
+            const dadosMedicos = {};
+            const campos = camposPorTipo[tipo] || [];
+            campos.forEach(campo => {
+                const element = document.getElementById(campo.id);
+                if (element) {
+                    dadosMedicos[campo.id] = element.value;
+                }
+            });
+            
+            return {
+                tipo,
+                paciente,
+                dadosMedicos,
+                dataEmissao: new Date().toISOString()
+            };
+        }
+        
+        function revisarDados() {
+            const dados = coletarDados();
+            if (!dados) return;
+            
+            dadosAtuais = dados;
+            
+            let html = `
+                <table class="review-table">
+                    <tr>
+                        <th colspan="3">Dados do Paciente</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Nome:</strong> ${dados.paciente.nomeCompleto}</td>
+                        <td><strong>BI:</strong> ${dados.paciente.bi}</td>
+                        <td>
+                            <button class="edit-btn" onclick="editarSecao('paciente')">✏️ Editar</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nascimento:</strong> ${dados.paciente.dataNascimento || 'Não informado'}</td>
+                        <td><strong>Género:</strong> ${dados.paciente.genero || 'Não informado'}</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3"><strong>Telefone:</strong> ${dados.paciente.telefone || 'Não informado'}</td>
+                    </tr>
+                    
+                    <tr>
+                        <th colspan="3">Dados Médicos</th>
+                    </tr>
+            `;
+            
+            // Ajouter les données médicales avec boutons d'édition individuels
+            for (let [key, value] of Object.entries(dados.dadosMedicos)) {
+                const campo = camposPorTipo[dados.tipo].find(c => c.id === key);
+                html += `
+                    <tr>
+                        <td><strong>${campo?.label || key}:</strong> ${value || 'Não informado'}</td>
+                        <td></td>
+                        <td>
+                            <button class="edit-btn" onclick="editarCampo('${key}')">✏️ Editar</button>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            html += `</table>`;
+            
+            document.getElementById('conteudoRevisao').innerHTML = html;
+            document.getElementById('modalRevisao').style.display = 'block';
+        }
+        
+        function editarSecao(secao) {
+            document.getElementById('modalRevisao').style.display = 'none';
+            
+            if (secao === 'paciente') {
+                document.getElementById('sectionPaciente').scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('sectionPaciente').classList.add('section-highlight');
+                setTimeout(() => {
+                    document.getElementById('sectionPaciente').classList.remove('section-highlight');
+                }, 2000);
+            }
+        }
+        
+        function editarCampo(campoId) {
+            document.getElementById('modalRevisao').style.display = 'none';
+            
+            const elemento = document.getElementById(campoId);
+            if (elemento) {
+                elemento.scrollIntoView({ behavior: 'smooth' });
+                elemento.classList.add('section-highlight');
+                setTimeout(() => {
+                    elemento.classList.remove('section-highlight');
+                }, 2000);
+                elemento.focus();
+            }
+        }
+        
+        function fecharModal() {
+            document.getElementById('modalRevisao').style.display = 'none';
+        }
+        
+        async function emitirCertificado() {
+            document.getElementById('modalRevisao').style.display = 'none';
+            
+            // Afficher loading
+            const loading = document.getElementById('loading');
+            const progressFill = document.getElementById('progressFill');
+            const timer = document.getElementById('timer');
+            const loadingMessage = document.getElementById('loadingMessage');
+            
+            loading.style.display = 'flex';
+            
+            // Simulation de progression sur 5 secondes
+            for (let i = 0; i <= 10; i++) {
+                setTimeout(() => {
+                    progressFill.style.width = (i * 10) + '%';
+                    timer.innerText = (5 - Math.floor(i * 0.5)) + 's';
+                    
+                    if (i === 3) {
+                        loadingMessage.innerHTML = '📝 Gerando certificado...';
+                    } else if (i === 6) {
+                        loadingMessage.innerHTML = '🔒 Calculando hash de segurança...';
+                    } else if (i === 9) {
+                        loadingMessage.innerHTML = '📄 Preparando PDF para download...';
+                    }
+                }, i * 500);
+            }
+            
+            try {
+                // Appel API pour émettre le certificat
+                const response = await fetch(`/api/certificados/emitir/${dadosAtuais.tipo}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': key
+                    },
+                    body: JSON.stringify({
+                        paciente: dadosAtuais.paciente,
+                        dados: dadosAtuais.dadosMedicos
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Attendre 5 secondes avant de continuer
+                    setTimeout(() => {
+                        loadingMessage.innerHTML = '✅ Certificado emitido com sucesso!';
+                        
+                        // Générer et télécharger le PDF
+                        gerarPDF(result.numero);
+                        
+                        // Proposer l'impression
+                        setTimeout(() => {
+                            if (confirm('Deseja imprimir o certificado?')) {
+                                window.print();
+                            }
+                            
+                            // Rediriger vers le tableau de bord
+                            window.location.href = '/lab-dashboard';
+                        }, 1000);
+                    }, 5000);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                alert('Erro ao emitir certificado: ' + error.message);
+            }
+        }
+        
+        function gerarPDF(numeroCertificado) {
+            // Appel à l'API pour générer le PDF
+            fetch('/api/certificados/pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': key
+                },
+                body: JSON.stringify({
+                    numero: numeroCertificado,
+                    dados: dadosAtuais
+                })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                // Créer un lien de téléchargement
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `certificado-${numeroCertificado}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                console.error('Erreur génération PDF:', error);
+                alert('Erro ao gerar PDF');
+            });
+        }
+    </script>
 </body>
 </html>
