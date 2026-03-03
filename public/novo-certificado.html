@@ -649,14 +649,6 @@
                 <button type="button" class="btn-secondary" onclick="window.location.href='/lab-dashboard'">Cancelar</button>
             </div>
         </form>
-
-        <!-- HISTÓRICO DE CERTIFICADOS (PDF permanente) -->
-        <div style="margin-top:40px; border-top:2px solid #006633; padding-top:20px;">
-            <h3 style="color:#006633;">📋 Certificados Emitidos (PDF permanente)</h3>
-            <div id="historicoCertificados">
-                <p style="color:#666; font-style:italic;">Nenhum certificado emitido ainda</p>
-            </div>
-        </div>
     </div>
 
     <!-- Loading Overlay -->
@@ -670,52 +662,6 @@
     </div>
 
     <script>
-        // Carregar histórico ao iniciar
-        carregarHistorico();
-
-        function carregarHistorico() {
-            const historico = JSON.parse(localStorage.getItem('certificados_emitidos') || '[]');
-            const divHistorico = document.getElementById('historicoCertificados');
-            
-            if(historico.length === 0) {
-                divHistorico.innerHTML = '<p style="color:#666; font-style:italic;">Nenhum certificado emitido ainda</p>';
-                return;
-            }
-            
-            let html = '';
-            historico.reverse().forEach((cert, index) => {
-                html += `
-                    <div class="historico-item">
-                        <div>
-                            <strong>${cert.numero}</strong> - ${cert.paciente} - ${new Date(cert.data).toLocaleDateString()}
-                        </div>
-                        <button class="btn-pdf" onclick="reimprimirPDF('${cert.numero}')">📄 Reimprimir PDF</button>
-                    </div>
-                `;
-            });
-            divHistorico.innerHTML = html;
-        }
-
-        function reimprimirPDF(numero) {
-            const historico = JSON.parse(localStorage.getItem('certificados_emitidos') || '[]');
-            const certificado = historico.find(c => c.numero === numero);
-            
-            if(certificado) {
-                // Recriar o PDF com os dados salvos
-                const dados = {
-                    paciente: {
-                        nomeCompleto: certificado.paciente,
-                        bi: certificado.bi || '',
-                        genero: certificado.genero || 'M',
-                        dataNascimento: certificado.dataNascimento || ''
-                    },
-                    dados: certificado.dados || {}
-                };
-                
-                gerarPDF(dados, certificado.numero, certificado.tipo, certificado.laboratorio, certificado.endereco, certificado.laborantin);
-            }
-        }
-
         function toggleExame(exameId) {
             const checkbox = document.getElementById(exameId + '_nao');
             const campo = document.getElementById(exameId);
@@ -756,10 +702,10 @@
             }
             else if(tipo === '6') {
                 mensagem += `\n\nEXAMES PRÉ-NATAL:`;
-                if(dados.dados.grupoSanguineo) mensagem += `\n- Grupo Sanguíneo: ${dados.dados.grupoSanguineo}`;
-                if(dados.dados.genotipo) mensagem += `\n- Genótipo: ${dados.dados.genotipo}`;
-                if(dados.dados.vih) mensagem += `\n- VIH: ${dados.dados.vih}`;
-                if(dados.dados.malaria) mensagem += `\n- Malária: ${dados.dados.malaria}`;
+                if(dados.dados.grupoSanguineo && dados.dados.grupoSanguineo !== 'Não solicitado') mensagem += `\n- Grupo Sanguíneo: ${dados.dados.grupoSanguineo}`;
+                if(dados.dados.genotipo && dados.dados.genotipo !== 'Não solicitado') mensagem += `\n- Genótipo: ${dados.dados.genotipo}`;
+                if(dados.dados.vih && dados.dados.vih !== 'Não solicitado') mensagem += `\n- VIH: ${dados.dados.vih}`;
+                if(dados.dados.malaria && dados.dados.malaria !== 'Não solicitado') mensagem += `\n- Malária: ${dados.dados.malaria}`;
             }
             
             mensagem += `\n\nTécnico: ${document.getElementById('nomeLaborantin').value}`;
@@ -773,11 +719,7 @@
                 setTimeout(() => {
                     const tipos = ['', 'GENÓTIPO', 'BOA SAÚDE', 'INCAPACIDADE', 'APTIDÃO', 'SAÚDE MATERNA', 'PRÉ-NATAL', 'EPIDEMIOLÓGICO'];
                     
-                    // CONSTRUCTION DES DONNÉES POUR LE QR CODE
-                    let dadosQR = `CERTIFICADO SNS
-Número: ${numero}
-Laboratório: ${laboratorio}
-Técnico: ${laborantin}`;
+                    let dadosQR = `CERTIFICADO SNS\nNúmero: ${numero}\nLaboratório: ${laboratorio}\nTécnico: ${laborantin}`;
 
                     if (tipo === '1' && dados.dados) {
                         const nomeParts = dados.paciente.nomeCompleto.split(' ');
@@ -999,7 +941,6 @@ Técnico: ${laborantin}`;
                 return;
             }
 
-            // Buscar dados do laboratório automaticamente
             let laboratorio = "Laboratório Nacional de Saúde";
             let endereco = "Endereço não informado";
             
@@ -1102,9 +1043,8 @@ Técnico: ${laborantin}`;
                 };
             }
 
-            // VERIFICAÇÃO DOS DADOS ANTES DE IMPRIMIR
             if(!verificarDados(dados, tipo)) {
-                return; // Cancelar se usuário não confirmar
+                return;
             }
 
             mostrarLoading('Preparando dados do paciente...');
@@ -1125,8 +1065,8 @@ Técnico: ${laborantin}`;
                 if(result.success) {
                     mostrarLoading('Gerando certificado oficial...');
                     
-                    // Salvar no histórico
-                    let historico = JSON.parse(localStorage.getItem('certificados_emitidos') || '[]');
+                    // Salvar no sessionStorage (compartilhado) e localStorage (backup)
+                    let historico = JSON.parse(sessionStorage.getItem('certificados_emitidos') || '[]');
                     historico.push({
                         numero: result.numero,
                         tipo: tipo,
@@ -1140,11 +1080,13 @@ Técnico: ${laborantin}`;
                         laborantin: laborantin,
                         data: new Date().toISOString()
                     });
+                    sessionStorage.setItem('certificados_emitidos', JSON.stringify(historico));
+                    
+                    // Backup no localStorage
                     localStorage.setItem('certificados_emitidos', JSON.stringify(historico));
                     
                     await gerarPDF(dados, result.numero, tipo, laboratorio, endereco, laborantin);
                     esconderLoading();
-                    carregarHistorico(); // Atualizar histórico
                 } else {
                     esconderLoading();
                     alert('❌ Erro: ' + result.erro);
