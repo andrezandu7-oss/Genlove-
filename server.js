@@ -748,6 +748,20 @@ app.get('/lab-dashboard', (req, res) => {
     '</script>' +
     '</body></html>');
 });
+
+'    // Estatísticas simples' +
+'    let hoje = 0, mes = 0, ano = 0;' +
+'    const hojeStr = new Date().toDateString();' +
+'    const mesAtual = new Date().getMonth();' +
+'    const anoAtual = new Date().getFullYear();' +
+'    lista.forEach(c => {' +
+'        const data = new Date(c.emitidoEm);' +
+'        if(data.toDateString() === hojeStr) hoje++;' +
+'        if(data.getMonth() === mesAtual && data.getFullYear() === anoAtual) mes++;' +
+'        if(data.getFullYear() === anoAtual) ano++;' +
+'    });' +
+'    // Mostrar no console (ou onde quiser)' +
+'    console.log("Hoje:", hoje, "Mês:", mes, "Ano:", ano);' +
 // ================================================
 // API DE LABORATÓRIOS
 // ================================================
