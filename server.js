@@ -581,7 +581,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         }
         
         // =========================================
-        // DADOS MÉDICOS
+        // DADOS MÉDICOS (AVEC "NÃO SOLICITADO")
         // =========================================
         doc.fillColor('#006633')
             .fontSize(12)
@@ -607,102 +607,103 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         
         y += 25;
         
-        // Afficher les données médicales avec mention "não solicitado"
         if (dados.dados) {
             // Liste de tous les examens possibles pour ce type de certificat
             const todosExames = {
-                1: ['grupoSanguineo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese', 'observacoes'],
-                2: ['peso', 'altura', 'imc', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos', 'observacoes'],
-                3: ['tipoIncapacidade', 'causa', 'grau', 'dataInicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante', 'observacoes'],
-                4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade', 'observacoes'],
-                5: ['gestacoes', 'partos', 'abortos', 'nascidosVivos', 'dum', 'dpp', 'idadeGestacional', 'consultasCPN', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguineo', 'fatorRh', 'exsudadoVaginal', 'pesoAtual', 'alturaUterina', 'batimentosCardiacosFeto', 'movimentosFetais', 'edema', 'proteinuria', 'observacoes'],
-                6: ['grupoSanguineo', 'fatorRh', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'ureia', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao', 'observacoes'],
-                7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos', 'observacoes'],
+                1: ['grupoSanguineo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese'],
+                2: ['peso', 'altura', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos'],
+                3: ['tipoIncapacidade', 'causa', 'grau', 'dataInicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante'],
+                4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade'],
+                5: ['gestacoes', 'partos', 'abortos', 'nascidosVivos', 'dum', 'dpp', 'idadeGestacional', 'consultasCPN', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguineo', 'fatorRh', 'exsudadoVaginal', 'pesoAtual', 'alturaUterina', 'batimentosCardiacosFeto', 'movimentosFetais', 'edema', 'proteinuria'],
+                6: ['grupoSanguineo', 'fatorRh', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'ureia', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao'],
+                7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos'],
                 8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais', 'recomendacoes']
             };
             
             const examesTipo = todosExames[dados.tipo] || [];
             
-            for (let [key, value] of Object.entries(dados.dados)) {
-                if (value && value.toString().trim()) {
-                    const nomeCampo = key.replace(/([A-Z])/g, ' $1')
-                        .replace(/^./, function(str) { return str.toUpperCase(); });
-                    
-                    doc.fontSize(11)
-                        .fillColor('#000')
-                        .text(`${nomeCampo}: ${value}`, 70, y);
-                    
-                    y += 20;
-                    
-                    if (y > 700) {
-                        doc.addPage();
-                        y = 50;
-                    }
+            // Préparer tous les examens avec leur statut
+            const todosExamesFormatados = [];
+            
+            for (let i = 0; i < examesTipo.length; i++) {
+                const exame = examesTipo[i];
+                
+                const nomeExame = exame.replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, function(str) { return str.toUpperCase(); });
+                
+                const valor = dados.dados[exame];
+                
+                if (valor && valor.toString().trim() !== '') {
+                    // Examen rempli
+                    todosExamesFormatados.push({
+                        exame: nomeExame,
+                        valor: valor,
+                        solicitado: true
+                    });
+                } else {
+                    // Examen non sollicité
+                    todosExamesFormatados.push({
+                        exame: nomeExame,
+                        valor: '(não solicitado)',
+                        solicitado: false
+                    });
                 }
             }
             
-            // Afficher les examens NON SOLLICITÉS (à droite de chaque case)
-const examesPreenchidos = Object.keys(dados.dados).filter(function(key) {
-    return dados.dados[key] && dados.dados[key].toString().trim();
-});
-
-// Pour CHAQUE examen possible, on vérifie s'il est rempli ou non
-const todosExamesFormatados = examesTipo.map(function(exame) {
-    if (exame === 'observacoes') return null; // Ignorer observations
-    
-    const nomeExame = exame.replace(/([A-Z])/g, ' $1')
-        .replace(/^./, function(str) { return str.toUpperCase(); });
-    
-    const valor = dados.dados[exame];
-    
-    if (valor && valor.toString().trim()) {
-        // Exame preenchido
-        return { exame: nomeExame, valor: valor, solicitado: true };
-    } else {
-        // Exame não solicitado
-        return { exame: nomeExame, valor: '(não solicitado)', solicitado: false };
-    }
-}).filter(item => item !== null);
-
-// Afficher tous les examens avec leur statut
-if (todosExamesFormatados.length > 0) {
-    y += 10;
-    
-    // Afficher en 2 colonnes
-    const metade = Math.ceil(todosExamesFormatados.length / 2);
-    const col1 = todosExamesFormatados.slice(0, metade);
-    const col2 = todosExamesFormatados.slice(metade);
-    
-    doc.fontSize(9);
-    
-    // Colonne 1
-    let yCol1 = y;
-    col1.forEach(function(item) {
-        if (item.solicitado) {
-            doc.fillColor('#000')
-               .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
-        } else {
-            doc.fillColor('#999')
-               .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
+            // Afficher tous les examens en 2 colonnes
+            if (todosExamesFormatados.length > 0) {
+                const metade = Math.ceil(todosExamesFormatados.length / 2);
+                
+                doc.fontSize(9);
+                
+                // Colonne 1
+                let yCol1 = y;
+                for (let j = 0; j < metade; j++) {
+                    const item = todosExamesFormatados[j];
+                    if (item.solicitado) {
+                        doc.fillColor('#000')
+                           .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
+                    } else {
+                        doc.fillColor('#999')
+                           .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
+                    }
+                    yCol1 += 15;
+                    
+                    if (yCol1 > 700) {
+                        doc.addPage();
+                        yCol1 = 50;
+                    }
+                }
+                
+                // Colonne 2
+                let yCol2 = y;
+                for (let j = metade; j < todosExamesFormatados.length; j++) {
+                    const item = todosExamesFormatados[j];
+                    if (item.solicitado) {
+                        doc.fillColor('#000')
+                           .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
+                    } else {
+                        doc.fillColor('#999')
+                           .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
+                    }
+                    yCol2 += 15;
+                    
+                    if (yCol2 > 700) {
+                        doc.addPage();
+                        yCol2 = 50;
+                    }
+                }
+                
+                y = (yCol1 > yCol2 ? yCol1 : yCol2) + 10;
+            }
         }
-        yCol1 += 15;
-    });
-    
-    // Colonne 2
-    let yCol2 = y;
-    col2.forEach(function(item) {
-        if (item.solicitado) {
-            doc.fillColor('#000')
-               .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
-        } else {
-            doc.fillColor('#999')
-               .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
+        
+        if (dados.imc) {
+            doc.fontSize(11)
+                .fillColor('#000')
+                .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
+            y += 25;
         }
-        yCol2 += 15;
-    });
-    
-    y = Math.max(yCol1, yCol2) + 10;
-}
         
         // =========================================
         // ASSINATURAS
@@ -762,6 +763,7 @@ if (todosExamesFormatados.length > 0) {
         res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
     }
 });
+
 // =============================================
 // FORMULÁRIO NOVO
 // =============================================
