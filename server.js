@@ -641,58 +641,68 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
                 }
             }
             
-            // Afficher les examens NON SOLLICITÉS
-            const examesPreenchidos = Object.keys(dados.dados).filter(function(key) {
-                return dados.dados[key] && dados.dados[key].toString().trim();
-            });
-            
-            const examesNaoSolicitados = examesTipo.filter(function(exame) {
-                return !examesPreenchidos.includes(exame) && exame !== 'observacoes';
-            });
-            
-            if (examesNaoSolicitados.length > 0) {
-                y += 10;
-                doc.fillColor('#999')
-                    .fontSize(10)
-                    .text('Exames não solicitados:', 70, y);
-                y += 15;
-                
-                // Afficher en 2 colonnes
-                const metade = Math.ceil(examesNaoSolicitados.length / 2);
-                const col1 = examesNaoSolicitados.slice(0, metade);
-                const col2 = examesNaoSolicitados.slice(metade);
-                
-                doc.fontSize(9)
-                    .fillColor('#666');
-                
-                // Colonne 1
-                let yCol1 = y;
-                col1.forEach(function(exame) {
-                    const nomeExame = exame.replace(/([A-Z])/g, ' $1')
-                        .replace(/^./, function(str) { return str.toUpperCase(); });
-                    doc.text(`• ${nomeExame} (não solicitado)`, 70, yCol1);
-                    yCol1 += 15;
-                });
-                
-                // Colonne 2
-                let yCol2 = y;
-                col2.forEach(function(exame) {
-                    const nomeExame = exame.replace(/([A-Z])/g, ' $1')
-                        .replace(/^./, function(str) { return str.toUpperCase(); });
-                    doc.text(`• ${nomeExame} (não solicitado)`, 300, yCol2);
-                    yCol2 += 15;
-                });
-                
-                y = Math.max(yCol1, yCol2) + 10;
-            }
+            // Afficher les examens NON SOLLICITÉS (à droite de chaque case)
+const examesPreenchidos = Object.keys(dados.dados).filter(function(key) {
+    return dados.dados[key] && dados.dados[key].toString().trim();
+});
+
+// Pour CHAQUE examen possible, on vérifie s'il est rempli ou non
+const todosExamesFormatados = examesTipo.map(function(exame) {
+    if (exame === 'observacoes') return null; // Ignorer observations
+    
+    const nomeExame = exame.replace(/([A-Z])/g, ' $1')
+        .replace(/^./, function(str) { return str.toUpperCase(); });
+    
+    const valor = dados.dados[exame];
+    
+    if (valor && valor.toString().trim()) {
+        // Exame preenchido
+        return { exame: nomeExame, valor: valor, solicitado: true };
+    } else {
+        // Exame não solicitado
+        return { exame: nomeExame, valor: '(não solicitado)', solicitado: false };
+    }
+}).filter(item => item !== null);
+
+// Afficher tous les examens avec leur statut
+if (todosExamesFormatados.length > 0) {
+    y += 10;
+    
+    // Afficher en 2 colonnes
+    const metade = Math.ceil(todosExamesFormatados.length / 2);
+    const col1 = todosExamesFormatados.slice(0, metade);
+    const col2 = todosExamesFormatados.slice(metade);
+    
+    doc.fontSize(9);
+    
+    // Colonne 1
+    let yCol1 = y;
+    col1.forEach(function(item) {
+        if (item.solicitado) {
+            doc.fillColor('#000')
+               .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
+        } else {
+            doc.fillColor('#999')
+               .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
         }
-        
-        if (dados.imc) {
-            doc.fontSize(11)
-                .fillColor('#000')
-                .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
-            y += 25;
+        yCol1 += 15;
+    });
+    
+    // Colonne 2
+    let yCol2 = y;
+    col2.forEach(function(item) {
+        if (item.solicitado) {
+            doc.fillColor('#000')
+               .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
+        } else {
+            doc.fillColor('#999')
+               .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
         }
+        yCol2 += 15;
+    });
+    
+    y = Math.max(yCol1, yCol2) + 10;
+}
         
         // =========================================
         // ASSINATURAS
