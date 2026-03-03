@@ -18,6 +18,8 @@
         button:hover{background:#004d26;}
         .btn-secondary{background:#6c757d;}
         .btn-secondary:hover{background:#5a6268;}
+        .btn-pdf{background:#17a2b8;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;font-size:12px;margin-left:5px;}
+        .btn-pdf:hover{background:#138496;}
         .tipo-specific{display:none;padding:15px;background:#f8f9fa;border-radius:10px;margin-top:15px;border:1px solid #ddd;}
         .error{color:#dc3545;margin:10px 0;}
         .loading-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;z-index:1000;}
@@ -31,6 +33,8 @@
         .checkbox-line > div:first-child{flex:1;}
         .checkbox-line > div:last-child{margin-top:22px;white-space:nowrap;}
         .checkbox-line label{font-weight:normal;font-size:12px;}
+        .historico-item{background:#f8f9fa;padding:10px;margin:5px 0;border-radius:5px;display:flex;justify-content:space-between;align-items:center;}
+        .verificacao-box{background:#e7f3ff;border-left:4px solid #006633;padding:15px;margin:20px 0;border-radius:5px;}
     </style>
 </head>
 <body>
@@ -645,6 +649,14 @@
                 <button type="button" class="btn-secondary" onclick="window.location.href='/lab-dashboard'">Cancelar</button>
             </div>
         </form>
+
+        <!-- HISTÓRICO DE CERTIFICADOS (PDF permanente) -->
+        <div style="margin-top:40px; border-top:2px solid #006633; padding-top:20px;">
+            <h3 style="color:#006633;">📋 Certificados Emitidos (PDF permanente)</h3>
+            <div id="historicoCertificados">
+                <p style="color:#666; font-style:italic;">Nenhum certificado emitido ainda</p>
+            </div>
+        </div>
     </div>
 
     <!-- Loading Overlay -->
@@ -658,7 +670,52 @@
     </div>
 
     <script>
-        // Função para desabilitar campos quando "Não solicitado" for marcado
+        // Carregar histórico ao iniciar
+        carregarHistorico();
+
+        function carregarHistorico() {
+            const historico = JSON.parse(localStorage.getItem('certificados_emitidos') || '[]');
+            const divHistorico = document.getElementById('historicoCertificados');
+            
+            if(historico.length === 0) {
+                divHistorico.innerHTML = '<p style="color:#666; font-style:italic;">Nenhum certificado emitido ainda</p>';
+                return;
+            }
+            
+            let html = '';
+            historico.reverse().forEach((cert, index) => {
+                html += `
+                    <div class="historico-item">
+                        <div>
+                            <strong>${cert.numero}</strong> - ${cert.paciente} - ${new Date(cert.data).toLocaleDateString()}
+                        </div>
+                        <button class="btn-pdf" onclick="reimprimirPDF('${cert.numero}')">📄 Reimprimir PDF</button>
+                    </div>
+                `;
+            });
+            divHistorico.innerHTML = html;
+        }
+
+        function reimprimirPDF(numero) {
+            const historico = JSON.parse(localStorage.getItem('certificados_emitidos') || '[]');
+            const certificado = historico.find(c => c.numero === numero);
+            
+            if(certificado) {
+                // Recriar o PDF com os dados salvos
+                const dados = {
+                    paciente: {
+                        nomeCompleto: certificado.paciente,
+                        bi: certificado.bi || '',
+                        genero: certificado.genero || 'M',
+                        dataNascimento: certificado.dataNascimento || ''
+                    },
+                    dados: certificado.dados || {}
+                };
+                
+                gerarPDF(dados, certificado.numero, certificado.tipo, certificado.laboratorio, certificado.endereco, certificado.laborantin);
+            }
+        }
+
         function toggleExame(exameId) {
             const checkbox = document.getElementById(exameId + '_nao');
             const campo = document.getElementById(exameId);
@@ -672,7 +729,6 @@
             }
         }
 
-        // Mostrar/esconder seções conforme tipo selecionado
         document.getElementById('tipo').addEventListener('change', function() {
             document.querySelectorAll('.tipo-specific').forEach(el => el.style.display = 'none');
             const tipo = this.value;
@@ -688,6 +744,30 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
 
+        function verificarDados(dados, tipo) {
+            let mensagem = "✅ Verifique os dados antes de imprimir:\n\n";
+            mensagem += `Paciente: ${dados.paciente.nomeCompleto}\n`;
+            mensagem += `BI: ${dados.paciente.bi}\n`;
+            mensagem += `Gênero: ${dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino'}\n`;
+            
+            if(tipo === '1') {
+                mensagem += `\nGenótipo: ${dados.dados.genotipo || 'N/A'}`;
+                mensagem += `\nGrupo Sanguíneo: ${dados.dados.grupoSanguineo || 'N/A'}`;
+            }
+            else if(tipo === '6') {
+                mensagem += `\n\nEXAMES PRÉ-NATAL:`;
+                if(dados.dados.grupoSanguineo) mensagem += `\n- Grupo Sanguíneo: ${dados.dados.grupoSanguineo}`;
+                if(dados.dados.genotipo) mensagem += `\n- Genótipo: ${dados.dados.genotipo}`;
+                if(dados.dados.vih) mensagem += `\n- VIH: ${dados.dados.vih}`;
+                if(dados.dados.malaria) mensagem += `\n- Malária: ${dados.dados.malaria}`;
+            }
+            
+            mensagem += `\n\nTécnico: ${document.getElementById('nomeLaborantin').value}`;
+            mensagem += `\n\nDeseja continuar com a impressão?`;
+            
+            return confirm(mensagem);
+        }
+
         function gerarPDF(dados, numero, tipo, laboratorio, endereco, laborantin) {
             return new Promise((resolve) => {
                 setTimeout(() => {
@@ -699,7 +779,6 @@ Número: ${numero}
 Laboratório: ${laboratorio}
 Técnico: ${laborantin}`;
 
-                    // SEULEMENT pour le type 1 (Genótipo) - format spécial avec || pour Genlove
                     if (tipo === '1' && dados.dados) {
                         const nomeParts = dados.paciente.nomeCompleto.split(' ');
                         const prenom = nomeParts[0] || '';
@@ -728,31 +807,16 @@ Técnico: ${laborantin}`;
                             dadosQR += `\nPartos: ${dados.dados.partos || '0'}`;
                         }
                         else if (tipo === '6' && dados.dados) {
-                            // Adicionar todos os exames do tipo 6
-                            if(dados.dados.grupoSanguineo) dadosQR += `\nGrupo Sanguíneo: ${dados.dados.grupoSanguineo}`;
-                            if(dados.dados.genotipo) dadosQR += `\nGenótipo: ${dados.dados.genotipo}`;
-                            if(dados.dados.falciformacao) dadosQR += `\nFalciformação: ${dados.dados.falciformacao}`;
-                            if(dados.dados.hemoglobina) dadosQR += `\nHemoglobina: ${dados.dados.hemoglobina} g/dL`;
-                            if(dados.dados.coombs) dadosQR += `\nCoombs: ${dados.dados.coombs}`;
-                            if(dados.dados.ferritina) dadosQR += `\nFerritina: ${dados.dados.ferritina}`;
-                            if(dados.dados.vitaminaD) dadosQR += `\nVitamina D: ${dados.dados.vitaminaD}`;
-                            if(dados.dados.vih) dadosQR += `\nVIH: ${dados.dados.vih}`;
-                            if(dados.dados.vdrl) dadosQR += `\nVDRL: ${dados.dados.vdrl}`;
-                            if(dados.dados.hepatiteB) dadosQR += `\nHepatite B: ${dados.dados.hepatiteB}`;
-                            if(dados.dados.hepatiteC) dadosQR += `\nHepatite C: ${dados.dados.hepatiteC}`;
-                            if(dados.dados.toxoplasmose) dadosQR += `\nToxoplasmose: ${dados.dados.toxoplasmose}`;
-                            if(dados.dados.rubéola) dadosQR += `\nRubéola: ${dados.dados.rubéola}`;
-                            if(dados.dados.citomegalovirus) dadosQR += `\nCitomegalovírus: ${dados.dados.citomegalovirus}`;
-                            if(dados.dados.tetanos) dadosQR += `\nAnti-Tetânica: ${dados.dados.tetanos}`;
-                            if(dados.dados.chlamydia) dadosQR += `\nChlamydia: ${dados.dados.chlamydia}`;
-                            if(dados.dados.gonococo) dadosQR += `\nGonococo: ${dados.dados.gonococo}`;
-                            if(dados.dados.zika) dadosQR += `\nZika: ${dados.dados.zika}`;
-                            if(dados.dados.herpes) dadosQR += `\nHerpes: ${dados.dados.herpes}`;
-                            if(dados.dados.malaria) dadosQR += `\nMalária: ${dados.dados.malaria}`;
-                            if(dados.dados.glicemia) dadosQR += `\nGlicemia: ${dados.dados.glicemia} mg/dL`;
-                            if(dados.dados.totg) dadosQR += `\nTOTG: ${dados.dados.totg}`;
-                            if(dados.dados.proteinuria) dadosQR += `\nProteinúria: ${dados.dados.proteinuria}`;
-                            if(dados.dados.tsh) dadosQR += `\nTSH: ${dados.dados.tsh}`;
+                            if(dados.dados.grupoSanguineo && dados.dados.grupoSanguineo !== 'Não solicitado') dadosQR += `\nGrupo Sanguíneo: ${dados.dados.grupoSanguineo}`;
+                            if(dados.dados.genotipo && dados.dados.genotipo !== 'Não solicitado') dadosQR += `\nGenótipo: ${dados.dados.genotipo}`;
+                            if(dados.dados.falciformacao && dados.dados.falciformacao !== 'Não solicitado') dadosQR += `\nFalciformação: ${dados.dados.falciformacao}`;
+                            if(dados.dados.hemoglobina && dados.dados.hemoglobina !== 'Não solicitado') dadosQR += `\nHemoglobina: ${dados.dados.hemoglobina} g/dL`;
+                            if(dados.dados.vih && dados.dados.vih !== 'Não solicitado') dadosQR += `\nVIH: ${dados.dados.vih}`;
+                            if(dados.dados.vdrl && dados.dados.vdrl !== 'Não solicitado') dadosQR += `\nVDRL: ${dados.dados.vdrl}`;
+                            if(dados.dados.hepatiteB && dados.dados.hepatiteB !== 'Não solicitado') dadosQR += `\nHepatite B: ${dados.dados.hepatiteB}`;
+                            if(dados.dados.toxoplasmose && dados.dados.toxoplasmose !== 'Não solicitado') dadosQR += `\nToxoplasmose: ${dados.dados.toxoplasmose}`;
+                            if(dados.dados.malaria && dados.dados.malaria !== 'Não solicitado') dadosQR += `\nMalária: ${dados.dados.malaria}`;
+                            if(dados.dados.glicemia && dados.dados.glicemia !== 'Não solicitado') dadosQR += `\nGlicemia: ${dados.dados.glicemia} mg/dL`;
                         }
                         else if (tipo === '7' && dados.dados) {
                             if(dados.dados.doenca1) dadosQR += `\nDoença: ${dados.dados.doenca1} - ${dados.dados.resultado1}`;
@@ -849,36 +913,22 @@ Técnico: ${laborantin}`;
                         html += `<tr><td>Nº de Partos:</td><td><strong>${dados.dados.partos || '0'}</strong></td></tr>`;
                         html += `<tr><td>Data Provável do Parto:</td><td><strong>${dados.dados.dpp ? new Date(dados.dados.dpp).toLocaleDateString() : 'N/A'}</strong></td></tr>`;
                     } else if (tipo === '6' && dados.dados) {
-                        // Adicionar todos os exames no PDF
-                        if(dados.dados.grupoSanguineo) html += `<tr><td>Grupo Sanguíneo:</td><td><strong>${dados.dados.grupoSanguineo}</strong></td></tr>`;
-                        if(dados.dados.genotipo) html += `<tr><td>Genótipo:</td><td><strong>${dados.dados.genotipo}</strong></td></tr>`;
-                        if(dados.dados.falciformacao) html += `<tr><td>Falciformação:</td><td><strong>${dados.dados.falciformacao}</strong></td></tr>`;
-                        if(dados.dados.hemoglobina) html += `<tr><td>Hemoglobina:</td><td><strong>${dados.dados.hemoglobina} g/dL</strong></td></tr>`;
-                        if(dados.dados.coombs) html += `<tr><td>Teste de Coombs:</td><td><strong>${dados.dados.coombs}</strong></td></tr>`;
-                        if(dados.dados.ferritina) html += `<tr><td>Ferritina:</td><td><strong>${dados.dados.ferritina}</strong></td></tr>`;
-                        if(dados.dados.vitaminaD) html += `<tr><td>Vitamina D:</td><td><strong>${dados.dados.vitaminaD}</strong></td></tr>`;
-                        if(dados.dados.vih) html += `<tr><td>VIH:</td><td><strong>${dados.dados.vih}</strong></td></tr>`;
-                        if(dados.dados.vdrl) html += `<tr><td>VDRL:</td><td><strong>${dados.dados.vdrl}</strong></td></tr>`;
-                        if(dados.dados.hepatiteB) html += `<tr><td>Hepatite B:</td><td><strong>${dados.dados.hepatiteB}</strong></td></tr>`;
-                        if(dados.dados.hepatiteC) html += `<tr><td>Hepatite C:</td><td><strong>${dados.dados.hepatiteC}</strong></td></tr>`;
-                        if(dados.dados.toxoplasmose) html += `<tr><td>Toxoplasmose:</td><td><strong>${dados.dados.toxoplasmose}</strong></td></tr>`;
-                        if(dados.dados.rubéola) html += `<tr><td>Rubéola:</td><td><strong>${dados.dados.rubéola}</strong></td></tr>`;
-                        if(dados.dados.citomegalovirus) html += `<tr><td>Citomegalovírus:</td><td><strong>${dados.dados.citomegalovirus}</strong></td></tr>`;
-                        if(dados.dados.tetanos) html += `<tr><td>Anti-Tetânica:</td><td><strong>${dados.dados.tetanos}</strong></td></tr>`;
-                        if(dados.dados.chlamydia) html += `<tr><td>Chlamydia:</td><td><strong>${dados.dados.chlamydia}</strong></td></tr>`;
-                        if(dados.dados.gonococo) html += `<tr><td>Gonococo:</td><td><strong>${dados.dados.gonococo}</strong></td></tr>`;
-                        if(dados.dados.zika) html += `<tr><td>Zika Vírus:</td><td><strong>${dados.dados.zika}</strong></td></tr>`;
-                        if(dados.dados.herpes) html += `<tr><td>Herpes:</td><td><strong>${dados.dados.herpes}</strong></td></tr>`;
-                        if(dados.dados.malaria) html += `<tr><td>Malária:</td><td><strong>${dados.dados.malaria}</strong></td></tr>`;
-                        if(dados.dados.glicemia) html += `<tr><td>Glicemia:</td><td><strong>${dados.dados.glicemia} mg/dL</strong></td></tr>`;
-                        if(dados.dados.totg) html += `<tr><td>TOTG:</td><td><strong>${dados.dados.totg}</strong></td></tr>`;
-                        if(dados.dados.proteinuria) html += `<tr><td>Proteinúria:</td><td><strong>${dados.dados.proteinuria}</strong></td></tr>`;
-                        if(dados.dados.tsh) html += `<tr><td>TSH:</td><td><strong>${dados.dados.tsh}</strong></td></tr>`;
-                        if(dados.dados.urina) html += `<tr><td>Urina Tipo II:</td><td><strong>${dados.dados.urina}</strong></td></tr>`;
-                        if(dados.dados.urocultura) html += `<tr><td>Urocultura:</td><td><strong>${dados.dados.urocultura}</strong></td></tr>`;
-                        if(dados.dados.fezes) html += `<tr><td>Parasitológico fezes:</td><td><strong>${dados.dados.fezes}</strong></td></tr>`;
-                        if(dados.dados.exsudado) html += `<tr><td>Exsudado vaginal:</td><td><strong>${dados.dados.exsudado}</strong></td></tr>`;
-                        if(dados.dados.outrosExames) html += `<tr><td>Outros exames:</td><td><strong>${dados.dados.outrosExames}</strong></td></tr>`;
+                        if(dados.dados.grupoSanguineo && dados.dados.grupoSanguineo !== 'Não solicitado') html += `<tr><td>Grupo Sanguíneo:</td><td><strong>${dados.dados.grupoSanguineo}</strong></td></tr>`;
+                        if(dados.dados.genotipo && dados.dados.genotipo !== 'Não solicitado') html += `<tr><td>Genótipo:</td><td><strong>${dados.dados.genotipo}</strong></td></tr>`;
+                        if(dados.dados.falciformacao && dados.dados.falciformacao !== 'Não solicitado') html += `<tr><td>Falciformação:</td><td><strong>${dados.dados.falciformacao}</strong></td></tr>`;
+                        if(dados.dados.hemoglobina && dados.dados.hemoglobina !== 'Não solicitado') html += `<tr><td>Hemoglobina:</td><td><strong>${dados.dados.hemoglobina} g/dL</strong></td></tr>`;
+                        if(dados.dados.coombs && dados.dados.coombs !== 'Não solicitado') html += `<tr><td>Teste de Coombs:</td><td><strong>${dados.dados.coombs}</strong></td></tr>`;
+                        if(dados.dados.ferritina && dados.dados.ferritina !== 'Não solicitado') html += `<tr><td>Ferritina:</td><td><strong>${dados.dados.ferritina}</strong></td></tr>`;
+                        if(dados.dados.vih && dados.dados.vih !== 'Não solicitado') html += `<tr><td>VIH:</td><td><strong>${dados.dados.vih}</strong></td></tr>`;
+                        if(dados.dados.vdrl && dados.dados.vdrl !== 'Não solicitado') html += `<tr><td>VDRL:</td><td><strong>${dados.dados.vdrl}</strong></td></tr>`;
+                        if(dados.dados.hepatiteB && dados.dados.hepatiteB !== 'Não solicitado') html += `<tr><td>Hepatite B:</td><td><strong>${dados.dados.hepatiteB}</strong></td></tr>`;
+                        if(dados.dados.toxoplasmose && dados.dados.toxoplasmose !== 'Não solicitado') html += `<tr><td>Toxoplasmose:</td><td><strong>${dados.dados.toxoplasmose}</strong></td></tr>`;
+                        if(dados.dados.rubéola && dados.dados.rubéola !== 'Não solicitado') html += `<tr><td>Rubéola:</td><td><strong>${dados.dados.rubéola}</strong></td></tr>`;
+                        if(dados.dados.citomegalovirus && dados.dados.citomegalovirus !== 'Não solicitado') html += `<tr><td>Citomegalovírus:</td><td><strong>${dados.dados.citomegalovirus}</strong></td></tr>`;
+                        if(dados.dados.tetanos && dados.dados.tetanos !== 'Não solicitado') html += `<tr><td>Anti-Tetânica:</td><td><strong>${dados.dados.tetanos}</strong></td></tr>`;
+                        if(dados.dados.malaria && dados.dados.malaria !== 'Não solicitado') html += `<tr><td>Malária:</td><td><strong>${dados.dados.malaria}</strong></td></tr>`;
+                        if(dados.dados.glicemia && dados.dados.glicemia !== 'Não solicitado') html += `<tr><td>Glicemia:</td><td><strong>${dados.dados.glicemia} mg/dL</strong></td></tr>`;
+                        if(dados.dados.proteinuria && dados.dados.proteinuria !== 'Não solicitado') html += `<tr><td>Proteinúria:</td><td><strong>${dados.dados.proteinuria}</strong></td></tr>`;
                     } else if (tipo === '7' && dados.dados) {
                         if(dados.dados.doenca1 && dados.dados.resultado1) {
                             html += `<tr><td>Doença testada: ${dados.dados.doenca1}</td><td><strong>${dados.dados.resultado1}</strong></td></tr>`;
@@ -921,9 +971,7 @@ Técnico: ${laborantin}`;
                             
                             <script>
                                 setTimeout(function() {
-                                    if(confirm('✅ Certificado gerado! Deseja imprimir/salvar em PDF agora?')) {
-                                        window.print();
-                                    }
+                                    window.print();
                                 }, 1000);
                             <\/script>
                         </body>
@@ -1054,6 +1102,11 @@ Técnico: ${laborantin}`;
                 };
             }
 
+            // VERIFICAÇÃO DOS DADOS ANTES DE IMPRIMIR
+            if(!verificarDados(dados, tipo)) {
+                return; // Cancelar se usuário não confirmar
+            }
+
             mostrarLoading('Preparando dados do paciente...');
             
             try {
@@ -1071,8 +1124,27 @@ Técnico: ${laborantin}`;
                 
                 if(result.success) {
                     mostrarLoading('Gerando certificado oficial...');
+                    
+                    // Salvar no histórico
+                    let historico = JSON.parse(localStorage.getItem('certificados_emitidos') || '[]');
+                    historico.push({
+                        numero: result.numero,
+                        tipo: tipo,
+                        paciente: dados.paciente.nomeCompleto,
+                        bi: dados.paciente.bi,
+                        genero: dados.paciente.genero,
+                        dataNascimento: dados.paciente.dataNascimento,
+                        dados: dados.dados,
+                        laboratorio: laboratorio,
+                        endereco: endereco,
+                        laborantin: laborantin,
+                        data: new Date().toISOString()
+                    });
+                    localStorage.setItem('certificados_emitidos', JSON.stringify(historico));
+                    
                     await gerarPDF(dados, result.numero, tipo, laboratorio, endereco, laborantin);
                     esconderLoading();
+                    carregarHistorico(); // Atualizar histórico
                 } else {
                     esconderLoading();
                     alert('❌ Erro: ' + result.erro);
