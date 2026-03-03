@@ -234,7 +234,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // =============================================
-// DASHBOARD DO LABORATORIO (COM RELATÓRIOS)
+// DASHBOARD DO LABORATORIO - VERSÃO CORRIGIDA
 // =============================================
 app.get('/lab-dashboard', (req, res) => {
   res.send('<!DOCTYPE html>' +
@@ -254,10 +254,12 @@ app.get('/lab-dashboard', (req, res) => {
     '.btn-pdf{background:#17a2b8;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;font-size:12px;}' +
     '.secao{display:none;}' +
     '.secao.ativa{display:block;}' +
-    '.card-container{display:flex;gap:15px;margin-top:20px;margin-bottom:30px;}' +
-    '.card{background:white;padding:20px;border-radius:10px;flex:1;border-top:4px solid #006633;box-shadow:0 2px 5px rgba(0,0,0,0.1);text-align:center;}' +
-    '.card h4{color:#666;font-size:14px;text-transform:uppercase;margin-bottom:10px;}' +
-    '.card p{font-size:28px;font-weight:bold;color:#006633;}' +
+    '.stats-container{display:flex;gap:15px;margin:30px 0;}' +
+    '.stat-card{background:white;padding:20px;border-radius:10px;flex:1;text-align:center;border-top:4px solid #006633;box-shadow:0 2px 5px rgba(0,0,0,0.1);}' +
+    '.stat-card h4{color:#666;font-size:14px;margin-bottom:10px;}' +
+    '.stat-card p{font-size:28px;font-weight:bold;color:#006633;}' +
+    '.stat-card.total{border-top-color:#ffa500;}' +
+    '.stat-card.total p{color:#ffa500;}' +
     'table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}' +
     'th{background:#006633;color:white;padding:12px;text-align:left;}' +
     'td{padding:12px;border-bottom:1px solid #ddd;}' +
@@ -272,20 +274,23 @@ app.get('/lab-dashboard', (req, res) => {
     '</div>' +
     '<div class="main">' +
     '<div id="welcome" class="welcome"></div>' +
+    
     '<div id="secaoDashboard" class="secao ativa">' +
     '<h2>Relatórios de Emissão</h2>' +
-    '<div class="card-container">' +
-    '<div class="card"><h4>Hoje</h4><p id="statDiario">0</p></div>' +
-    '<div class="card"><h4>Este Mês</h4><p id="statMensal">0</p></div>' +
-    '<div class="card"><h4>Este Ano</h4><p id="statAnual">0</p></div>' +
-    '<div class="card" style="border-top-color:#ffa500;"><h4>Total Geral</h4><p id="statTotal" style="color:#ffa500;">0</p></div>' +
+    '<div class="stats-container">' +
+    '<div class="stat-card"><h4>HOJE</h4><p id="statDiario">0</p></div>' +
+    '<div class="stat-card"><h4>ESTE MÊS</h4><p id="statMensal">0</p></div>' +
+    '<div class="stat-card"><h4>ESTE ANO</h4><p id="statAnual">0</p></div>' +
+    '<div class="stat-card total"><h4>TOTAL GERAL</h4><p id="statTotal">0</p></div>' +
     '</div>' +
     '</div>' +
+    
     '<div id="secaoCertificados" class="secao">' +
     '<h2>Certificados <button class="btn" style="float:right;" onclick="window.location.href=\'/novo-certificado\'">+ Novo</button></h2>' +
     '<table><thead><tr><th>Número</th><th>Tipo</th><th>Paciente</th><th>Data</th><th>Ações</th></tr></thead><tbody id="tabela"><tr><td colspan="5">Carregando...</td></tr></tbody></table>' +
     '</div>' +
     '</div>' +
+    
     '<script>' +
     'const key = localStorage.getItem("labKey");' +
     'if(!key) window.location.href = "/lab-login";' +
@@ -297,7 +302,7 @@ app.get('/lab-dashboard', (req, res) => {
     '    const dMe = await rMe.json();' +
     '    if(dMe && dMe.nome) document.getElementById("welcome").innerHTML = "<h2>Olá, " + dMe.nome + "!</h2><p>Pronto para mais um dia de trabalho? Vamos juntos!</p>";' +
     
-    '    // Carregar Estatísticas (Relatórios)' +
+    '    // Carregar Estatísticas' +
     '    const rStats = await fetch("/api/certificados/stats-detalhes", {headers:{"x-api-key":key}});' +
     '    const dStats = await rStats.json();' +
     '    document.getElementById("statDiario").innerText = dStats.diario;' +
@@ -305,7 +310,7 @@ app.get('/lab-dashboard', (req, res) => {
     '    document.getElementById("statAnual").innerText = dStats.anual;' +
     '    document.getElementById("statTotal").innerText = dStats.total;' +
     
-    '    // Carregar Tabela de Certificados' +
+    '    // Carregar Tabela' +
     '    const rCert = await fetch("/api/certificados/lab", {headers:{"x-api-key":key}});' +
     '    const lista = await rCert.json();' +
     '    const tipos = ["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO"];' +
