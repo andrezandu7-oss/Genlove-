@@ -417,31 +417,23 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
 });
 
 // =========================================
-// EN-TÊTE DU DOCUMENT (CENTRÉ)
+// EN-TÊTE DU DOCUMENT (CENTRÉ) - VERSION SIMPLE
 // =========================================
-// Configuration pour centrer le texte
 doc.fillColor('#006633');
 
-// Première ligne - centrée
-doc.fontSize(20)
-   .text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+// Trois lignes centrées
+doc.fontSize(20).text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+doc.fontSize(24).text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
 
-// Deuxième ligne - centrée
-doc.fontSize(16)
-   .text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
-
-// Troisième ligne - centrée et plus grande
-doc.fontSize(24)
-   .text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
-
-// Ligne de séparation centrée
+// Ligne de séparation
 doc.strokeColor('#006633')
    .lineWidth(2)
-   .moveTo(doc.page.width / 2 - 250, 150)
-   .lineTo(doc.page.width / 2 + 250, 150)
+   .moveTo(50, 150)  // Version simplifiée : coordonnées fixes
+   .lineTo(550, 150)
    .stroke();
 
-let y = 180;
+let y = 180;  
 
 // =========================================
 // LABORATÓRIO EMISSOR
