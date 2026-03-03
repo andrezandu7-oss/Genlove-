@@ -397,6 +397,51 @@ app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
   }
 });
 
+// Stats détaillées pour le laboratoire
+app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
+    try {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        
+        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+        
+        const stats = await Certificate.aggregate([
+            { $match: { emitidoPor: req.lab._id } },
+            {
+                $facet: {
+                    diario: [
+                        { $match: { emitidoEm: { $gte: hoje } } },
+                        { $count: "count" }
+                    ],
+                    mensal: [
+                        { $match: { emitidoEm: { $gte: inicioMes } } },
+                        { $count: "count" }
+                    ],
+                    anual: [
+                        { $match: { emitidoEm: { $gte: inicioAno } } },
+                        { $count: "count" }
+                    ],
+                    porTipo: [
+                        { $group: { _id: "$tipo", count: { $sum: 1 } } }
+                    ]
+                }
+            }
+        ]);
+        
+        res.json({
+            diario: stats[0].diario[0]?.count || 0,
+            mensal: stats[0].mensal[0]?.count || 0,
+            anual: stats[0].anual[0]?.count || 0,
+            total: req.lab.totalEmissoes,
+            porTipo: stats[0].porTipo
+        });
+    } catch (error) {
+        console.error('Erreur stats:', error);
+        res.status(500).json({ error: 'Erreur lors du calcul des statistiques' });
+    }
+});
+
 app.get('/api/certificados/lab', labMiddleware, async (req, res) => {
   const certificados = await Certificate.find({ emitidoPor: req.lab._id }).sort({ emitidoEm: -1 });
   res.json(certificados);
