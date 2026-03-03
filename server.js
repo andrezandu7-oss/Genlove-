@@ -560,7 +560,7 @@ app.get('/lab-dashboard', (req, res) => {
     '<div id="welcome" class="welcome"></div>' +
     '<div id="secaoDashboard" class="secao ativa">' +
     '<h2>Dashboard</h2>' +
-    
+
     // Statistiques générales
     '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:30px;">' +
     '<div class="stat-box">' +
@@ -627,37 +627,18 @@ app.get('/lab-dashboard', (req, res) => {
     '<table><thead><tr><th>Número</th><th>Tipo</th><th>Paciente</th><th>Data</th><th>Ações</th></tr></thead><tbody id="tabela"><tr><td colspan="5">Carregando...</td></tr></tbody></table>' +
     '</div>' +
     '</div>' +
+
     '<script>' +
     'const key = localStorage.getItem("labKey");' +
     'if(!key) window.location.href = "/lab-login";' +
 
-    // Função para reimprimir PDF com dados completos
+    // Função para reimprimir PDF
     'function reimprimirPDF(numero) {' +
     '  const historico = JSON.parse(sessionStorage.getItem("certificados_emitidos") || "[]");' +
     '  const cert = historico.find(c => c.numero === numero);' +
     '  if(cert) {' +
     '    const tipos = ["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO"];' +
     '    const win = window.open("", "_blank");' +
-    '    ' +
-    '    // Construir dados do paciente' +
-    '    let dadosPaciente = "<h3>DADOS DO PACIENTE</h3>";' +
-    '    dadosPaciente += "<p><strong>Nome:</strong> " + cert.paciente + "</p>";' +
-    '    dadosPaciente += "<p><strong>BI:</strong> " + (cert.bi || "N/A") + "</p>";' +
-    '    dadosPaciente += "<p><strong>Gênero:</strong> " + (cert.genero === "M" ? "Masculino" : "Feminino") + "</p>";' +
-    '    if(cert.dataNascimento) dadosPaciente += "<p><strong>Data Nasc.:</strong> " + new Date(cert.dataNascimento).toLocaleDateString() + "</p>";' +
-    '    ' +
-    '    // Construir dados dos exames' +
-    '    let dadosExames = "<h3>EXAMES REALIZADOS</h3>";' +
-    '    if(cert.dados) {' +
-    '      for(let key in cert.dados) {' +
-    '        if(cert.dados[key] && cert.dados[key] !== "Não solicitado" && cert.dados[key] !== "") {' +
-    '          dadosExames += "<p><strong>" + key + ":</strong> " + cert.dados[key] + "</p>";' +
-    '        }' +
-    '      }' +
-    '    }' +
-    '    ' +
-    '    const qrUrl = `https://quickchart.io/qr?text=Certificado%20${cert.numero}%20${cert.paciente}&size=200`;' +
-    '    ' +
     '    let html = `' +
     '      <html><head><title>Certificado ${cert.numero}</title>' +
     '      <style>' +
@@ -667,9 +648,8 @@ app.get('/lab-dashboard', (req, res) => {
     '        .numero{text-align:right;font-size:14px;margin:20px 0;}' +
     '        .laboratorio{background:#e8f5e9;padding:15px;border-radius:10px;margin:20px 0;text-align:center;}' +
     '        .paciente{background:#f0f8f0;padding:20px;border-radius:10px;margin:20px 0;}' +
-    '        .exames{background:white;padding:20px;border:1px solid #ddd;border-radius:10px;margin:20px 0;}' +
     '        .qr{text-align:center;margin:30px 0;}' +
-    '        .btn-print{background:#006633;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:16px;margin:20px 0;}' +
+    '        .btn-print{background:#006633;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;}' +
     '      </style>' +
     '      </head><body>' +
     '      <div class="header">' +
@@ -688,22 +668,18 @@ app.get('/lab-dashboard', (req, res) => {
     '        <p style="margin-top:10px;">Técnico: <strong>${cert.laborantin}</strong></p>' +
     '      </div>' +
     '      <div class="paciente">' +
-    '        ${dadosPaciente}' +
-    '      </div>' +
-    '      <div class="exames">' +
-    '        ${dadosExames}' +
+    '        <h3 style="color:#006633;">📋 DADOS DO PACIENTE</h3>' +
+    '        <p><strong>Nome:</strong> ${cert.paciente}</p>' +
+    '        <p><strong>BI:</strong> ${cert.bi || "N/A"}</p>' +
+    '        <p><strong>Gênero:</strong> ${cert.genero === "M" ? "Masculino" : "Feminino"}</p>' +
     '      </div>' +
     '      <div class="qr">' +
     '        <h3 style="color:#006633;">🔑 CÓDIGO DE VALIDAÇÃO</h3>' +
-    '        <img src="${qrUrl}" style="width:200px;border:2px solid #006633;border-radius:5px;padding:5px;">' +
+    '        <img src="https://quickchart.io/qr?text=Certificado%20${cert.numero}&size=200" style="width:200px;">' +
     '        <p style="font-size:13px;color:#006633;">Aponte a câmara para validar</p>' +
     '      </div>' +
     '      <div style="text-align:center;margin-top:30px;">' +
     '        <button class="btn-print" onclick="window.print()">🖨️ Imprimir PDF</button>' +
-    '      </div>' +
-    '      <div style="margin-top:50px;text-align:center;font-size:11px;color:#999;">' +
-    '        <p>Documento emitido em ${new Date(cert.data).toLocaleString()}</p>' +
-    '        <p>Certificado válido em todo território nacional</p>' +
     '      </div>' +
     '      </body></html>' +
     '    );' +
@@ -721,13 +697,18 @@ app.get('/lab-dashboard', (req, res) => {
     '    if(d && d.nome){' +
     '      document.getElementById("welcome").innerHTML = "<h2>Olá, " + d.nome + "!</h2><p>Pronto para mais um dia de trabalho? Vamos juntos!</p>";' +
     '    }' +
-    '  } catch(e){}' +
+    '  } catch(e){' +
+    '    console.log("Erro ao carregar laboratório");' +
+    '  }' +
     '}' +
 
     'function mostrar(secao){' +
+    '  console.log("Mostrando secao:", secao);' +
     '  document.getElementById("secaoDashboard").classList.remove("ativa");' +
     '  document.getElementById("secaoCertificados").classList.remove("ativa");' +
-    '  if(secao === "dashboard") document.getElementById("secaoDashboard").classList.add("ativa");' +
+    '  if(secao === "dashboard") {' +
+    '    document.getElementById("secaoDashboard").classList.add("ativa");' +
+    '  }' +
     '  if(secao === "certificados"){' +
     '    document.getElementById("secaoCertificados").classList.add("ativa");' +
     '    carregarCertificados();' +
@@ -751,15 +732,15 @@ app.get('/lab-dashboard', (req, res) => {
     '    const data = new Date(c.emitidoEm);' +
     '    if(data.toDateString() === hoje) {' +
     '      stats.totalHoje++;' +
-    '      stats.tipo[c.tipo].hoje++;' +
+    '      if(stats.tipo[c.tipo]) stats.tipo[c.tipo].hoje++;' +
     '    }' +
     '    if(data.getMonth() === mesAtual && data.getFullYear() === anoAtual) {' +
     '      stats.totalMes++;' +
-    '      stats.tipo[c.tipo].mes++;' +
+    '      if(stats.tipo[c.tipo]) stats.tipo[c.tipo].mes++;' +
     '    }' +
     '    if(data.getFullYear() === anoAtual) {' +
     '      stats.totalAno++;' +
-    '      stats.tipo[c.tipo].ano++;' +
+    '      if(stats.tipo[c.tipo]) stats.tipo[c.tipo].ano++;' +
     '    }' +
     '  });' +
     '  ' +
@@ -768,44 +749,75 @@ app.get('/lab-dashboard', (req, res) => {
 
     'async function carregarCertificados(){' +
     '  try{' +
+    '    console.log("Carregando certificados...");' +
     '    const r = await fetch("/api/certificados/lab",{headers:{"x-api-key":key}});' +
     '    const lista = await r.json();' +
+    '    console.log("Certificados carregados:", lista.length);' +
+    '    ' +
     '    document.getElementById("total").innerText = lista.length;' +
     '    ' +
     '    // Calcular estatísticas' +
     '    const stats = calcularEstatisticas(lista);' +
-    '    document.getElementById("totalHoje").innerText = stats.totalHoje;' +
-    '    document.getElementById("totalMes").innerText = stats.totalMes;' +
-    '    document.getElementById("totalAno").innerText = stats.totalAno;' +
     '    ' +
-    '    // Atualizar por tipo' +
-    '    document.getElementById("genHoje").innerText = stats.tipo[1].hoje;' +
-    '    document.getElementById("genMes").innerText = stats.tipo[1].mes;' +
-    '    document.getElementById("genAno").innerText = stats.tipo[1].ano;' +
+    '    // Verificar se os elementos existem antes de atualizar' +
+    '    const elementos = {' +
+    '      totalHoje: document.getElementById("totalHoje"),' +
+    '      totalMes: document.getElementById("totalMes"),' +
+    '      totalAno: document.getElementById("totalAno"),' +
+    '      genHoje: document.getElementById("genHoje"),' +
+    '      genMes: document.getElementById("genMes"),' +
+    '      genAno: document.getElementById("genAno"),' +
+    '      saudeHoje: document.getElementById("saudeHoje"),' +
+    '      saudeMes: document.getElementById("saudeMes"),' +
+    '      saudeAno: document.getElementById("saudeAno"),' +
+    '      incHoje: document.getElementById("incHoje"),' +
+    '      incMes: document.getElementById("incMes"),' +
+    '      incAno: document.getElementById("incAno"),' +
+    '      aptHoje: document.getElementById("aptHoje"),' +
+    '      aptMes: document.getElementById("aptMes"),' +
+    '      aptAno: document.getElementById("aptAno"),' +
+    '      matHoje: document.getElementById("matHoje"),' +
+    '      matMes: document.getElementById("matMes"),' +
+    '      matAno: document.getElementById("matAno"),' +
+    '      cpnHoje: document.getElementById("cpnHoje"),' +
+    '      cpnMes: document.getElementById("cpnMes"),' +
+    '      cpnAno: document.getElementById("cpnAno"),' +
+    '      epiHoje: document.getElementById("epiHoje"),' +
+    '      epiMes: document.getElementById("epiMes"),' +
+    '      epiAno: document.getElementById("epiAno")' +
+    '    };' +
     '    ' +
-    '    document.getElementById("saudeHoje").innerText = stats.tipo[2].hoje;' +
-    '    document.getElementById("saudeMes").innerText = stats.tipo[2].mes;' +
-    '    document.getElementById("saudeAno").innerText = stats.tipo[2].ano;' +
+    '    if(elementos.totalHoje) elementos.totalHoje.innerText = stats.totalHoje;' +
+    '    if(elementos.totalMes) elementos.totalMes.innerText = stats.totalMes;' +
+    '    if(elementos.totalAno) elementos.totalAno.innerText = stats.totalAno;' +
     '    ' +
-    '    document.getElementById("incHoje").innerText = stats.tipo[3].hoje;' +
-    '    document.getElementById("incMes").innerText = stats.tipo[3].mes;' +
-    '    document.getElementById("incAno").innerText = stats.tipo[3].ano;' +
+    '    if(elementos.genHoje) elementos.genHoje.innerText = stats.tipo[1].hoje;' +
+    '    if(elementos.genMes) elementos.genMes.innerText = stats.tipo[1].mes;' +
+    '    if(elementos.genAno) elementos.genAno.innerText = stats.tipo[1].ano;' +
     '    ' +
-    '    document.getElementById("aptHoje").innerText = stats.tipo[4].hoje;' +
-    '    document.getElementById("aptMes").innerText = stats.tipo[4].mes;' +
-    '    document.getElementById("aptAno").innerText = stats.tipo[4].ano;' +
+    '    if(elementos.saudeHoje) elementos.saudeHoje.innerText = stats.tipo[2].hoje;' +
+    '    if(elementos.saudeMes) elementos.saudeMes.innerText = stats.tipo[2].mes;' +
+    '    if(elementos.saudeAno) elementos.saudeAno.innerText = stats.tipo[2].ano;' +
     '    ' +
-    '    document.getElementById("matHoje").innerText = stats.tipo[5].hoje;' +
-    '    document.getElementById("matMes").innerText = stats.tipo[5].mes;' +
-    '    document.getElementById("matAno").innerText = stats.tipo[5].ano;' +
+    '    if(elementos.incHoje) elementos.incHoje.innerText = stats.tipo[3].hoje;' +
+    '    if(elementos.incMes) elementos.incMes.innerText = stats.tipo[3].mes;' +
+    '    if(elementos.incAno) elementos.incAno.innerText = stats.tipo[3].ano;' +
     '    ' +
-    '    document.getElementById("cpnHoje").innerText = stats.tipo[6].hoje;' +
-    '    document.getElementById("cpnMes").innerText = stats.tipo[6].mes;' +
-    '    document.getElementById("cpnAno").innerText = stats.tipo[6].ano;' +
+    '    if(elementos.aptHoje) elementos.aptHoje.innerText = stats.tipo[4].hoje;' +
+    '    if(elementos.aptMes) elementos.aptMes.innerText = stats.tipo[4].mes;' +
+    '    if(elementos.aptAno) elementos.aptAno.innerText = stats.tipo[4].ano;' +
     '    ' +
-    '    document.getElementById("epiHoje").innerText = stats.tipo[7].hoje;' +
-    '    document.getElementById("epiMes").innerText = stats.tipo[7].mes;' +
-    '    document.getElementById("epiAno").innerText = stats.tipo[7].ano;' +
+    '    if(elementos.matHoje) elementos.matHoje.innerText = stats.tipo[5].hoje;' +
+    '    if(elementos.matMes) elementos.matMes.innerText = stats.tipo[5].mes;' +
+    '    if(elementos.matAno) elementos.matAno.innerText = stats.tipo[5].ano;' +
+    '    ' +
+    '    if(elementos.cpnHoje) elementos.cpnHoje.innerText = stats.tipo[6].hoje;' +
+    '    if(elementos.cpnMes) elementos.cpnMes.innerText = stats.tipo[6].mes;' +
+    '    if(elementos.cpnAno) elementos.cpnAno.innerText = stats.tipo[6].ano;' +
+    '    ' +
+    '    if(elementos.epiHoje) elementos.epiHoje.innerText = stats.tipo[7].hoje;' +
+    '    if(elementos.epiMes) elementos.epiMes.innerText = stats.tipo[7].mes;' +
+    '    if(elementos.epiAno) elementos.epiAno.innerText = stats.tipo[7].ano;' +
     '    ' +
     '    // Montar tabela' +
     '    let html = "";' +
@@ -819,30 +831,23 @@ app.get('/lab-dashboard', (req, res) => {
     '    }' +
     '    document.getElementById("tabela").innerHTML = html;' +
     '  } catch(e){' +
+    '    console.error("Erro ao carregar certificados:", e);' +
     '    document.getElementById("tabela").innerHTML = "<tr><td colspan=\'5\'>Erro ao carregar</td></tr>";' +
     '  }' +
     '}' +
 
     'function logout(){' +
     '  localStorage.removeItem("labKey");' +
-    '  sessionStorage.removeItem("certificados_emitidos");' +
     '  window.location.href = "/";' +
     '}' +
 
+    '// Inicialização' +
     'carregarLab();' +
     'carregarCertificados();' +
     'mostrar("dashboard");' +
     '</script>' +
     '</body></html>');
 });
-
-// =============================================
-// ROTA DO FORMULÁRIO DE CERTIFICADO
-// =============================================
-app.get('/novo-certificado', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'novo-certificado.html'));
-});
-
 // ================================================
 // API DE LABORATÓRIOS
 // ================================================
