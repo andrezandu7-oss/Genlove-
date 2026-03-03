@@ -423,7 +423,12 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
     try {
         const { numero } = req.body;
         
-        // Récupérer le certificat avec les données déjà calculées par MongoDB
+        // Vérifier que le numéro est présent
+        if (!numero) {
+            return res.status(400).json({ error: 'Número do certificado não fornecido' });
+        }
+        
+        // Récupérer le certificat avec les données
         const certificado = await Certificate.findOne({ 
             numero,
             emitidoPor: req.lab._id 
@@ -434,7 +439,18 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         }
         
         // Utiliser la méthode de l'instance pour préparer les données
-        const dados = certificado.prepararParaPDF();
+        const dados = certificado.prepararParaPDF ? certificado.prepararParaPDF() : {
+            numero: certificado.numero,
+            tipo: certificado.tipo,
+            paciente: certificado.paciente,
+            laborantin: certificado.laborantin || { nome: 'Não informado', registro: '' },
+            dados: certificado.dados,
+            imc: certificado.imc,
+            idade: certificado.idade,
+            classificacaoIMC: certificado.classificacaoIMC,
+            emitidoEm: certificado.emitidoEm
+        };
+        
         const lab = req.lab;
         
         // Créer un nouveau document PDF
@@ -506,10 +522,10 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         y += 20;
         doc.fillColor('#000')
             .fontSize(11)
-            .text(`Nome: ${dados.laborantin.nome}`, 70, y);
+            .text(`Nome: ${dados.laborantin?.nome || 'Não informado'}`, 70, y);
         y += 15;
         
-        if (dados.laborantin.registro) {
+        if (dados.laborantin?.registro) {
             doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
             y += 25;
         } else {
@@ -526,12 +542,12 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         y += 20;
         doc.fillColor('#000')
             .fontSize(11)
-            .text(`Nome: ${dados.paciente.nomeCompleto}`, 70, y);
+            .text(`Nome: ${dados.paciente?.nomeCompleto || 'Não informado'}`, 70, y);
         y += 15;
-        doc.text(`BI: ${dados.paciente.bi}`, 70, y);
+        doc.text(`BI: ${dados.paciente?.bi || 'Não informado'}`, 70, y);
         y += 15;
         
-        if (dados.paciente.dataNascimento) {
+        if (dados.paciente?.dataNascimento) {
             doc.text(`Data Nascimento: ${new Date(dados.paciente.dataNascimento).toLocaleDateString('pt-PT')}`, 70, y);
             y += 15;
         }
@@ -541,19 +557,19 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             y += 15;
         }
         
-        if (dados.paciente.genero) {
+        if (dados.paciente?.genero) {
             const genero = dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino';
             doc.text(`Género: ${genero}`, 70, y);
             y += 15;
         }
         
-        if (dados.paciente.telefone) {
+        if (dados.paciente?.telefone) {
             doc.text(`Telefone: ${dados.paciente.telefone}`, 70, y);
             y += 20;
         }
         
         // =========================================
-        // DADOS MÉDICOS (AU MILIEU)
+        // DADOS MÉDICOS
         // =========================================
         doc.fillColor('#006633')
             .fontSize(12)
@@ -610,7 +626,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         y += 20;
         
         // =========================================
-        // ASSINATURAS (EN BAS)
+        // ASSINATURAS
         // =========================================
         // Linha para assinatura do laborantin
         doc.lineWidth(1)
@@ -620,7 +636,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         
         doc.fontSize(10)
             .text('Assinatura do Laborantin', 70, y + 5)
-            .text(dados.laborantin.nome, 70, y + 20);
+            .text(dados.laborantin?.nome || '___________________', 70, y + 20);
         
         // Linha para assinatura do diretor
         doc.lineWidth(1)
@@ -630,7 +646,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         
         doc.fontSize(10)
             .text('Assinatura do Diretor Clínico', 350, y + 5)
-            .text(lab.diretor || 'Não informado', 350, y + 20);
+            .text(lab.diretor || '___________________', 350, y + 20);
         
         y += 50;
         
@@ -663,8 +679,8 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         doc.end();
         
     } catch (error) {
-        console.error('Erreur PDF:', error);
-        res.status(500).json({ error: 'Erreur lors de la génération du PDF' });
+        console.error('❌ Erreur PDF:', error);
+        res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
     }
 });
 
