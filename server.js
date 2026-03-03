@@ -569,61 +569,118 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         }
         
         // =========================================
-        // DADOS MÉDICOS
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(12)
-            .text('DADOS MÉDICOS:', 50, y);
-        
-        y += 20;
-        
-        // Titre du type de certificat
-        const tipos = {
-            1: 'CERTIFICADO DE GENÓTIPO',
-            2: 'CERTIFICADO DE BOA SAÚDE',
-            3: 'CERTIFICADO DE INCAPACIDADE',
-            4: 'CERTIFICADO DE APTIDÃO',
-            5: 'CERTIFICADO DE SAÚDE MATERNA',
-            6: 'CERTIFICADO DE PRÉ-NATAL',
-            7: 'CERTIFICADO EPIDEMIOLÓGICO',
-            8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
-        };
-        
-        doc.fillColor('#333')
-            .fontSize(12)
-            .text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
-        
-        y += 25;
-        
-        // Afficher les données médicales
-        if (dados.dados) {
-            for (let [key, value] of Object.entries(dados.dados)) {
-                if (value && value.toString().trim()) {
-                    const nomeCampo = key.replace(/([A-Z])/g, ' $1')
-                        .replace(/^./, str => str.toUpperCase());
-                    
-                    doc.fontSize(11)
-                        .fillColor('#000')
-                        .text(`${nomeCampo}: ${value}`, 70, y);
-                    
-                    y += 20;
-                    
-                    if (y > 700) {
-                        doc.addPage();
-                        y = 50;
-                    }
-                }
-            }
-        }
-        
-        if (dados.imc) {
+// DADOS MÉDICOS
+// =========================================
+doc.fillColor('#006633')
+    .fontSize(12)
+    .text('DADOS MÉDICOS:', 50, y);
+
+y += 20;
+
+// Titre du type de certificat
+const tipos = {
+    1: 'CERTIFICADO DE GENÓTIPO',
+    2: 'CERTIFICADO DE BOA SAÚDE',
+    3: 'CERTIFICADO DE INCAPACIDADE',
+    4: 'CERTIFICADO DE APTIDÃO',
+    5: 'CERTIFICADO DE SAÚDE MATERNA',
+    6: 'CERTIFICADO DE PRÉ-NATAL',
+    7: 'CERTIFICADO EPIDEMIOLÓGICO',
+    8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
+};
+
+doc.fillColor('#333')
+    .fontSize(12)
+    .text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
+
+y += 25;
+
+// 👇 NOUVELLE SECTION : Afficher les données médicales avec mention "não solicitado"
+if (dados.dados) {
+    // Liste de tous les examens possibles pour ce type de certificat
+    const todosExames = {
+        1: ['grupoSanguineo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese', 'observacoes'],
+        2: ['peso', 'altura', 'imc', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos', 'observacoes'],
+        3: ['tipoIncapacidade', 'causa', 'grau', 'dataInicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante', 'observacoes'],
+        4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade', 'observacoes'],
+        5: ['gestacoes', 'partos', 'abortos', 'nascidosVivos', 'dum', 'dpp', 'idadeGestacional', 'consultasCPN', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguineo', 'fatorRh', 'exsudadoVaginal', 'pesoAtual', 'alturaUterina', 'batimentosCardiacosFeto', 'movimentosFetais', 'edema', 'proteinuria', 'observacoes'],
+        6: ['grupoSanguineo', 'fatorRh', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'ureia', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao', 'observacoes'],
+        7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos', 'observacoes'],
+        8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais', 'recomendacoes']
+    };
+    
+    const examesTipo = todosExames[dados.tipo] || [];
+    
+    for (let [key, value] of Object.entries(dados.dados)) {
+        if (value && value.toString().trim()) {
+            const nomeCampo = key.replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase());
+            
             doc.fontSize(11)
                 .fillColor('#000')
-                .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
-            y += 25;
+                .text(`${nomeCampo}: ${value}`, 70, y);
+            
+            y += 20;
+            
+            if (y > 700) {
+                doc.addPage();
+                y = 50;
+            }
         }
+    }
+    
+    // 👇 NOUVEAU : Afficher les examens NON SOLLICITÉS
+    const examesPreenchidos = Object.keys(dados.dados).filter(key => 
+        dados.dados[key] && dados.dados[key].toString().trim()
+    );
+    
+    const examesNaoSolicitados = examesTipo.filter(exame => 
+        !examesPreenchidos.includes(exame) && exame !== 'observacoes'
+    );
+    
+    if (examesNaoSolicitados.length > 0) {
+        y += 10;
+        doc.fillColor('#999')
+            .fontSize(10)
+            .text('Exames não solicitados:', 70, y);
+        y += 15;
         
-        y += 20;
+        // Afficher en 2 colonnes
+        const metade = Math.ceil(examesNaoSolicitados.length / 2);
+        const col1 = examesNaoSolicitados.slice(0, metade);
+        const col2 = examesNaoSolicitados.slice(metade);
+        
+        doc.fontSize(9)
+            .fillColor('#666');
+        
+        // Colonne 1
+        let yCol1 = y;
+        col1.forEach(exame => {
+            const nomeExame = exame.replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase());
+            doc.text(`• ${nomeExame} (não solicitado)`, 70, yCol1);
+            yCol1 += 15;
+        });
+        
+        // Colonne 2
+        let yCol2 = y;
+        col2.forEach(exame => {
+            const nomeExame = exame.replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase());
+            doc.text(`• ${nomeExame} (não solicitado)`, 300, yCol2);
+            yCol2 += 15;
+        });
+        
+        y = Math.max(yCol1, yCol2) + 10;
+    }
+}
+
+if (dados.imc) {
+    doc.fontSize(11)
+        .fillColor('#000')
+        .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
+    y += 25;
+}
         
         // =========================================
         // ASSINATURAS
