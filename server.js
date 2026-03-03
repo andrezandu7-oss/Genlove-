@@ -426,6 +426,47 @@ app.get('/novo-certificado', (req, res) => {
 });
 
 // =============================================
+// API DE ESTATÍSTICAS DETALHADAS (RELATÓRIOS)
+// =============================================
+app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
+  try {
+    const hoje = new Date();
+    const inicioHoje = new Date(hoje.setHours(0, 0, 0, 0));
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+
+    const stats = await Certificate.aggregate([
+      { $match: { emitidoPor: req.lab._id } },
+      {
+        $facet: {
+          "diario": [
+            { $match: { emitidoEm: { $gte: inicioHoje } } },
+            { $count: "count" }
+          ],
+          "mensal": [
+            { $match: { emitidoEm: { $gte: inicioMes } } },
+            { $count: "count" }
+          ],
+          "anual": [
+            { $match: { emitidoEm: { $gte: inicioAno } } },
+            { $count: "count" }
+          ]
+        }
+      }
+    ]);
+
+    res.json({
+      diario: stats[0]?.diario[0]?.count || 0,
+      mensal: stats[0]?.mensal[0]?.count || 0,
+      anual: stats[0]?.anual[0]?.count || 0,
+      total: req.lab.totalEmissoes || 0
+    });
+  } catch (error) {
+    res.status(500).json({ erro: 'Erro ao calcular estatísticas' });
+  }
+});
+
+// =============================================
 // STATS GLOBAIS (MINISTÉRIO)
 // =============================================
 app.get('/api/stats', authMiddleware, async (req, res) => {
