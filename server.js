@@ -518,7 +518,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // =============================================
-// DASHBOARD DO LABORATORIO - VERSÃO FUNCIONAL
+// DASHBOARD DO LABORATORIO - VERSÃO CORRIGIDA
 // =============================================
 app.get('/lab-dashboard', (req, res) => {
   res.send('<!DOCTYPE html>' +
@@ -535,7 +535,7 @@ app.get('/lab-dashboard', (req, res) => {
     '.welcome{background:#e8f5e9;padding:20px;border-left:5px solid #006633;margin-bottom:20px;}' +
     '.btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;margin:5px;}' +
     '.btn:hover{background:#004d26;}' +
-    '.btn-danger{background:#dc3545;}' +
+    '.btn-danger{background:#dc3545;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;}' +
     '.btn-danger:hover{background:#c82333;}' +
     '.btn-pdf{background:#17a2b8;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;font-size:12px;}' +
     '.btn-pdf:hover{background:#138496;}' +
@@ -579,12 +579,12 @@ app.get('/lab-dashboard', (req, res) => {
     '    let html = `' +
     '      <html><head><title>Certificado ${cert.numero}</title>' +
     '      <style>' +
-    '        body{font-family:Arial;padding:40px;max-width:800px;margin:0auto;}' +
-    '        .header{text-align:center;color:#006633;border-bottom:2pxsolid#006633;}' +
+    '        body{font-family:Arial;padding:40px;max-width:800px;margin:0 auto;}' +
+    '        .header{text-align:center;color:#006633;border-bottom:2px solid #006633;}' +
     '        h1{font-size:24px;} h2{font-size:18px;}' +
-    '        .info{background:#f0f8f0;padding:20px;border-radius:10px;margin:20px0;}' +
-    '        .qr{text-align:center;margin:30px0;}' +
-    '        .btn-print{background:#006633;color:white;border:none;padding:10px20px;border-radius:5px;cursor:pointer;}' +
+    '        .info{background:#f0f8f0;padding:20px;border-radius:10px;margin:20px 0;}' +
+    '        .qr{text-align:center;margin:30px 0;}' +
+    '        .btn-print{background:#006633;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;}' +
     '      </style>' +
     '      </head><body>' +
     '      <div class="header"><h1>REPÚBLICA DE ANGOLA</h1><h2>MINISTÉRIO DA SAÚDE</h2></div>' +
@@ -604,7 +604,7 @@ app.get('/lab-dashboard', (req, res) => {
     '        <img src="https://quickchart.io/qr?text=Certificado%20${cert.numero}&size=200" style="width:200px;">' +
     '      </div>' +
     '      <button class="btn-print" onclick="window.print()">🖨️ Imprimir</button>' +
-    '      </body></html>"' +
+    '      </body></html>' +
     '    );' +
     '    win.document.write(html);' +
     '    win.document.close();' +
@@ -655,6 +655,7 @@ app.get('/lab-dashboard', (req, res) => {
     
     'function logout(){' +
     '  localStorage.removeItem("labKey");' +
+    '  sessionStorage.removeItem("certificados_emitidos");' +
     '  window.location.href = "/";' +
     '}' +
     
