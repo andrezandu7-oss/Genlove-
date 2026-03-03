@@ -428,6 +428,7 @@ app.get('/novo-certificado', (req, res) => {
 });
 
 // =============================================
+// =============================================
 // API DE ESTATÍSTICAS DETALHADAS (RELATÓRIOS)
 // =============================================
 app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
