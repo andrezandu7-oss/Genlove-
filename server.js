@@ -474,40 +474,30 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             .stroke();
         
         // =========================================
-        // NUMÉRO DU CERTIFICAT
+        // LABORATÓRIO EMISSOR
         // =========================================
         doc.fillColor('#006633')
             .fontSize(14)
-            .text(`CERTIFICADO Nº: ${numero}`, 50, 160)
+            .text(`${lab.nome}`, 50, 160)
             .fontSize(10)
             .fillColor('#666')
-            .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, 180);
-        
-        let y = 210;
+            .text(`NIF: ${lab.nif} | ${lab.provincia}`, 50, 180)
+            .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telephone || 'Não informado'}`, 50, 195);
         
         // =========================================
-        // LABORATÓRIO EMISSOR (depuis API Key)
+        // NUMÉRO DO CERTIFICADO
         // =========================================
         doc.fillColor('#006633')
             .fontSize(12)
-            .text('LABORATÓRIO EMISSOR:', 50, y);
+            .text(`CERTIFICADO Nº: ${numero}`, 50, 220)
+            .fontSize(10)
+            .fillColor('#666')
+            .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, 235);
         
-        y += 20;
-        doc.fillColor('#000')
-            .fontSize(11)
-            .text(`${lab.nome}`, 70, y);
-        y += 15;
-        doc.text(`NIF: ${lab.nif}`, 70, y);
-        y += 15;
-        doc.text(`Endereço: ${lab.endereco || 'Não informado'}`, 70, y);
-        y += 15;
-        doc.text(`${lab.provincia} - Angola`, 70, y);
-        y += 15;
-        doc.text(`Tel: ${lab.telephone || 'Não informado'}`, 70, y);
-        y += 20;
+        let y = 270;
         
         // =========================================
-        // RESPONSÁVEL PELA EMISSÃO
+        // RESPONSÁVEL PELA EMISSÃO (LABORANTIN)
         // =========================================
         doc.fillColor('#006633')
             .fontSize(12)
@@ -521,9 +511,9 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         
         if (dados.laborantin.registro) {
             doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
-            y += 20;
+            y += 25;
         } else {
-            y += 5;
+            y += 10;
         }
         
         // =========================================
@@ -563,7 +553,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         }
         
         // =========================================
-        // DADOS MÉDICOS
+        // DADOS MÉDICOS (AU MILIEU)
         // =========================================
         doc.fillColor('#006633')
             .fontSize(12)
@@ -593,7 +583,6 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         if (dados.dados) {
             for (let [key, value] of Object.entries(dados.dados)) {
                 if (value && value.toString().trim()) {
-                    // Formater le nom du champ
                     const nomeCampo = key.replace(/([A-Z])/g, ' $1')
                         .replace(/^./, str => str.toUpperCase());
                     
@@ -603,8 +592,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
                     
                     y += 20;
                     
-                    // Nouvelle page si nécessaire
-                    if (y > 750) {
+                    if (y > 700) {
                         doc.addPage();
                         y = 50;
                     }
@@ -612,19 +600,19 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             }
         }
         
-        // Afficher IMC si disponible
         if (dados.imc) {
             doc.fontSize(11)
                 .fillColor('#000')
                 .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
-            y += 20;
+            y += 25;
         }
         
         y += 20;
         
         // =========================================
-        // ASSINATURAS
+        // ASSINATURAS (EN BAS)
         // =========================================
+        // Linha para assinatura do laborantin
         doc.lineWidth(1)
             .moveTo(70, y)
             .lineTo(270, y)
@@ -634,6 +622,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             .text('Assinatura do Laborantin', 70, y + 5)
             .text(dados.laborantin.nome, 70, y + 20);
         
+        // Linha para assinatura do diretor
         doc.lineWidth(1)
             .moveTo(350, y)
             .lineTo(550, y)
@@ -646,7 +635,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         y += 50;
         
         // =========================================
-        // CODE DE VERIFICAÇÃO (simule un QR code)
+        // CÓDIGO DE VERIFICAÇÃO
         // =========================================
         const hashVerificacao = crypto.createHash('sha256')
             .update(numero + lab.apiKey)
@@ -671,7 +660,6 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             .fillColor('#666')
             .text('Documento válido em todo território nacional', 50, 780, { align: 'center' });
         
-        // Finaliser le PDF
         doc.end();
         
     } catch (error) {
