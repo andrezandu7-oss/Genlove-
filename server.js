@@ -472,104 +472,115 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         doc.pipe(res);
         
         // =========================================
-        // EN-TÊTE DU DOCUMENT
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(20)
-            .text('REPÚBLICA DE ANGOLA', 50, 50)
-            .fontSize(16)
-            .text('MINISTÉRIO DA SAÚDE', 50, 75)
-            .fontSize(24)
-            .text('SISTEMA NACIONAL DE SAÚDE', 50, 100);
-        
-        // Ligne de séparation
-        doc.strokeColor('#006633')
-            .lineWidth(2)
-            .moveTo(50, 140)
-            .lineTo(550, 140)
-            .stroke();
-        
-        // =========================================
-        // LABORATÓRIO EMISSOR
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(14)
-            .text(`${lab.nome}`, 50, 160)
-            .fontSize(10)
-            .fillColor('#666')
-            .text(`NIF: ${lab.nif} | ${lab.provincia}`, 50, 180)
-            .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telephone || 'Não informado'}`, 50, 195);
-        
-        // =========================================
-        // NUMÉRO DO CERTIFICADO
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(12)
-            .text(`CERTIFICADO Nº: ${numero}`, 50, 220)
-            .fontSize(10)
-            .fillColor('#666')
-            .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, 235);
-        
-        let y = 270;
-        
-        // =========================================
-        // RESPONSÁVEL PELA EMISSÃO (LABORANTIN)
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(12)
-            .text('RESPONSÁVEL PELA EMISSÃO:', 50, y);
-        
-        y += 20;
-        doc.fillColor('#000')
-            .fontSize(11)
-            .text(`Nome: ${dados.laborantin?.nome || 'Não informado'}`, 70, y);
-        y += 15;
-        
-        if (dados.laborantin?.registro) {
-            doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
-            y += 25;
-        } else {
-            y += 10;
-        }
-        
-        // =========================================
-        // DADOS DO PACIENTE
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(12)
-            .text('DADOS DO PACIENTE:', 50, y);
-        
-        y += 20;
-        doc.fillColor('#000')
-            .fontSize(11)
-            .text(`Nome: ${dados.paciente?.nomeCompleto || 'Não informado'}`, 70, y);
-        y += 15;
-        doc.text(`BI: ${dados.paciente?.bi || 'Não informado'}`, 70, y);
-        y += 15;
-        
-        if (dados.paciente?.dataNascimento) {
-            doc.text(`Data Nascimento: ${new Date(dados.paciente.dataNascimento).toLocaleDateString('pt-PT')}`, 70, y);
-            y += 15;
-        }
-        
-        if (dados.idade) {
-            doc.text(`Idade: ${dados.idade} anos`, 70, y);
-            y += 15;
-        }
-        
-        if (dados.paciente?.genero) {
-            const genero = dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino';
-            doc.text(`Género: ${genero}`, 70, y);
-            y += 15;
-        }
-        
-        if (dados.paciente?.telefone) {
-            doc.text(`Telefone: ${dados.paciente.telefone}`, 70, y);
-            y += 20;
-        }
-        
-        // =========================================
-// DADOS MÉDICOS
+// EN-TÊTE DU DOCUMENT (CENTRÉ)
+// =========================================
+// Configuration pour centrer le texte
+doc.fillColor('#006633');
+
+// Première ligne - centrée
+doc.fontSize(20)
+   .text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+
+// Deuxième ligne - centrée
+doc.fontSize(16)
+   .text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+
+// Troisième ligne - centrée et plus grande
+doc.fontSize(24)
+   .text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
+
+// Ligne de séparation centrée
+doc.strokeColor('#006633')
+   .lineWidth(2)
+   .moveTo(doc.page.width / 2 - 250, 150)  // Centre moins 250
+   .lineTo(doc.page.width / 2 + 250, 150)  // Centre plus 250
+   .stroke();
+
+let y = 180;  // Ajuster la position de départ après l'en-tête
+
+// =========================================
+// LABORATÓRIO EMISSOR
+// =========================================
+doc.fillColor('#006633')
+    .fontSize(14)
+    .text(`${lab.nome}`, 50, y)
+    .fontSize(10)
+    .fillColor('#666')
+    .text(`NIF: ${lab.nif} | ${lab.provincia}`, 50, y + 20)
+    .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telephone || 'Não informado'}`, 50, y + 35);
+
+y += 60;
+
+// =========================================
+// NUMÉRO DO CERTIFICADO
+// =========================================
+doc.fillColor('#006633')
+    .fontSize(12)
+    .text(`CERTIFICADO Nº: ${numero}`, 50, y)
+    .fontSize(10)
+    .fillColor('#666')
+    .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, y + 15);
+
+y += 40;
+
+// =========================================
+// RESPONSÁVEL PELA EMISSÃO (LABORANTIN)
+// =========================================
+doc.fillColor('#006633')
+    .fontSize(12)
+    .text('RESPONSÁVEL PELA EMISSÃO:', 50, y);
+
+y += 20;
+doc.fillColor('#000')
+    .fontSize(11)
+    .text(`Nome: ${dados.laborantin?.nome || 'Não informado'}`, 70, y);
+y += 15;
+
+if (dados.laborantin?.registro) {
+    doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
+    y += 25;
+} else {
+    y += 10;
+}
+
+// =========================================
+// DADOS DO PACIENTE
+// =========================================
+doc.fillColor('#006633')
+    .fontSize(12)
+    .text('DADOS DO PACIENTE:', 50, y);
+
+y += 20;
+doc.fillColor('#000')
+    .fontSize(11)
+    .text(`Nome: ${dados.paciente?.nomeCompleto || 'Não informado'}`, 70, y);
+y += 15;
+doc.text(`BI: ${dados.paciente?.bi || 'Não informado'}`, 70, y);
+y += 15;
+
+if (dados.paciente?.dataNascimento) {
+    doc.text(`Data Nascimento: ${new Date(dados.paciente.dataNascimento).toLocaleDateString('pt-PT')}`, 70, y);
+    y += 15;
+}
+
+if (dados.idade) {
+    doc.text(`Idade: ${dados.idade} anos`, 70, y);
+    y += 15;
+}
+
+if (dados.paciente?.genero) {
+    const genero = dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino';
+    doc.text(`Género: ${genero}`, 70, y);
+    y += 15;
+}
+
+if (dados.paciente?.telefone) {
+    doc.text(`Telefone: ${dados.paciente.telefone}`, 70, y);
+    y += 20;
+}
+
+// =========================================
+// DADOS MÉDICOS (avec "não solicitado")
 // =========================================
 doc.fillColor('#006633')
     .fontSize(12)
@@ -595,22 +606,8 @@ doc.fillColor('#333')
 
 y += 25;
 
-// 👇 NOUVELLE SECTION : Afficher les données médicales avec mention "não solicitado"
+// Afficher les données médicales
 if (dados.dados) {
-    // Liste de tous les examens possibles pour ce type de certificat
-    const todosExames = {
-        1: ['grupoSanguineo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese', 'observacoes'],
-        2: ['peso', 'altura', 'imc', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos', 'observacoes'],
-        3: ['tipoIncapacidade', 'causa', 'grau', 'dataInicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante', 'observacoes'],
-        4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade', 'observacoes'],
-        5: ['gestacoes', 'partos', 'abortos', 'nascidosVivos', 'dum', 'dpp', 'idadeGestacional', 'consultasCPN', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguineo', 'fatorRh', 'exsudadoVaginal', 'pesoAtual', 'alturaUterina', 'batimentosCardiacosFeto', 'movimentosFetais', 'edema', 'proteinuria', 'observacoes'],
-        6: ['grupoSanguineo', 'fatorRh', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'ureia', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao', 'observacoes'],
-        7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos', 'observacoes'],
-        8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais', 'recomendacoes']
-    };
-    
-    const examesTipo = todosExames[dados.tipo] || [];
-    
     for (let [key, value] of Object.entries(dados.dados)) {
         if (value && value.toString().trim()) {
             const nomeCampo = key.replace(/([A-Z])/g, ' $1')
@@ -629,13 +626,23 @@ if (dados.dados) {
         }
     }
     
-    // 👇 NOUVEAU : Afficher les examens NON SOLLICITÉS
-    const examesPreenchidos = Object.keys(dados.dados).filter(key => 
-        dados.dados[key] && dados.dados[key].toString().trim()
-    );
+    // Liste des examens possibles pour ce type
+    const todosExames = {
+        1: ['grupoSanguineo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese'],
+        2: ['peso', 'altura', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos'],
+        3: ['tipoIncapacidade', 'causa', 'grau', 'dataInicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante'],
+        4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade'],
+        5: ['hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguineo', 'fatorRh', 'exsudadoVaginal'],
+        6: ['hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'ureia', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao'],
+        7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos'],
+        8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais']
+    };
     
+    const examesTipo = todosExames[dados.tipo] || [];
+    const examesPreenchidos = Object.keys(dados.dados);
     const examesNaoSolicitados = examesTipo.filter(exame => 
-        !examesPreenchidos.includes(exame) && exame !== 'observacoes'
+        !examesPreenchidos.includes(exame) && 
+        dados.dados[exame] === undefined || dados.dados[exame] === ''
     );
     
     if (examesNaoSolicitados.length > 0) {
@@ -651,9 +658,8 @@ if (dados.dados) {
         const col2 = examesNaoSolicitados.slice(metade);
         
         doc.fontSize(9)
-            .fillColor('#666');
+           .fillColor('#666');
         
-        // Colonne 1
         let yCol1 = y;
         col1.forEach(exame => {
             const nomeExame = exame.replace(/([A-Z])/g, ' $1')
@@ -662,7 +668,6 @@ if (dados.dados) {
             yCol1 += 15;
         });
         
-        // Colonne 2
         let yCol2 = y;
         col2.forEach(exame => {
             const nomeExame = exame.replace(/([A-Z])/g, ' $1')
@@ -681,65 +686,107 @@ if (dados.imc) {
         .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
     y += 25;
 }
-        
-        // =========================================
-        // ASSINATURAS
-        // =========================================
-        // Linha para assinatura do laborantin
-        doc.lineWidth(1)
-            .moveTo(70, y)
-            .lineTo(270, y)
-            .stroke();
-        
-        doc.fontSize(10)
-            .text('Assinatura do Laborantin', 70, y + 5)
-            .text(dados.laborantin?.nome || '___________________', 70, y + 20);
-        
-        // Linha para assinatura do diretor
-        doc.lineWidth(1)
-            .moveTo(350, y)
-            .lineTo(550, y)
-            .stroke();
-        
-        doc.fontSize(10)
-            .text('Assinatura do Diretor Clínico', 350, y + 5)
-            .text(lab.diretor || '___________________', 350, y + 20);
-        
-        y += 50;
-        
-        // =========================================
-        // CÓDIGO DE VERIFICAÇÃO
-        // =========================================
-        const hashVerificacao = crypto.createHash('sha256')
-            .update(numero + lab.apiKey)
-            .digest('hex')
-            .substring(0, 16)
-            .toUpperCase();
-        
-        doc.fontSize(8)
-            .fillColor('#666')
-            .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
-            .fontSize(10)
-            .fillColor('#006633')
-            .text(hashVerificacao, 50, y + 10)
-            .fontSize(7)
-            .fillColor('#999')
-            .text('Este código único verifica a autenticidade do certificado', 50, y + 25);
-        
-        // =========================================
-        // RODAPÉ
-        // =========================================
-        doc.fontSize(8)
-            .fillColor('#666')
-            .text('Documento válido em todo território nacional', 50, 780, { align: 'center' });
-        
-        doc.end();
-        
-    } catch (error) {
-        console.error('❌ Erreur PDF:', error);
-        res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
-    }
-});
+
+y += 20;
+
+// =========================================
+// ASSINATURAS
+// =========================================
+doc.lineWidth(1)
+    .moveTo(70, y)
+    .lineTo(270, y)
+    .stroke();
+
+doc.fontSize(10)
+    .text('Assinatura do Laborantin', 70, y + 5)
+    .text(dados.laborantin?.nome || '___________________', 70, y + 20);
+
+doc.lineWidth(1)
+    .moveTo(350, y)
+    .lineTo(550, y)
+    .stroke();
+
+doc.fontSize(10)
+    .text('Assinatura do Diretor Clínico', 350, y + 5)
+    .text(lab.diretor || '___________________', 350, y + 20);
+
+y += 60;
+
+// =========================================
+// QR CODE
+// =========================================
+try {
+    // Données à encoder dans le QR code
+    const dadosQR = {
+        cert: numero,
+        lab: lab.nome,
+        pac: dados.paciente?.nomeCompleto || 'N/I',
+        bi: dados.paciente?.bi || 'N/I',
+        data: new Date(dados.emitidoEm).toLocaleDateString('pt-PT'),
+        resp: dados.laborantin?.nome || 'N/I'
+    };
+    
+    const textoQR = JSON.stringify(dadosQR);
+    
+    // Générer le QR code
+    const qrBuffer = await QRCode.toBuffer(textoQR, {
+        errorCorrectionLevel: 'H',
+        margin: 1,
+        width: 120,
+        color: { dark: '#006633', light: '#FFFFFF' }
+    });
+    
+    // Position du QR code (à droite)
+    const qrX = doc.page.width - 170;
+    doc.image(qrBuffer, qrX, y, { width: 100 });
+    
+    // Texte explicatif
+    doc.fontSize(8)
+       .fillColor('#666')
+       .text('SCANEIE O QR CODE', 50, y + 20)
+       .fontSize(7)
+       .text('Para verificar a autenticidade', 50, y + 35)
+       .text('deste certificado', 50, y + 45);
+    
+    // Code de secours
+    const hashCurto = crypto.createHash('sha256')
+        .update(numero + lab.apiKey)
+        .digest('hex')
+        .substring(0, 6)
+        .toUpperCase();
+    
+    doc.fontSize(6)
+       .fillColor('#999')
+       .text(`Código: ${hashCurto}`, 50, y + 60);
+    
+} catch (qrError) {
+    console.error('Erreur QR:', qrError);
+    // Fallback
+    const hashFallback = crypto.createHash('sha256')
+        .update(numero + lab.apiKey)
+        .digest('hex')
+        .substring(0, 12)
+        .toUpperCase();
+    
+    doc.fontSize(8)
+       .fillColor('#666')
+       .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
+       .fontSize(10)
+       .fillColor('#006633')
+       .text(hashFallback, 50, y + 10)
+       .fontSize(7)
+       .fillColor('#999')
+       .text('Código único de verificação', 50, y + 25);
+}
+
+y += 80;
+
+// =========================================
+// RODAPÉ (centré)
+// =========================================
+doc.fontSize(8)
+   .fillColor('#666')
+   .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
 
 // =============================================
 // FORMULÁRIO NOVO
