@@ -518,7 +518,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // =============================================
-// DASHBOARD DO LABORATORIO - VERSÃO COMPLETA
+// DASHBOARD DO LABORATORIO - VERSÃO FUNCIONAL
 // =============================================
 app.get('/lab-dashboard', (req, res) => {
   res.send('<!DOCTYPE html>' +
@@ -544,9 +544,6 @@ app.get('/lab-dashboard', (req, res) => {
     'table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}' +
     'th{background:#006633;color:white;padding:10px;text-align:left;}' +
     'td{padding:10px;border-bottom:1px solid #ddd;}' +
-    '.stat-box{background:#e8f5e9;padding:15px;border-radius:10px;text-align:center;}' +
-    '.stat-number{font-size:24px;font-weight:bold;color:#006633;}' +
-    '.tipo-box{background:#f0f8f0;padding:10px;border-radius:8px;margin-bottom:5px;}' +
     '</style>' +
     '</head>' +
     '<body>' +
@@ -560,136 +557,18 @@ app.get('/lab-dashboard', (req, res) => {
     '<div id="welcome" class="welcome"></div>' +
     '<div id="secaoDashboard" class="secao ativa">' +
     '<h2>Dashboard</h2>' +
-
-    // Statistiques générales
-    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:30px;">' +
-    '<div class="stat-box">' +
-    '<h3 style="color:#006633;">📅 Hoje</h3>' +
-    '<p class="stat-number" id="totalHoje">0</p>' +
+    '<p>Total de certificados emitidos: <span id="total">0</span></p>' +
     '</div>' +
-    '<div class="stat-box">' +
-    '<h3 style="color:#006633;">📆 Este Mês</h3>' +
-    '<p class="stat-number" id="totalMes">0</p>' +
-    '</div>' +
-    '<div class="stat-box">' +
-    '<h3 style="color:#006633;">📊 Este Ano</h3>' +
-    '<p class="stat-number" id="totalAno">0</p>' +
-    '</div>' +
-    '</div>' +
-
-    // Statistiques par type
-    '<h3>Certificados por Tipo</h3>' +
-    '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:15px;">' +
-
-    '<div class="tipo-box">' +
-    '<strong>GENÓTIPO</strong>' +
-    '<p>Hoje: <span id="genHoje">0</span> | Mês: <span id="genMes">0</span> | Ano: <span id="genAno">0</span></p>' +
-    '</div>' +
-
-    '<div class="tipo-box">' +
-    '<strong>BOA SAÚDE</strong>' +
-    '<p>Hoje: <span id="saudeHoje">0</span> | Mês: <span id="saudeMes">0</span> | Ano: <span id="saudeAno">0</span></p>' +
-    '</div>' +
-
-    '<div class="tipo-box">' +
-    '<strong>INCAPACIDADE</strong>' +
-    '<p>Hoje: <span id="incHoje">0</span> | Mês: <span id="incMes">0</span> | Ano: <span id="incAno">0</span></p>' +
-    '</div>' +
-
-    '<div class="tipo-box">' +
-    '<strong>APTIDÃO</strong>' +
-    '<p>Hoje: <span id="aptHoje">0</span> | Mês: <span id="aptMes">0</span> | Ano: <span id="aptAno">0</span></p>' +
-    '</div>' +
-
-    '<div class="tipo-box">' +
-    '<strong>SAÚDE MATERNA</strong>' +
-    '<p>Hoje: <span id="matHoje">0</span> | Mês: <span id="matMes">0</span> | Ano: <span id="matAno">0</span></p>' +
-    '</div>' +
-
-    '<div class="tipo-box">' +
-    '<strong>PRÉ-NATAL</strong>' +
-    '<p>Hoje: <span id="cpnHoje">0</span> | Mês: <span id="cpnMes">0</span> | Ano: <span id="cpnAno">0</span></p>' +
-    '</div>' +
-
-    '<div class="tipo-box">' +
-    '<strong>EPIDEMIOLÓGICO</strong>' +
-    '<p>Hoje: <span id="epiHoje">0</span> | Mês: <span id="epiMes">0</span> | Ano: <span id="epiAno">0</span></p>' +
-    '</div>' +
-
-    '</div>' + // fim grid tipos
-
-    '<p style="margin-top:20px;">Total de certificados emitidos: <span id="total">0</span></p>' +
-    '</div>' + // fim secaoDashboard
-
     '<div id="secaoCertificados" class="secao">' +
     '<h2>Certificados</h2>' +
     '<button class="btn" onclick="window.location.href=\'/novo-certificado\'">+ Novo Certificado</button>' +
     '<table><thead><tr><th>Número</th><th>Tipo</th><th>Paciente</th><th>Data</th><th>Ações</th></tr></thead><tbody id="tabela"><tr><td colspan="5">Carregando...</td></tr></tbody></table>' +
     '</div>' +
     '</div>' +
-
     '<script>' +
     'const key = localStorage.getItem("labKey");' +
     'if(!key) window.location.href = "/lab-login";' +
-
-    // Função para reimprimir PDF
-    'function reimprimirPDF(numero) {' +
-    '  const historico = JSON.parse(sessionStorage.getItem("certificados_emitidos") || "[]");' +
-    '  const cert = historico.find(c => c.numero === numero);' +
-    '  if(cert) {' +
-    '    const tipos = ["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO"];' +
-    '    const win = window.open("", "_blank");' +
-    '    let html = `' +
-    '      <html><head><title>Certificado ${cert.numero}</title>' +
-    '      <style>' +
-    '        body{font-family:Arial;padding:40px;max-width:800px;margin:0 auto;}' +
-    '        .header{text-align:center;color:#006633;border-bottom:2px solid #006633;padding-bottom:20px;}' +
-    '        h1{font-size:24px;} h2{font-size:18px;}' +
-    '        .numero{text-align:right;font-size:14px;margin:20px 0;}' +
-    '        .laboratorio{background:#e8f5e9;padding:15px;border-radius:10px;margin:20px 0;text-align:center;}' +
-    '        .paciente{background:#f0f8f0;padding:20px;border-radius:10px;margin:20px 0;}' +
-    '        .qr{text-align:center;margin:30px 0;}' +
-    '        .btn-print{background:#006633;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;}' +
-    '      </style>' +
-    '      </head><body>' +
-    '      <div class="header">' +
-    '        <h1>REPÚBLICA DE ANGOLA</h1>' +
-    '        <h2>MINISTÉRIO DA SAÚDE</h2>' +
-    '        <h3>SISTEMA NACIONAL DE SAÚDE</h3>' +
-    '      </div>' +
-    '      <div class="numero"><strong>Nº ${cert.numero}</strong></div>' +
-    '      <div style="text-align:center;margin:20px 0;">' +
-    '        <span style="background:#006633;color:white;padding:10px 30px;border-radius:50px;font-size:18px;">${tipos[cert.tipo]}</span>' +
-    '      </div>' +
-    '      <div class="laboratorio">' +
-    '        <h3 style="color:#006633;">🏥 LABORATÓRIO EMISSOR</h3>' +
-    '        <p style="font-size:18px;"><strong>${cert.laboratorio}</strong></p>' +
-    '        <p>${cert.endereco || "Endereço não informado"}</p>' +
-    '        <p style="margin-top:10px;">Técnico: <strong>${cert.laborantin}</strong></p>' +
-    '      </div>' +
-    '      <div class="paciente">' +
-    '        <h3 style="color:#006633;">📋 DADOS DO PACIENTE</h3>' +
-    '        <p><strong>Nome:</strong> ${cert.paciente}</p>' +
-    '        <p><strong>BI:</strong> ${cert.bi || "N/A"}</p>' +
-    '        <p><strong>Gênero:</strong> ${cert.genero === "M" ? "Masculino" : "Feminino"}</p>' +
-    '      </div>' +
-    '      <div class="qr">' +
-    '        <h3 style="color:#006633;">🔑 CÓDIGO DE VALIDAÇÃO</h3>' +
-    '        <img src="https://quickchart.io/qr?text=Certificado%20${cert.numero}&size=200" style="width:200px;">' +
-    '        <p style="font-size:13px;color:#006633;">Aponte a câmara para validar</p>' +
-    '      </div>' +
-    '      <div style="text-align:center;margin-top:30px;">' +
-    '        <button class="btn-print" onclick="window.print()">🖨️ Imprimir PDF</button>' +
-    '      </div>' +
-    '      </body></html>' +
-    '    );' +
-    '    win.document.write(html);' +
-    '    win.document.close();' +
-    '  } else {' +
-    '    alert("❌ Certificado não encontrado no histórico");' +
-    '  }' +
-    '}' +
-
+    
     'async function carregarLab(){' +
     '  try{' +
     '    const r = await fetch("/api/labs/me",{headers:{"x-api-key":key}});' +
@@ -697,151 +576,44 @@ app.get('/lab-dashboard', (req, res) => {
     '    if(d && d.nome){' +
     '      document.getElementById("welcome").innerHTML = "<h2>Olá, " + d.nome + "!</h2><p>Pronto para mais um dia de trabalho? Vamos juntos!</p>";' +
     '    }' +
-    '  } catch(e){' +
-    '    console.log("Erro ao carregar laboratório");' +
-    '  }' +
+    '  } catch(e){}' +
     '}' +
-
+    
     'function mostrar(secao){' +
-    '  console.log("Mostrando secao:", secao);' +
     '  document.getElementById("secaoDashboard").classList.remove("ativa");' +
     '  document.getElementById("secaoCertificados").classList.remove("ativa");' +
-    '  if(secao === "dashboard") {' +
-    '    document.getElementById("secaoDashboard").classList.add("ativa");' +
-    '  }' +
+    '  if(secao === "dashboard") document.getElementById("secaoDashboard").classList.add("ativa");' +
     '  if(secao === "certificados"){' +
     '    document.getElementById("secaoCertificados").classList.add("ativa");' +
     '    carregarCertificados();' +
     '  }' +
     '}' +
-
-    // Função para calcular estatísticas
-    'function calcularEstatisticas(lista) {' +
-    '  const hoje = new Date().toDateString();' +
-    '  const mesAtual = new Date().getMonth();' +
-    '  const anoAtual = new Date().getFullYear();' +
-    '  ' +
-    '  let stats = {' +
-    '    totalHoje: 0, totalMes: 0, totalAno: 0,' +
-    '    tipo: {1:{hoje:0,mes:0,ano:0}, 2:{hoje:0,mes:0,ano:0}, 3:{hoje:0,mes:0,ano:0},' +
-    '           4:{hoje:0,mes:0,ano:0}, 5:{hoje:0,mes:0,ano:0}, 6:{hoje:0,mes:0,ano:0},' +
-    '           7:{hoje:0,mes:0,ano:0}}' +
-    '  };' +
-    '  ' +
-    '  lista.forEach(c => {' +
-    '    const data = new Date(c.emitidoEm);' +
-    '    if(data.toDateString() === hoje) {' +
-    '      stats.totalHoje++;' +
-    '      if(stats.tipo[c.tipo]) stats.tipo[c.tipo].hoje++;' +
-    '    }' +
-    '    if(data.getMonth() === mesAtual && data.getFullYear() === anoAtual) {' +
-    '      stats.totalMes++;' +
-    '      if(stats.tipo[c.tipo]) stats.tipo[c.tipo].mes++;' +
-    '    }' +
-    '    if(data.getFullYear() === anoAtual) {' +
-    '      stats.totalAno++;' +
-    '      if(stats.tipo[c.tipo]) stats.tipo[c.tipo].ano++;' +
-    '    }' +
-    '  });' +
-    '  ' +
-    '  return stats;' +
-    '}' +
-
+    
     'async function carregarCertificados(){' +
     '  try{' +
-    '    console.log("Carregando certificados...");' +
     '    const r = await fetch("/api/certificados/lab",{headers:{"x-api-key":key}});' +
     '    const lista = await r.json();' +
-    '    console.log("Certificados carregados:", lista.length);' +
-    '    ' +
     '    document.getElementById("total").innerText = lista.length;' +
-    '    ' +
-    '    // Calcular estatísticas' +
-    '    const stats = calcularEstatisticas(lista);' +
-    '    ' +
-    '    // Verificar se os elementos existem antes de atualizar' +
-    '    const elementos = {' +
-    '      totalHoje: document.getElementById("totalHoje"),' +
-    '      totalMes: document.getElementById("totalMes"),' +
-    '      totalAno: document.getElementById("totalAno"),' +
-    '      genHoje: document.getElementById("genHoje"),' +
-    '      genMes: document.getElementById("genMes"),' +
-    '      genAno: document.getElementById("genAno"),' +
-    '      saudeHoje: document.getElementById("saudeHoje"),' +
-    '      saudeMes: document.getElementById("saudeMes"),' +
-    '      saudeAno: document.getElementById("saudeAno"),' +
-    '      incHoje: document.getElementById("incHoje"),' +
-    '      incMes: document.getElementById("incMes"),' +
-    '      incAno: document.getElementById("incAno"),' +
-    '      aptHoje: document.getElementById("aptHoje"),' +
-    '      aptMes: document.getElementById("aptMes"),' +
-    '      aptAno: document.getElementById("aptAno"),' +
-    '      matHoje: document.getElementById("matHoje"),' +
-    '      matMes: document.getElementById("matMes"),' +
-    '      matAno: document.getElementById("matAno"),' +
-    '      cpnHoje: document.getElementById("cpnHoje"),' +
-    '      cpnMes: document.getElementById("cpnMes"),' +
-    '      cpnAno: document.getElementById("cpnAno"),' +
-    '      epiHoje: document.getElementById("epiHoje"),' +
-    '      epiMes: document.getElementById("epiMes"),' +
-    '      epiAno: document.getElementById("epiAno")' +
-    '    };' +
-    '    ' +
-    '    if(elementos.totalHoje) elementos.totalHoje.innerText = stats.totalHoje;' +
-    '    if(elementos.totalMes) elementos.totalMes.innerText = stats.totalMes;' +
-    '    if(elementos.totalAno) elementos.totalAno.innerText = stats.totalAno;' +
-    '    ' +
-    '    if(elementos.genHoje) elementos.genHoje.innerText = stats.tipo[1].hoje;' +
-    '    if(elementos.genMes) elementos.genMes.innerText = stats.tipo[1].mes;' +
-    '    if(elementos.genAno) elementos.genAno.innerText = stats.tipo[1].ano;' +
-    '    ' +
-    '    if(elementos.saudeHoje) elementos.saudeHoje.innerText = stats.tipo[2].hoje;' +
-    '    if(elementos.saudeMes) elementos.saudeMes.innerText = stats.tipo[2].mes;' +
-    '    if(elementos.saudeAno) elementos.saudeAno.innerText = stats.tipo[2].ano;' +
-    '    ' +
-    '    if(elementos.incHoje) elementos.incHoje.innerText = stats.tipo[3].hoje;' +
-    '    if(elementos.incMes) elementos.incMes.innerText = stats.tipo[3].mes;' +
-    '    if(elementos.incAno) elementos.incAno.innerText = stats.tipo[3].ano;' +
-    '    ' +
-    '    if(elementos.aptHoje) elementos.aptHoje.innerText = stats.tipo[4].hoje;' +
-    '    if(elementos.aptMes) elementos.aptMes.innerText = stats.tipo[4].mes;' +
-    '    if(elementos.aptAno) elementos.aptAno.innerText = stats.tipo[4].ano;' +
-    '    ' +
-    '    if(elementos.matHoje) elementos.matHoje.innerText = stats.tipo[5].hoje;' +
-    '    if(elementos.matMes) elementos.matMes.innerText = stats.tipo[5].mes;' +
-    '    if(elementos.matAno) elementos.matAno.innerText = stats.tipo[5].ano;' +
-    '    ' +
-    '    if(elementos.cpnHoje) elementos.cpnHoje.innerText = stats.tipo[6].hoje;' +
-    '    if(elementos.cpnMes) elementos.cpnMes.innerText = stats.tipo[6].mes;' +
-    '    if(elementos.cpnAno) elementos.cpnAno.innerText = stats.tipo[6].ano;' +
-    '    ' +
-    '    if(elementos.epiHoje) elementos.epiHoje.innerText = stats.tipo[7].hoje;' +
-    '    if(elementos.epiMes) elementos.epiMes.innerText = stats.tipo[7].mes;' +
-    '    if(elementos.epiAno) elementos.epiAno.innerText = stats.tipo[7].ano;' +
-    '    ' +
-    '    // Montar tabela' +
     '    let html = "";' +
     '    if(lista.length === 0){' +
     '      html = "<tr><td colspan=\'5\'>Nenhum certificado encontrado</td></tr>";' +
     '    } else {' +
     '      const tipos = ["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO"];' +
     '      lista.forEach(c => {' +
-    '        html += "<tr><td>" + c.numero + "</td><td>" + (tipos[c.tipo] || "Tipo "+c.tipo) + "</td><td>" + (c.paciente?.nomeCompleto || "N/A") + "</td><td>" + new Date(c.emitidoEm).toLocaleDateString() + "</td><td><button class=\'btn-pdf\' onclick=\'reimprimirPDF(\\"" + c.numero + "\\")\'>📄 PDF</button></td></tr>";' +
+    '        html += "<tr><td>" + c.numero + "</td><td>" + (tipos[c.tipo] || "Tipo "+c.tipo) + "</td><td>" + (c.paciente?.nomeCompleto || "N/A") + "</td><td>" + new Date(c.emitidoEm).toLocaleDateString() + "</td><td><button class=\'btn-pdf\' onclick=\'alert(\\"PDF de " + c.numero + "\\")\'>📄 PDF</button></td></tr>";' +
     '      });' +
     '    }' +
     '    document.getElementById("tabela").innerHTML = html;' +
     '  } catch(e){' +
-    '    console.error("Erro ao carregar certificados:", e);' +
     '    document.getElementById("tabela").innerHTML = "<tr><td colspan=\'5\'>Erro ao carregar</td></tr>";' +
     '  }' +
     '}' +
-
+    
     'function logout(){' +
     '  localStorage.removeItem("labKey");' +
     '  window.location.href = "/";' +
     '}' +
-
-    '// Inicialização' +
+    
     'carregarLab();' +
     'carregarCertificados();' +
     'mostrar("dashboard");' +
@@ -1013,9 +785,13 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
   }
 });
 
-// ====================================================
-// INICIAR SERVIDOR
-// ====================================================
+// =============================================
+// ROTA DO FORMULÁRIO DE CERTIFICADO
+// =============================================
+app.get('/novo-certificado', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'novo-certificado.html'));
+});
+
 app.listen(PORT, () => {
   console.log('\n' + '='.repeat(50));
   console.log('SNS - SISTEMA NACIONAL DE SAÚDE');
@@ -1023,7 +799,5 @@ app.listen(PORT, () => {
   console.log('✅ URL: http://localhost:' + PORT);
   console.log('✅ Ministério: /ministerio (admin@sns.gov.ao / Admin@2025)');
   console.log('✅ Laboratório: /lab-login (com API Key)');
-  console.log('✅ Dashboard com estatísticas diárias/mensais/anuais');
-  console.log('✅ PDF funcional com dados completos');
   console.log('='.repeat(50) + '\n');
 });
