@@ -370,10 +370,16 @@
         // Configuration des champs médicaux par type
         const camposPorTipo = {
             1: [ // GENÓTIPO
-                { id: 'genotipo', label: 'Genótipo', type: 'select', options: ['AA', 'AS', 'SS', 'AC', 'CC'] },
-                { id: 'hemoglobina', label: 'Hemoglobina (g/dL)', type: 'number', step: '0.1' },
-                { id: 'observacoes', label: 'Observações', type: 'textarea' }
-            ],
+                1: [ // GENÓTIPO - Com todas as cases necessárias
+    { id: 'grupoSanguineo', label: 'Grupo Sanguíneo', type: 'select', options: ['A', 'B', 'AB', 'O'] },
+    { id: 'fatorRh', label: 'Fator Rh', type: 'select', options: ['Positivo (+)', 'Negativo (-)'] },
+    { id: 'genotipo', label: 'Genótipo (Hemoglobina)', type: 'select', options: ['AA', 'AS', 'SS', 'AC', 'CC', 'Outro'] },
+    { id: 'hemoglobina', label: 'Hemoglobina (g/dL)', type: 'number', step: '0.1', min: '0', max: '20' },
+    { id: 'hematocrito', label: 'Hematócrito (%)', type: 'number', step: '0.1', min: '0', max: '60' },
+    { id: 'contagem_reticulocitos', label: 'Contagem de Reticulócitos', type: 'text', placeholder: 'Ex: 0.5%' },
+    { id: 'eletroforese', label: 'Eletroforese de Hemoglobina', type: 'textarea', placeholder: 'Resultado detalhado' },
+    { id: 'observacoes', label: 'Observações', type: 'textarea' }
+]
             2: [ // BOA SAÚDE
                 { id: 'pressaoArterial', label: 'Pressão Arterial', type: 'text', placeholder: '120/80' },
                 { id: 'peso', label: 'Peso (kg)', type: 'number', step: '0.1' },
