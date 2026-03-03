@@ -416,62 +416,7 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
     }
 });
 
-// =============================================
-// ROUTE POUR GÉNÉRER LES PDF
-// =============================================
-app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
-    try {
-        const { numero } = req.body;
-        
-        // Vérifier que le numéro est présent
-        if (!numero) {
-            return res.status(400).json({ error: 'Número do certificado não fornecido' });
-        }
-        
-        // Récupérer le certificat avec les données
-        const certificado = await Certificate.findOne({ 
-            numero,
-            emitidoPor: req.lab._id 
-        });
-        
-        if (!certificado) {
-            return res.status(404).json({ error: 'Certificado não encontrado' });
-        }
-        
-        // Utiliser la méthode de l'instance pour préparer les données
-        const dados = certificado.prepararParaPDF ? certificado.prepararParaPDF() : {
-            numero: certificado.numero,
-            tipo: certificado.tipo,
-            paciente: certificado.paciente,
-            laborantin: certificado.laborantin || { nome: 'Não informado', registro: '' },
-            dados: certificado.dados,
-            imc: certificado.imc,
-            idade: certificado.idade,
-            classificacaoIMC: certificado.classificacaoIMC,
-            emitidoEm: certificado.emitidoEm
-        };
-        
-        const lab = req.lab;
-        
-        // Créer un nouveau document PDF
-        const doc = new PDFDocument({
-            size: 'A4',
-            margin: 50,
-            info: {
-                Title: `Certificado ${numero}`,
-                Author: lab.nome,
-                Subject: 'Certificado Médico SNS Angola'
-            }
-        });
-        
-        // Configurer la réponse
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=certificado-${numero}.pdf`);
-        
-        // Pipe le PDF vers la réponse
-        doc.pipe(res);
-        
-        // =========================================
+// =========================================
 // EN-TÊTE DU DOCUMENT (CENTRÉ)
 // =========================================
 // Configuration pour centrer le texte
@@ -492,19 +437,20 @@ doc.fontSize(24)
 // Ligne de séparation centrée
 doc.strokeColor('#006633')
    .lineWidth(2)
-   .moveTo(doc.page.width / 2 - 250, 150)  // Centre moins 250
-   .lineTo(doc.page.width / 2 + 250, 150)  // Centre plus 250
+   .moveTo(doc.page.width / 2 - 250, 150)
+   .lineTo(doc.page.width / 2 + 250, 150)
    .stroke();
 
-let y = 180;  // Ajuster la position de départ après l'en-tête
+let y = 180;
 
 // =========================================
 // LABORATÓRIO EMISSOR
 // =========================================
 doc.fillColor('#006633')
     .fontSize(14)
-    .text(`${lab.nome}`, 50, y)
-    .fontSize(10)
+    .text(lab.nome, 50, y);
+
+doc.fontSize(10)
     .fillColor('#666')
     .text(`NIF: ${lab.nif} | ${lab.provincia}`, 50, y + 20)
     .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telephone || 'Não informado'}`, 50, y + 35);
@@ -516,8 +462,9 @@ y += 60;
 // =========================================
 doc.fillColor('#006633')
     .fontSize(12)
-    .text(`CERTIFICADO Nº: ${numero}`, 50, y)
-    .fontSize(10)
+    .text(`CERTIFICADO Nº: ${numero}`, 50, y);
+
+doc.fontSize(10)
     .fillColor('#666')
     .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, y + 15);
 
@@ -534,6 +481,7 @@ y += 20;
 doc.fillColor('#000')
     .fontSize(11)
     .text(`Nome: ${dados.laborantin?.nome || 'Não informado'}`, 70, y);
+
 y += 15;
 
 if (dados.laborantin?.registro) {
@@ -554,6 +502,7 @@ y += 20;
 doc.fillColor('#000')
     .fontSize(11)
     .text(`Nome: ${dados.paciente?.nomeCompleto || 'Não informado'}`, 70, y);
+
 y += 15;
 doc.text(`BI: ${dados.paciente?.bi || 'Não informado'}`, 70, y);
 y += 15;
@@ -611,7 +560,7 @@ if (dados.dados) {
     for (let [key, value] of Object.entries(dados.dados)) {
         if (value && value.toString().trim()) {
             const nomeCampo = key.replace(/([A-Z])/g, ' $1')
-                .replace(/^./, str => str.toUpperCase());
+                .replace(/^./, function(str) { return str.toUpperCase(); });
             
             doc.fontSize(11)
                 .fillColor('#000')
@@ -640,10 +589,11 @@ if (dados.dados) {
     
     const examesTipo = todosExames[dados.tipo] || [];
     const examesPreenchidos = Object.keys(dados.dados);
-    const examesNaoSolicitados = examesTipo.filter(exame => 
-        !examesPreenchidos.includes(exame) && 
-        dados.dados[exame] === undefined || dados.dados[exame] === ''
-    );
+    
+    const examesNaoSolicitados = examesTipo.filter(function(exame) {
+        return !examesPreenchidos.includes(exame) && 
+               (!dados.dados[exame] || dados.dados[exame] === '');
+    });
     
     if (examesNaoSolicitados.length > 0) {
         y += 10;
@@ -661,17 +611,17 @@ if (dados.dados) {
            .fillColor('#666');
         
         let yCol1 = y;
-        col1.forEach(exame => {
+        col1.forEach(function(exame) {
             const nomeExame = exame.replace(/([A-Z])/g, ' $1')
-                .replace(/^./, str => str.toUpperCase());
+                .replace(/^./, function(str) { return str.toUpperCase(); });
             doc.text(`• ${nomeExame} (não solicitado)`, 70, yCol1);
             yCol1 += 15;
         });
         
         let yCol2 = y;
-        col2.forEach(exame => {
+        col2.forEach(function(exame) {
             const nomeExame = exame.replace(/([A-Z])/g, ' $1')
-                .replace(/^./, str => str.toUpperCase());
+                .replace(/^./, function(str) { return str.toUpperCase(); });
             doc.text(`• ${nomeExame} (não solicitado)`, 300, yCol2);
             yCol2 += 15;
         });
@@ -728,36 +678,57 @@ try {
     
     const textoQR = JSON.stringify(dadosQR);
     
-    // Générer le QR code
-    const qrBuffer = await QRCode.toBuffer(textoQR, {
+    // Générer le QR code (nécessite d'ajouter await si la fonction est async)
+    // Note: Cette partie doit être dans une fonction async
+    QRCode.toBuffer(textoQR, {
         errorCorrectionLevel: 'H',
         margin: 1,
         width: 120,
         color: { dark: '#006633', light: '#FFFFFF' }
+    }, function(err, qrBuffer) {
+        if (err) {
+            console.error('Erreur QR:', err);
+            // Fallback
+            const hashFallback = crypto.createHash('sha256')
+                .update(numero + lab.apiKey)
+                .digest('hex')
+                .substring(0, 12)
+                .toUpperCase();
+            
+            doc.fontSize(8)
+               .fillColor('#666')
+               .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
+               .fontSize(10)
+               .fillColor('#006633')
+               .text(hashFallback, 50, y + 10)
+               .fontSize(7)
+               .fillColor('#999')
+               .text('Código único de verificação', 50, y + 25);
+        } else {
+            // Position du QR code (à droite)
+            const qrX = doc.page.width - 170;
+            doc.image(qrBuffer, qrX, y, { width: 100 });
+            
+            // Texte explicatif
+            doc.fontSize(8)
+               .fillColor('#666')
+               .text('SCANEIE O QR CODE', 50, y + 20)
+               .fontSize(7)
+               .text('Para verificar a autenticidade', 50, y + 35)
+               .text('deste certificado', 50, y + 45);
+            
+            // Code de secours
+            const hashCurto = crypto.createHash('sha256')
+                .update(numero + lab.apiKey)
+                .digest('hex')
+                .substring(0, 6)
+                .toUpperCase();
+            
+            doc.fontSize(6)
+               .fillColor('#999')
+               .text(`Código: ${hashCurto}`, 50, y + 60);
+        }
     });
-    
-    // Position du QR code (à droite)
-    const qrX = doc.page.width - 170;
-    doc.image(qrBuffer, qrX, y, { width: 100 });
-    
-    // Texte explicatif
-    doc.fontSize(8)
-       .fillColor('#666')
-       .text('SCANEIE O QR CODE', 50, y + 20)
-       .fontSize(7)
-       .text('Para verificar a autenticidade', 50, y + 35)
-       .text('deste certificado', 50, y + 45);
-    
-    // Code de secours
-    const hashCurto = crypto.createHash('sha256')
-        .update(numero + lab.apiKey)
-        .digest('hex')
-        .substring(0, 6)
-        .toUpperCase();
-    
-    doc.fontSize(6)
-       .fillColor('#999')
-       .text(`Código: ${hashCurto}`, 50, y + 60);
     
 } catch (qrError) {
     console.error('Erreur QR:', qrError);
@@ -787,7 +758,6 @@ y += 80;
 doc.fontSize(8)
    .fillColor('#666')
    .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
-
 // =============================================
 // FORMULÁRIO NOVO
 // =============================================
