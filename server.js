@@ -365,109 +365,247 @@ app.get('/api/labs', authMiddleware, async (req, res) => {
   res.json(labs);
 });
 
-// ===================================================
-// API DE CERTIFICADOS (INCLUINDO STATS DETALHES)
-// ===================================================
-app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
-  try {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const inicioAno = new Date(hoje.getFullYear(), 0, 1);
-
-    const stats = await Certificate.aggregate([
-      { $match: { emitidoPor: req.lab._id } },
-      {
-        $facet: {
-          "diario": [{ $match: { emitidoEm: { $gte: hoje } } }, { $count: "count" }],
-          "mensal": [{ $match: { emitidoEm: { $gte: inicioMes } } }, { $count: "count" }],
-          "anual": [{ $match: { emitidoEm: { $gte: inicioAno } } }, { $count: "count" }]
-        }
-      }
-    ]);
-
-    res.json({
-      diario: stats[0].diario[0]?.count || 0,
-      mensal: stats[0].mensal[0]?.count || 0,
-      anual: stats[0].anual[0]?.count || 0,
-      total: req.lab.totalEmissoes
-    });
-  } catch (error) {
-    res.status(500).json({ erro: 'Erro' });
-  }
-});
-
-// Stats détaillées pour le laboratoire
-app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
+// Route pour générer PDF
+app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
     try {
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
+        const { numero, dados } = req.body;
         
-        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-        const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+        // Récupérer les informations du laboratoire depuis le middleware
+        const lab = req.lab;
         
-        const stats = await Certificate.aggregate([
-            { $match: { emitidoPor: req.lab._id } },
-            {
-                $facet: {
-                    diario: [
-                        { $match: { emitidoEm: { $gte: hoje } } },
-                        { $count: "count" }
-                    ],
-                    mensal: [
-                        { $match: { emitidoEm: { $gte: inicioMes } } },
-                        { $count: "count" }
-                    ],
-                    anual: [
-                        { $match: { emitidoEm: { $gte: inicioAno } } },
-                        { $count: "count" }
-                    ],
-                    porTipo: [
-                        { $group: { _id: "$tipo", count: { $sum: 1 } } }
-                    ]
+        // Créer un nouveau document PDF
+        const doc = new PDFDocument({
+            size: 'A4',
+            margin: 50,
+            info: {
+                Title: `Certificado ${numero}`,
+                Author: lab.nome,
+                Subject: 'Certificado Médico SNS Angola'
+            }
+        });
+        
+        // Configurer la réponse
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=certificado-${numero}.pdf`);
+        
+        // Pipe le PDF vers la réponse
+        doc.pipe(res);
+        
+        // En-tête du document
+        doc.image('public/logo-sns.png', 50, 45, { width: 100 })
+            .fillColor('#006633')
+            .fontSize(20)
+            .text('REPÚBLICA DE ANGOLA', 170, 50)
+            .fontSize(16)
+            .text('MINISTÉRIO DA SAÚDE', 170, 75)
+            .fontSize(24)
+            .text('SISTEMA NACIONAL DE SAÚDE', 170, 100)
+            .moveDown();
+        
+        // Ligne de séparation
+        doc.strokeColor('#006633')
+            .lineWidth(2)
+            .moveTo(50, 150)
+            .lineTo(550, 150)
+            .stroke();
+        
+        // Numéro du certificat
+        doc.fillColor('#006633')
+            .fontSize(14)
+            .text(`CERTIFICADO Nº: ${numero}`, 50, 170)
+            .fontSize(10)
+            .fillColor('#666')
+            .text(`Emissão: ${new Date(dados.dataEmissao).toLocaleDateString('pt-PT')}`, 50, 190)
+            .moveDown();
+        
+        // ===== INFORMATIONS DU LABORATOIRE (depuis l'API key) =====
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('LABORATÓRIO EMISSOR:', 50, 220);
+        
+        doc.fillColor('#000')
+            .fontSize(11)
+            .text(`${lab.nome}`, 70, 240)
+            .text(`NIF: ${lab.nif}`, 70, 255)
+            .text(`Endereço: ${lab.endereco || 'Endereço não informado'}`, 70, 270)
+            .text(`${lab.provincia} - Angola`, 70, 285)
+            .text(`Tel: ${lab.telephone || 'Não informado'}`, 70, 300)
+            .text(`Email: ${lab.email || 'Não informado'}`, 70, 315)
+            .moveDown();
+        
+        let y = 340;
+        
+        // ===== RESPONSÁVEL PELA EMISSÃO (laborantin) =====
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('RESPONSÁVEL PELA EMISSÃO:', 50, y);
+        
+        y += 20;
+        doc.fillColor('#000')
+            .fontSize(11)
+            .text(`Nome: ${dados.laborantin.nome}`, 70, y);
+        
+        y += 15;
+        if (dados.laborantin.registro) {
+            doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
+            y += 25;
+        } else {
+            y += 10;
+        }
+        
+        // ===== DADOS DO PACIENTE =====
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('DADOS DO PACIENTE:', 50, y);
+        
+        y += 20;
+        doc.fillColor('#000')
+            .fontSize(11)
+            .text(`Nome: ${dados.paciente.nomeCompleto}`, 70, y);
+        
+        y += 15;
+        doc.text(`BI: ${dados.paciente.bi}`, 70, y);
+        
+        y += 15;
+        if (dados.paciente.dataNascimento) {
+            doc.text(`Data Nascimento: ${new Date(dados.paciente.dataNascimento).toLocaleDateString('pt-PT')}`, 70, y);
+            y += 15;
+        }
+        
+        if (dados.paciente.genero) {
+            const genero = dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino';
+            doc.text(`Género: ${genero}`, 70, y);
+            y += 15;
+        }
+        
+        if (dados.paciente.telefone) {
+            doc.text(`Telefone: ${dados.paciente.telefone}`, 70, y);
+            y += 15;
+        }
+        
+        y += 10;
+        
+        // ===== DADOS MÉDICOS =====
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('DADOS MÉDICOS:', 50, y);
+        
+        y += 20;
+        
+        // Titre du type de certificat
+        const tipos = {
+            1: 'CERTIFICADO DE GENÓTIPO',
+            2: 'CERTIFICADO DE BOA SAÚDE',
+            3: 'CERTIFICADO DE INCAPACIDADE',
+            4: 'CERTIFICADO DE APTIDÃO',
+            5: 'CERTIFICADO DE SAÚDE MATERNA',
+            6: 'CERTIFICADO DE PRÉ-NATAL',
+            7: 'CERTIFICADO EPIDEMIOLÓGICO',
+            8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
+        };
+        
+        doc.fillColor('#333')
+            .fontSize(12)
+            .text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
+        
+        y += 25;
+        
+        // Afficher les données médicales spécifiques
+        for (let [key, value] of Object.entries(dados.dadosMedicos)) {
+            if (value && value.trim) {
+                // Formater le nom du champ
+                const nomeCampo = key.replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase());
+                
+                doc.fontSize(11)
+                    .fillColor('#000')
+                    .text(`${nomeCampo}:`, 70, y);
+                
+                // Gérer les lignes longues
+                const textWidth = 450;
+                const textLines = doc.fontSize(11).text(value, 150, y, {
+                    width: textWidth,
+                    align: 'left'
+                });
+                
+                y += 20 + (textLines.height || 0);
+                
+                // Nouvelle page si nécessaire
+                if (y > 750) {
+                    doc.addPage();
+                    y = 50;
                 }
             }
-        ]);
+        }
         
-        res.json({
-            diario: stats[0].diario[0]?.count || 0,
-            mensal: stats[0].mensal[0]?.count || 0,
-            anual: stats[0].anual[0]?.count || 0,
-            total: req.lab.totalEmissoes,
-            porTipo: stats[0].porTipo
-        });
+        // Espace pour signature
+        y += 30;
+        
+        // ===== ASSINATURAS =====
+        doc.lineWidth(1)
+            .moveTo(70, y)
+            .lineTo(270, y)
+            .stroke();
+        
+        doc.fontSize(10)
+            .text('Assinatura do Laborantin/Técnico', 70, y + 5)
+            .text(dados.laborantin.nome, 70, y + 20);
+        
+        doc.lineWidth(1)
+            .moveTo(350, y)
+            .lineTo(550, y)
+            .stroke();
+        
+        doc.fontSize(10)
+            .text('Assinatura do Diretor Clínico', 350, y + 5)
+            .text(lab.diretor || 'Não informado', 350, y + 20);
+        
+        // Date
+        y += 50;
+        doc.fontSize(10)
+            .text(`Data: ${new Date().toLocaleDateString('pt-PT')}`, 70, y);
+        
+        // ===== CODE QR (simulé avec texte) =====
+        y += 30;
+        
+        // Créer un résumé des données pour le QR code
+        const dadosQR = {
+            certificado: numero,
+            emissao: dados.dataEmissao,
+            laboratorio: lab.nome,
+            laborantin: dados.laborantin.nome,
+            paciente: dados.paciente.nomeCompleto,
+            bi: dados.paciente.bi,
+            tipo: tipos[dados.tipo],
+            dadosMedicos: dados.dadosMedicos
+        };
+        
+        // Convertir en JSON et créer un hash
+        const dadosJSON = JSON.stringify(dadosQR);
+        const hashQR = crypto.createHash('sha256').update(dadosJSON).digest('hex').substring(0, 16);
+        
+        doc.fontSize(8)
+            .fillColor('#666')
+            .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
+            .fontSize(10)
+            .fillColor('#006633')
+            .text(hashQR, 50, y + 10, { width: 500 })
+            .fontSize(7)
+            .fillColor('#999')
+            .text('Este código único verifica a autenticidade do certificado', 50, y + 25);
+        
+        // ===== RODAPÉ =====
+        doc.fontSize(8)
+            .fillColor('#666')
+            .text('Documento válido em todo território nacional', 50, 780, { align: 'center' });
+        
+        // Finaliser le PDF
+        doc.end();
+        
     } catch (error) {
-        console.error('Erreur stats:', error);
-        res.status(500).json({ error: 'Erreur lors du calcul des statistiques' });
+        console.error('Erreur PDF:', error);
+        res.status(500).json({ error: 'Erreur lors de la génération du PDF' });
     }
-});
-
-app.get('/api/certificados/lab', labMiddleware, async (req, res) => {
-  const certificados = await Certificate.find({ emitidoPor: req.lab._id }).sort({ emitidoEm: -1 });
-  res.json(certificados);
-});
-
-app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
-  try {
-    const tipo = parseInt(req.params.tipo);
-    const dados = req.body;
-    const numero = gerarNumeroCertificado(tipo);
-    const hash = crypto.createHash('sha256').update(numero + Date.now()).digest('hex');
-    const certificado = new Certificate({
-      numero, tipo, paciente: dados.paciente, dados: dados.dados, hash, emitidoPor: req.lab._id
-    });
-    await certificado.save();
-    req.lab.totalEmissoes++;
-    await req.lab.save();
-    res.json({ success: true, numero });
-  } catch (error) {
-    res.status(500).json({ erro: error.message });
-  }
-});
-
-// FORMULÁRIO NOVO
-app.get('/novo-certificado', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'novo-certificado.html'));
 });
 
 // =============================================
