@@ -235,6 +235,27 @@
             font-size: 12px;
             margin-top: 5px;
         }
+
+        /* CSS pour l'impression */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .modal-content, .modal-content * {
+                visibility: visible;
+            }
+            .modal-content {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 20px;
+            }
+            .btn, .edit-btn, .action-buttons {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -255,6 +276,7 @@
                     <option value="5">SAÚDE MATERNA</option>
                     <option value="6">PRÉ-NATAL</option>
                     <option value="7">EPIDEMIOLÓGICO</option>
+                    <option value="8">CSD - CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO</option>
                 </select>
             </div>
         </div>
@@ -285,6 +307,19 @@
             <div class="form-group">
                 <label for="telefone">Telefone</label>
                 <input type="tel" id="telefone">
+            </div>
+        </div>
+        
+        <!-- Responsável pela Emissão (NOVO) -->
+        <div class="form-section" id="sectionLaborantin">
+            <h2>Responsável pela Emissão</h2>
+            <div class="form-group">
+                <label for="nomeLaborantin">Nome do Laborantin/Técnico *</label>
+                <input type="text" id="nomeLaborantin" required placeholder="Nome completo">
+            </div>
+            <div class="form-group">
+                <label for="registroProfissional">Nº de Registro Profissional</label>
+                <input type="text" id="registroProfissional" placeholder="Opcional">
             </div>
         </div>
         
@@ -374,6 +409,13 @@
                 { id: 'dataExame', label: 'Data do Exame', type: 'date' },
                 { id: 'metodo', label: 'Método', type: 'text' },
                 { id: 'resultado', label: 'Resultado', type: 'select', options: ['Positivo', 'Negativo', 'Inconclusivo'] }
+            ],
+            8: [ // CSD - Certificado de Saúde para Deslocação
+                { id: 'destino', label: 'País de Destino', type: 'text', placeholder: 'Ex: Portugal, Brasil, etc.' },
+                { id: 'motivoViagem', label: 'Motivo da Viagem', type: 'text', placeholder: 'Ex: Turismo, Trabalho, etc.' },
+                { id: 'dataPartida', label: 'Data Prevista de Partida', type: 'date' },
+                { id: 'vacinas', label: 'Vacinas Administradas', type: 'textarea', placeholder: 'Lista de vacinas' },
+                { id: 'recomendacoes', label: 'Recomendações', type: 'textarea', placeholder: 'Recomendações para a viagem' }
             ]
         };
         
@@ -404,7 +446,7 @@
                     html += `
                         <div class="form-group">
                             <label for="${campo.id}">${campo.label}</label>
-                            <textarea id="${campo.id}" rows="3"></textarea>
+                            <textarea id="${campo.id}" rows="3" placeholder="${campo.placeholder || ''}"></textarea>
                         </div>
                     `;
                 } else {
@@ -415,8 +457,9 @@
                                 ${campo.step ? `step="${campo.step}"` : ''}
                                 ${campo.min ? `min="${campo.min}"` : ''}
                                 ${campo.max ? `max="${campo.max}"` : ''}
-                                ${campo.readonly ? 'readonly' : ''}
-                                ${campo.placeholder ? `placeholder="${campo.placeholder}"` : ''}>
+                                ${campo.value ? `value="${campo.value}"` : ''}
+                                ${campo.placeholder ? `placeholder="${campo.placeholder}"` : ''}
+                                ${campo.readonly ? 'readonly' : ''}>
                         </div>
                     `;
                 }
@@ -462,6 +505,17 @@
                 return null;
             }
             
+            // Récupérer les données du laborantin
+            const laborantin = {
+                nome: document.getElementById('nomeLaborantin').value,
+                registro: document.getElementById('registroProfissional').value
+            };
+            
+            if (!laborantin.nome) {
+                alert('Preencha o nome do laborantin/técnico');
+                return null;
+            }
+            
             const dadosMedicos = {};
             const campos = camposPorTipo[tipo] || [];
             campos.forEach(campo => {
@@ -474,6 +528,7 @@
             return {
                 tipo,
                 paciente,
+                laborantin,
                 dadosMedicos,
                 dataEmissao: new Date().toISOString()
             };
@@ -487,6 +542,17 @@
             
             let html = `
                 <table class="review-table">
+                    <tr>
+                        <th colspan="3">Responsável pela Emissão</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Laborantin:</strong> ${dados.laborantin.nome}</td>
+                        <td><strong>Registro:</strong> ${dados.laborantin.registro || 'Não informado'}</td>
+                        <td>
+                            <button class="edit-btn" onclick="editarSecao('laborantin')">✏️ Editar</button>
+                        </td>
+                    </tr>
+                    
                     <tr>
                         <th colspan="3">Dados do Paciente</th>
                     </tr>
@@ -539,6 +605,12 @@
                 document.getElementById('sectionPaciente').classList.add('section-highlight');
                 setTimeout(() => {
                     document.getElementById('sectionPaciente').classList.remove('section-highlight');
+                }, 2000);
+            } else if (secao === 'laborantin') {
+                document.getElementById('sectionLaborantin').scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('sectionLaborantin').classList.add('section-highlight');
+                setTimeout(() => {
+                    document.getElementById('sectionLaborantin').classList.remove('section-highlight');
                 }, 2000);
             }
         }
@@ -598,6 +670,7 @@
                     },
                     body: JSON.stringify({
                         paciente: dadosAtuais.paciente,
+                        laborantin: dadosAtuais.laborantin,
                         dados: dadosAtuais.dadosMedicos
                     })
                 });
