@@ -518,7 +518,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // =============================================
-// DASHBOARD DO LABORATORIO - VERSÃO CORRIGIDA
+// DASHBOARD DO LABORATORIO - VERSÃO COMPLETA E CORRIGIDA
 // =============================================
 app.get('/lab-dashboard', (req, res) => {
   res.send('<!DOCTYPE html>' +
