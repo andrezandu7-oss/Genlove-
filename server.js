@@ -416,6 +416,7 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
     }
 });
 
+// =============================================
 // ROUTE POUR GÉNÉRER LES PDF
 // =============================================
 app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
@@ -471,45 +472,57 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         doc.pipe(res);
         
         // =========================================
-        // EN-TÊTE DU DOCUMENT
+        // EN-TÊTE DU DOCUMENT (CENTRÉ)
         // =========================================
-        doc.fillColor('#006633')
-            .fontSize(20)
-            .text('REPÚBLICA DE ANGOLA', 50, 50)
-            .fontSize(16)
-            .text('MINISTÉRIO DA SAÚDE', 50, 75)
-            .fontSize(24)
-            .text('SISTEMA NACIONAL DE SAÚDE', 50, 100);
-        
-        // Ligne de séparation
+        doc.fillColor('#006633');
+
+        // Première ligne - centrée
+        doc.fontSize(20)
+           .text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+
+        // Deuxième ligne - centrée
+        doc.fontSize(16)
+           .text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+
+        // Troisième ligne - centrée et plus grande
+        doc.fontSize(24)
+           .text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
+
+        // Ligne de séparation centrée
         doc.strokeColor('#006633')
-            .lineWidth(2)
-            .moveTo(50, 140)
-            .lineTo(550, 140)
-            .stroke();
+           .lineWidth(2)
+           .moveTo(doc.page.width / 2 - 250, 150)
+           .lineTo(doc.page.width / 2 + 250, 150)
+           .stroke();
+
+        let y = 180;
         
         // =========================================
         // LABORATÓRIO EMISSOR
         // =========================================
         doc.fillColor('#006633')
             .fontSize(14)
-            .text(`${lab.nome}`, 50, 160)
-            .fontSize(10)
+            .text(lab.nome, 50, y);
+
+        doc.fontSize(10)
             .fillColor('#666')
-            .text(`NIF: ${lab.nif} | ${lab.provincia}`, 50, 180)
-            .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telephone || 'Não informado'}`, 50, 195);
+            .text(`NIF: ${lab.nif} | ${lab.provincia}`, 50, y + 20)
+            .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telephone || 'Não informado'}`, 50, y + 35);
+
+        y += 60;
         
         // =========================================
         // NUMÉRO DO CERTIFICADO
         // =========================================
         doc.fillColor('#006633')
             .fontSize(12)
-            .text(`CERTIFICADO Nº: ${numero}`, 50, 220)
-            .fontSize(10)
+            .text(`CERTIFICADO Nº: ${numero}`, 50, y);
+
+        doc.fontSize(10)
             .fillColor('#666')
-            .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, 235);
-        
-        let y = 270;
+            .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, y + 15);
+
+        y += 40;
         
         // =========================================
         // RESPONSÁVEL PELA EMISSÃO (LABORANTIN)
@@ -568,118 +581,118 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         }
         
         // =========================================
-// DADOS MÉDICOS
-// =========================================
-doc.fillColor('#006633')
-    .fontSize(12)
-    .text('DADOS MÉDICOS:', 50, y);
-
-y += 20;
-
-// Titre du type de certificat
-const tipos = {
-    1: 'CERTIFICADO DE GENÓTIPO',
-    2: 'CERTIFICADO DE BOA SAÚDE',
-    3: 'CERTIFICADO DE INCAPACIDADE',
-    4: 'CERTIFICADO DE APTIDÃO',
-    5: 'CERTIFICADO DE SAÚDE MATERNA',
-    6: 'CERTIFICADO DE PRÉ-NATAL',
-    7: 'CERTIFICADO EPIDEMIOLÓGICO',
-    8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
-};
-
-doc.fillColor('#333')
-    .fontSize(12)
-    .text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
-
-y += 25;
-
-// 👇 NOUVELLE SECTION : Afficher les données médicales avec mention "não solicitado"
-if (dados.dados) {
-    // Liste de tous les examens possibles pour ce type de certificat
-    const todosExames = {
-        1: ['grupoSanguineo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese', 'observacoes'],
-        2: ['peso', 'altura', 'imc', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos', 'observacoes'],
-        3: ['tipoIncapacidade', 'causa', 'grau', 'dataInicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante', 'observacoes'],
-        4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade', 'observacoes'],
-        5: ['gestacoes', 'partos', 'abortos', 'nascidosVivos', 'dum', 'dpp', 'idadeGestacional', 'consultasCPN', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguineo', 'fatorRh', 'exsudadoVaginal', 'pesoAtual', 'alturaUterina', 'batimentosCardiacosFeto', 'movimentosFetais', 'edema', 'proteinuria', 'observacoes'],
-        6: ['grupoSanguineo', 'fatorRh', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'ureia', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao', 'observacoes'],
-        7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos', 'observacoes'],
-        8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais', 'recomendacoes']
-    };
-    
-    const examesTipo = todosExames[dados.tipo] || [];
-    
-    for (let [key, value] of Object.entries(dados.dados)) {
-        if (value && value.toString().trim()) {
-            const nomeCampo = key.replace(/([A-Z])/g, ' $1')
-                .replace(/^./, str => str.toUpperCase());
+        // DADOS MÉDICOS
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('DADOS MÉDICOS:', 50, y);
+        
+        y += 20;
+        
+        // Titre du type de certificat
+        const tipos = {
+            1: 'CERTIFICADO DE GENÓTIPO',
+            2: 'CERTIFICADO DE BOA SAÚDE',
+            3: 'CERTIFICADO DE INCAPACIDADE',
+            4: 'CERTIFICADO DE APTIDÃO',
+            5: 'CERTIFICADO DE SAÚDE MATERNA',
+            6: 'CERTIFICADO DE PRÉ-NATAL',
+            7: 'CERTIFICADO EPIDEMIOLÓGICO',
+            8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
+        };
+        
+        doc.fillColor('#333')
+            .fontSize(12)
+            .text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
+        
+        y += 25;
+        
+        // Afficher les données médicales avec mention "não solicitado"
+        if (dados.dados) {
+            // Liste de tous les examens possibles pour ce type de certificat
+            const todosExames = {
+                1: ['grupoSanguineo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese', 'observacoes'],
+                2: ['peso', 'altura', 'imc', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos', 'observacoes'],
+                3: ['tipoIncapacidade', 'causa', 'grau', 'dataInicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante', 'observacoes'],
+                4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade', 'observacoes'],
+                5: ['gestacoes', 'partos', 'abortos', 'nascidosVivos', 'dum', 'dpp', 'idadeGestacional', 'consultasCPN', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguineo', 'fatorRh', 'exsudadoVaginal', 'pesoAtual', 'alturaUterina', 'batimentosCardiacosFeto', 'movimentosFetais', 'edema', 'proteinuria', 'observacoes'],
+                6: ['grupoSanguineo', 'fatorRh', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'ureia', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao', 'observacoes'],
+                7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos', 'observacoes'],
+                8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais', 'recomendacoes']
+            };
             
-            doc.fontSize(11)
-                .fillColor('#000')
-                .text(`${nomeCampo}: ${value}`, 70, y);
+            const examesTipo = todosExames[dados.tipo] || [];
             
-            y += 20;
+            for (let [key, value] of Object.entries(dados.dados)) {
+                if (value && value.toString().trim()) {
+                    const nomeCampo = key.replace(/([A-Z])/g, ' $1')
+                        .replace(/^./, function(str) { return str.toUpperCase(); });
+                    
+                    doc.fontSize(11)
+                        .fillColor('#000')
+                        .text(`${nomeCampo}: ${value}`, 70, y);
+                    
+                    y += 20;
+                    
+                    if (y > 700) {
+                        doc.addPage();
+                        y = 50;
+                    }
+                }
+            }
             
-            if (y > 700) {
-                doc.addPage();
-                y = 50;
+            // Afficher les examens NON SOLLICITÉS
+            const examesPreenchidos = Object.keys(dados.dados).filter(function(key) {
+                return dados.dados[key] && dados.dados[key].toString().trim();
+            });
+            
+            const examesNaoSolicitados = examesTipo.filter(function(exame) {
+                return !examesPreenchidos.includes(exame) && exame !== 'observacoes';
+            });
+            
+            if (examesNaoSolicitados.length > 0) {
+                y += 10;
+                doc.fillColor('#999')
+                    .fontSize(10)
+                    .text('Exames não solicitados:', 70, y);
+                y += 15;
+                
+                // Afficher en 2 colonnes
+                const metade = Math.ceil(examesNaoSolicitados.length / 2);
+                const col1 = examesNaoSolicitados.slice(0, metade);
+                const col2 = examesNaoSolicitados.slice(metade);
+                
+                doc.fontSize(9)
+                    .fillColor('#666');
+                
+                // Colonne 1
+                let yCol1 = y;
+                col1.forEach(function(exame) {
+                    const nomeExame = exame.replace(/([A-Z])/g, ' $1')
+                        .replace(/^./, function(str) { return str.toUpperCase(); });
+                    doc.text(`• ${nomeExame} (não solicitado)`, 70, yCol1);
+                    yCol1 += 15;
+                });
+                
+                // Colonne 2
+                let yCol2 = y;
+                col2.forEach(function(exame) {
+                    const nomeExame = exame.replace(/([A-Z])/g, ' $1')
+                        .replace(/^./, function(str) { return str.toUpperCase(); });
+                    doc.text(`• ${nomeExame} (não solicitado)`, 300, yCol2);
+                    yCol2 += 15;
+                });
+                
+                y = Math.max(yCol1, yCol2) + 10;
             }
         }
-    }
-    
-    // 👇 NOUVEAU : Afficher les examens NON SOLLICITÉS
-    const examesPreenchidos = Object.keys(dados.dados).filter(key => 
-        dados.dados[key] && dados.dados[key].toString().trim()
-    );
-    
-    const examesNaoSolicitados = examesTipo.filter(exame => 
-        !examesPreenchidos.includes(exame) && exame !== 'observacoes'
-    );
-    
-    if (examesNaoSolicitados.length > 0) {
-        y += 10;
-        doc.fillColor('#999')
-            .fontSize(10)
-            .text('Exames não solicitados:', 70, y);
-        y += 15;
         
-        // Afficher en 2 colonnes
-        const metade = Math.ceil(examesNaoSolicitados.length / 2);
-        const col1 = examesNaoSolicitados.slice(0, metade);
-        const col2 = examesNaoSolicitados.slice(metade);
-        
-        doc.fontSize(9)
-            .fillColor('#666');
-        
-        // Colonne 1
-        let yCol1 = y;
-        col1.forEach(exame => {
-            const nomeExame = exame.replace(/([A-Z])/g, ' $1')
-                .replace(/^./, str => str.toUpperCase());
-            doc.text(`• ${nomeExame} (não solicitado)`, 70, yCol1);
-            yCol1 += 15;
-        });
-        
-        // Colonne 2
-        let yCol2 = y;
-        col2.forEach(exame => {
-            const nomeExame = exame.replace(/([A-Z])/g, ' $1')
-                .replace(/^./, str => str.toUpperCase());
-            doc.text(`• ${nomeExame} (não solicitado)`, 300, yCol2);
-            yCol2 += 15;
-        });
-        
-        y = Math.max(yCol1, yCol2) + 10;
-    }
-}
-
-if (dados.imc) {
-    doc.fontSize(11)
-        .fillColor('#000')
-        .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
-    y += 25;
-}
+        if (dados.imc) {
+            doc.fontSize(11)
+                .fillColor('#000')
+                .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
+            y += 25;
+        }
         
         // =========================================
         // ASSINATURAS
@@ -730,7 +743,7 @@ if (dados.imc) {
         // =========================================
         doc.fontSize(8)
             .fillColor('#666')
-            .text('Documento válido em todo território nacional', 50, 780, { align: 'center' });
+            .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
         
         doc.end();
         
@@ -739,7 +752,6 @@ if (dados.imc) {
         res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
     }
 });
-
 // =============================================
 // FORMULÁRIO NOVO
 // =============================================
