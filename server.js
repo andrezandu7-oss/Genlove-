@@ -1046,10 +1046,11 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
     }
 });
 // =============================================
-// FORMULÁRIO NOVO
 // =============================================
-app.get('/novo-certificado', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'novo-certificado.html'));
+// FORMULÁRIO NOVO LABORATÓRIO
+// =============================================
+app.get('/novo-laboratorio', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'novo-laboratorio.html'));
 });
 
 // =============================================
