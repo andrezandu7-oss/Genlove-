@@ -284,186 +284,114 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO LABORATORIO (VERSION FINALE)
+// DASHBOARD DO LABORATORIO (SANS STATISTIQUES)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Laboratório - SNS Angola</title>
+    <title>Laboratório - SNS</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-        
-        body {
-            display: flex;
-            background: #f5f5f5;
-        }
-        
+        * { margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
+        body { display:flex; background:#f5f5f5; }
         .sidebar {
-            width: 250px;
-            background: #006633;
-            color: white;
-            height: 100vh;
-            padding: 20px;
-            position: fixed;
-            display: flex;
-            flex-direction: column;
+            width:250px;
+            background:#006633;
+            color:white;
+            height:100vh;
+            padding:20px;
+            position:fixed;
         }
-        
-        .sidebar h2 {
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
+        .sidebar h2 { margin-bottom:30px; }
         .sidebar a {
-            display: block;
-            color: white;
-            text-decoration: none;
-            padding: 12px;
-            margin: 5px 0;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
+            display:block;
+            color:white;
+            text-decoration:none;
+            padding:12px;
+            margin:5px 0;
+            border-radius:5px;
+            cursor:pointer;
         }
-        
-        .sidebar a:hover {
-            background: #004d26;
-        }
-        
-        .sidebar .novo-btn {
-            background: #ffa500;
-            color: #006633;
-            font-weight: bold;
-            text-align: center;
-            margin-top: 10px;
-        }
-        
-        .sidebar .novo-btn:hover {
-            background: #ff8c00;
-        }
-        
-        .sidebar button {
-            margin-top: auto;
-            width: 100%;
-        }
-        
+        .sidebar a:hover { background:#004d26; }
         .main {
-            margin-left: 270px;
-            padding: 30px;
-            width: 100%;
+            margin-left:270px;
+            padding:30px;
+            width:100%;
         }
-        
         .welcome {
-            background: #e8f5e9;
-            padding: 20px;
-            border-left: 5px solid #006633;
-            margin-bottom: 20px;
-            border-radius: 0 5px 5px 0;
+            background:#e8f5e9;
+            padding:20px;
+            border-left:5px solid #006633;
+            margin-bottom:20px;
         }
-        
         .btn {
-            background: #006633;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 14px;
+            background:#006633;
+            color:white;
+            border:none;
+            padding:10px 20px;
+            cursor:pointer;
+            border-radius:5px;
         }
-        
-        .btn:hover {
-            background: #004d26;
-        }
-        
-        .btn-danger {
-            background: #dc3545;
-        }
-        
-        .btn-danger:hover {
-            background: #c82333;
-        }
-        
         .btn-sm {
-            padding: 5px 10px;
-            font-size: 12px;
+            padding:5px 10px;
+            font-size:12px;
+            margin:0 2px;
         }
-        
+        .btn-danger { background:#dc3545; }
         table {
-            width: 100%;
-            background: white;
-            border-collapse: collapse;
-            margin-top: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            border-radius: 5px;
-            overflow: hidden;
+            width:100%;
+            background:white;
+            border-collapse:collapse;
+            margin-top:20px;
         }
-        
         th {
-            background: #006633;
-            color: white;
-            padding: 12px;
-            text-align: left;
+            background:#006633;
+            color:white;
+            padding:12px;
+            text-align:left;
         }
-        
         td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
+            padding:12px;
+            border-bottom:1px solid #ddd;
         }
-        
-        tr:hover {
-            background: #f5f5f5;
-        }
-        
-        .acoes {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .section-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+        .acoes { display:flex; gap:5px; }
+        th:last-child, td:last-child { text-align:center; }
+        .header {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:20px;
         }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>SNS - Lab</h2>
-        <a onclick="mostrar('certificados')">📋 Meus Certificados</a>
-        <a onclick="window.location.href='/novo-certificado'" class="novo-btn">➕ Novo Certificado</a>
-        <button onclick="logout()" class="btn btn-danger">🚪 Sair</button>
+        <a onclick="window.location.href='/lab-dashboard'">📋 Meus Certificados</a>
+        <button onclick="logout()" class="btn btn-danger" style="margin-top:20px;width:100%;">🚪 Sair</button>
     </div>
     
     <div class="main">
         <div id="welcome" class="welcome"></div>
         
-        <div id="secaoCertificados" class="secao ativa">
-            <div class="section-title">
-                <h2>📋 Meus Certificados</h2>
-            </div>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Número</th>
-                        <th>Tipo</th>
-                        <th>Paciente</th>
-                        <th>Data</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaCertificados">
-                    <tr><td colspan="5" style="text-align:center;">Carregando certificados...</td></tr>
-                </tbody>
-            </table>
+        <div class="header">
+            <h2>📋 Meus Certificados</h2>
+            <button class="btn" onclick="window.location.href='/novo-certificado'">➕ Novo Certificado</button>
         </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Número</th>
+                    <th>Tipo</th>
+                    <th>Paciente</th>
+                    <th>Data</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela"></tbody>
+        </table>
     </div>
 
     <script>
@@ -474,22 +402,11 @@ app.get('/lab-dashboard', (req, res) => {
 
         async function carregarDados() {
             try {
-                const rMe = await fetch("/api/labs/me", {
-                    headers: { "x-api-key": key }
-                });
+                const rMe = await fetch("/api/labs/me", { headers: { "x-api-key": key } });
                 const dMe = await rMe.json();
                 document.getElementById("welcome").innerHTML = "<h2>👋 Bem-vindo, " + dMe.nome + "</h2>";
-                await carregarCertificados();
-            } catch (e) {
-                console.error('Erro ao carregar dados:', e);
-            }
-        }
-
-        async function carregarCertificados() {
-            try {
-                const rCert = await fetch("/api/certificados/lab", {
-                    headers: { "x-api-key": key }
-                });
+                
+                const rCert = await fetch("/api/certificados/lab", { headers: { "x-api-key": key } });
                 const lista = await rCert.json();
                 
                 let html = "";
@@ -498,24 +415,25 @@ app.get('/lab-dashboard', (req, res) => {
                 } else {
                     for (let i = 0; i < lista.length; i++) {
                         const c = lista[i];
-                        const dataEmissao = new Date(c.emitidoEm).toLocaleDateString('pt-PT');
-                        html += '<tr>';
-                        html += '<td><strong>' + c.numero + '</strong></td>';
-                        html += '<td>' + (tipos[c.tipo] || 'Desconhecido') + '</td>';
-                        html += '<td>' + (c.paciente?.nomeCompleto || 'N/I') + '</td>';
-                        html += '<td>' + dataEmissao + '</td>';
-                        html += '<td class="acoes">';
-                        html += '<button class="btn btn-sm" onclick="visualizarPDF(\'' + c.numero + '\')" title="Visualizar">👁️</button>';
-                        html += '<button class="btn btn-sm" onclick="imprimirPDF(\'' + c.numero + '\')" title="Imprimir">🖨️</button>';
-                        html += '<button class="btn btn-sm" onclick="baixarPDF(\'' + c.numero + '\')" title="Baixar">📥</button>';
-                        html += '</td>';
-                        html += '</tr>';
+                        const dataEmissao = new Date(c.emitidoEm).toLocaleDateString();
+                        html += "<tr>";
+                        html += "<td><strong>" + c.numero + "</strong></td>";
+                        html += "<td>" + (tipos[c.tipo] || "Desconhecido") + "</td>";
+                        html += "<td>" + (c.paciente?.nomeCompleto || "N/I") + "</td>";
+                        html += "<td>" + dataEmissao + "</td>";
+                        html += "<td class='acoes'>";
+                        html += "<button class='btn btn-sm' onclick='visualizarPDF(\"" + c.numero + "\")' title='Visualizar'>👁️</button>";
+                        html += "<button class='btn btn-sm' onclick='imprimirPDF(\"" + c.numero + "\")' title='Imprimir'>🖨️</button>";
+                        html += "<button class='btn btn-sm' onclick='baixarPDF(\"" + c.numero + "\")' title='Baixar'>📥</button>";
+                        html += "</td>";
+                        html += "</tr>";
                     }
                 }
-                document.getElementById("tabelaCertificados").innerHTML = html;
+                document.getElementById("tabela").innerHTML = html;
+                
             } catch (e) {
-                console.error('Erro ao carregar certificados:', e);
-                document.getElementById("tabelaCertificados").innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Erro ao carregar certificados</td></tr>';
+                console.error(e);
+                document.getElementById("tabela").innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Erro ao carregar</td></tr>';
             }
         }
 
@@ -523,20 +441,12 @@ app.get('/lab-dashboard', (req, res) => {
             try {
                 const response = await fetch('/api/certificados/pdf', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': key
-                    },
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': key },
                     body: JSON.stringify({ numero: numero })
                 });
-
-                if (!response.ok) {
-                    throw new Error('Erro ao gerar PDF');
-                }
-
+                if (!response.ok) throw new Error('Erro ao gerar PDF');
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
-
                 if (acao === 'visualizar') {
                     window.open(url, '_blank');
                 } else if (acao === 'baixar') {
@@ -550,42 +460,26 @@ app.get('/lab-dashboard', (req, res) => {
                 } else if (acao === 'imprimir') {
                     const printWindow = window.open(url, '_blank');
                     if (printWindow) {
-                        printWindow.onload = function() {
-                            printWindow.print();
-                        };
+                        printWindow.onload = function() { printWindow.print(); };
                     } else {
                         alert('Pop-up bloqueado. Permita pop-ups para este site.');
                     }
                 }
             } catch (error) {
                 console.error('Erro PDF:', error);
-                alert('Erro ao gerar o PDF. Tente novamente.');
+                alert('Erro ao gerar o PDF.');
             }
         }
 
-        function visualizarPDF(numero) {
-            fetchPDF(numero, 'visualizar');
-        }
+        function visualizarPDF(numero) { fetchPDF(numero, 'visualizar'); }
+        function baixarPDF(numero) { fetchPDF(numero, 'baixar'); }
+        function imprimirPDF(numero) { fetchPDF(numero, 'imprimir'); }
 
-        function baixarPDF(numero) {
-            fetchPDF(numero, 'baixar');
-        }
-
-        function imprimirPDF(numero) {
-            fetchPDF(numero, 'imprimir');
-        }
-
-        function mostrar(secao) {
-            // Apenas uma seção, então não faz nada
-            console.log('Seção: ' + secao);
-        }
-
-        // Bloquear Ctrl+P (imprimir página)
         window.addEventListener('keydown', function(e) {
             const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
             if (!isInput && (e.ctrlKey || e.metaKey) && e.key === 'p') {
                 e.preventDefault();
-                alert('📌 Para imprimir um certificado, utilize o botão 🖨️ na lista.');
+                alert('📌 Para imprimir, use o botão 🖨️ na lista.');
                 return false;
             }
         });
@@ -595,7 +489,6 @@ app.get('/lab-dashboard', (req, res) => {
             window.location.href = "/";
         }
 
-        // Iniciar
         carregarDados();
     </script>
 </body>
