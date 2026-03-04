@@ -33,14 +33,12 @@
         .progress-bar { width:100%; height:20px; background:#f0f0f0; border-radius:10px; overflow:hidden; margin:20px 0; }
         .progress-fill { height:100%; background:#006633; width:0%; transition:width 0.3s; }
         .timer { font-size:24px; font-weight:bold; color:#006633; margin:10px 0; }
-        .warning { background:#fff3cd; border:1px solid #ffc107; color:#856404; padding:15px; border-radius:5px; margin:20px 0; text-align:center; font-weight:bold; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🏥 Novo Laboratório</h1>
         
-        <!-- Informações Básicas -->
         <div class="form-section" id="sectionBasica">
             <h2>Informações Básicas</h2>
             <div class="form-group">
@@ -62,7 +60,6 @@
             </div>
         </div>
         
-        <!-- Localização -->
         <div class="form-section" id="sectionLocalizacao">
             <h2>Localização</h2>
             <div class="form-group">
@@ -86,7 +83,6 @@
             </div>
         </div>
         
-        <!-- Contactos -->
         <div class="form-section" id="sectionContactos">
             <h2>Contactos</h2>
             <div class="form-group">
@@ -107,7 +103,6 @@
             </div>
         </div>
         
-        <!-- Responsáveis -->
         <div class="form-section" id="sectionResponsaveis">
             <h2>Responsáveis</h2>
             <div class="form-group">
@@ -120,7 +115,6 @@
             </div>
         </div>
         
-        <!-- Licenciamento -->
         <div class="form-section" id="sectionLicenca">
             <h2>Licenciamento</h2>
             <div class="form-group">
@@ -133,14 +127,12 @@
             </div>
         </div>
         
-        <!-- Botões -->
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button class="btn btn-secondary" onclick="window.location.href='/admin-dashboard'">Cancelar</button>
             <button class="btn" onclick="revisarDados()">Pré-visualizar</button>
         </div>
     </div>
     
-    <!-- Modal de revisão -->
     <div id="modalRevisao" class="modal">
         <div class="modal-content">
             <h2 style="color: #006633; margin-bottom: 20px;">📋 Revisão do Laboratório</h2>
@@ -152,7 +144,6 @@
         </div>
     </div>
     
-    <!-- Loading -->
     <div id="loading" class="loading">
         <div class="spinner"></div>
         <h3>Processando laboratório...</h3>
@@ -164,12 +155,10 @@
     </div>
     
     <script>
-        var token = localStorage.getItem("token");
-        if (!token) {
-            window.location.href = "/ministerio";
-        }
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "/ministerio";
         
-        var dadosAtuais = {};
+        let dadosAtuais = {};
         
         function coletarDados() {
             return {
@@ -198,23 +187,21 @@
             if (!dados.provincia) return 'Província é obrigatória';
             if (!dados.endereco) return 'Endereço é obrigatório';
             if (!dados.telefone) return 'Telefone é obrigatório';
-            if (!dados.email || dados.email.indexOf('@') === -1) return 'Email inválido';
+            if (!dados.email || !dados.email.includes('@')) return 'Email inválido';
             if (!dados.diretor) return 'Nome do diretor é obrigatório';
             return null;
         }
         
         function revisarDados() {
-            var dados = coletarDados();
-            var erro = validarDados(dados);
+            const dados = coletarDados();
+            const erro = validarDados(dados);
             if (erro) {
                 alert(erro);
                 return;
             }
-            
             dadosAtuais = dados;
             
-            var html = '<table class="review-table">';
-            
+            let html = '<table class="review-table">';
             html += '<tr><th colspan="2">Informações Básicas</th></tr>';
             html += '<tr><td><strong>Nome:</strong> ' + dados.nome + '</td><td><strong>NIF:</strong> ' + dados.nif + '</td></tr>';
             html += '<tr><td colspan="2"><strong>Tipo:</strong> ' + dados.tipo + '</td></tr>';
@@ -232,7 +219,6 @@
             
             html += '<tr><th colspan="2">Licenciamento</th></tr>';
             html += '<tr><td><strong>Licença:</strong> ' + (dados.licenca || '-') + '</td><td><strong>Validade:</strong> ' + (dados.validadeLicenca || '-') + '</td></tr>';
-            
             html += '</table>';
             
             document.getElementById('conteudoRevisao').innerHTML = html;
@@ -243,81 +229,84 @@
             document.getElementById('modalRevisao').style.display = 'none';
         }
         
-        function emitirLaboratorio() {
+        async function emitirLaboratorio() {
             document.getElementById('modalRevisao').style.display = 'none';
             
-            var loading = document.getElementById('loading');
-            var progressFill = document.getElementById('progressFill');
-            var timer = document.getElementById('timer');
-            var loadingMessage = document.getElementById('loadingMessage');
+            const loading = document.getElementById('loading');
+            const progressFill = document.getElementById('progressFill');
+            const timer = document.getElementById('timer');
+            const loadingMessage = document.getElementById('loadingMessage');
             
             loading.style.display = 'flex';
             
-            for (var i = 0; i <= 10; i++) {
-                (function(i) {
-                    setTimeout(function() {
-                        progressFill.style.width = (i * 10) + '%';
-                        timer.innerText = (5 - Math.floor(i * 0.5)) + 's';
-                        if (i === 3) loadingMessage.innerHTML = '📝 Gerando API Key...';
-                        if (i === 6) loadingMessage.innerHTML = '🔒 Criando laboratório...';
-                        if (i === 9) loadingMessage.innerHTML = '📄 Preparando PDF...';
-                    }, i * 500);
-                })(i);
+            for (let i = 0; i <= 10; i++) {
+                setTimeout(() => {
+                    progressFill.style.width = (i * 10) + '%';
+                    timer.innerText = (5 - Math.floor(i * 0.5)) + 's';
+                    if (i === 3) loadingMessage.innerHTML = '📝 Gerando API Key...';
+                    if (i === 6) loadingMessage.innerHTML = '🔒 Criando laboratório...';
+                    if (i === 9) loadingMessage.innerHTML = '📄 Preparando PDF...';
+                }, i * 500);
             }
             
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/labs', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    if (xhr.status === 200) {
-                        var result = JSON.parse(xhr.responseText);
-                        if (result.success) {
-                            setTimeout(function() {
-                                loadingMessage.innerHTML = '✅ Laboratório criado com sucesso!';
-                                gerarPDF(result.labId, result.apiKey);
-                                setTimeout(function() {
-                                    window.location.href = '/admin-dashboard';
-                                }, 2000);
-                            }, 5000);
-                        } else {
-                            loading.style.display = 'none';
-                            alert('Erro: ' + (result.error || 'Erro desconhecido'));
-                        }
-                    } else {
-                        loading.style.display = 'none';
-                        alert('Erro ao criar laboratório');
-                    }
+            try {
+                const response = await fetch('/api/labs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(dadosAtuais)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    setTimeout(() => {
+                        loadingMessage.innerHTML = '✅ Laboratório criado com sucesso!';
+                        gerarPDF(result.labId, result.apiKey);
+                        setTimeout(() => {
+                            window.location.href = '/admin-dashboard';
+                        }, 2000);
+                    }, 5000);
+                } else {
+                    loading.style.display = 'none';
+                    alert('Erro: ' + (result.error || 'Erro desconhecido'));
                 }
-            };
-            xhr.send(JSON.stringify(dadosAtuais));
+            } catch (error) {
+                loading.style.display = 'none';
+                alert('Erro ao criar laboratório: ' + error.message);
+            }
         }
         
         function gerarPDF(labId, apiKey) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/api/labs/pdf', true);
-            xhr.setRequestHeader('Content-Type', 'application/json');
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.responseType = 'blob';
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var blob = xhr.response;
-                    var url = window.URL.createObjectURL(blob);
-                    var a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'laboratorio-' + labId + '.pdf';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                }
-            };
-            xhr.send(JSON.stringify({
-                labId: labId,
-                apiKey: apiKey,
-                dados: dadosAtuais
-            }));
+            fetch('/api/labs/pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    labId: labId,
+                    apiKey: apiKey,
+                    dados: dadosAtuais
+                })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'laboratorio-' + labId + '.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(error => {
+                console.error('Erro PDF:', error);
+                alert('Erro ao gerar PDF');
+            });
         }
     </script>
 </body>
