@@ -284,7 +284,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO LABORATORIO (VERSION SIMPLIFIÉE)
+// DASHBOARD DO LABORATORIO (VERSION FINALE)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -299,10 +299,12 @@ app.get('/lab-dashboard', (req, res) => {
             box-sizing: border-box;
             font-family: Arial, sans-serif;
         }
+        
         body {
             display: flex;
             background: #f5f5f5;
         }
+        
         .sidebar {
             width: 250px;
             background: #006633;
@@ -310,10 +312,15 @@ app.get('/lab-dashboard', (req, res) => {
             height: 100vh;
             padding: 20px;
             position: fixed;
+            display: flex;
+            flex-direction: column;
         }
+        
         .sidebar h2 {
             margin-bottom: 30px;
+            text-align: center;
         }
+        
         .sidebar a {
             display: block;
             color: white;
@@ -322,21 +329,44 @@ app.get('/lab-dashboard', (req, res) => {
             margin: 5px 0;
             border-radius: 5px;
             cursor: pointer;
+            font-size: 16px;
         }
+        
         .sidebar a:hover {
             background: #004d26;
         }
+        
+        .sidebar .novo-btn {
+            background: #ffa500;
+            color: #006633;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .sidebar .novo-btn:hover {
+            background: #ff8c00;
+        }
+        
+        .sidebar button {
+            margin-top: auto;
+            width: 100%;
+        }
+        
         .main {
             margin-left: 270px;
             padding: 30px;
             width: 100%;
         }
+        
         .welcome {
             background: #e8f5e9;
             padding: 20px;
             border-left: 5px solid #006633;
             margin-bottom: 20px;
+            border-radius: 0 5px 5px 0;
         }
+        
         .btn {
             background: #006633;
             color: white;
@@ -346,39 +376,60 @@ app.get('/lab-dashboard', (req, res) => {
             border-radius: 5px;
             font-size: 14px;
         }
+        
         .btn:hover {
             background: #004d26;
         }
+        
         .btn-danger {
             background: #dc3545;
         }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
         .btn-sm {
             padding: 5px 10px;
             font-size: 12px;
         }
+        
         table {
             width: 100%;
             background: white;
             border-collapse: collapse;
             margin-top: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            overflow: hidden;
         }
+        
         th {
             background: #006633;
             color: white;
             padding: 12px;
             text-align: left;
         }
+        
         td {
             padding: 12px;
             border-bottom: 1px solid #ddd;
         }
+        
         tr:hover {
             background: #f5f5f5;
         }
+        
         .acoes {
             display: flex;
             gap: 5px;
+        }
+        
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -386,16 +437,16 @@ app.get('/lab-dashboard', (req, res) => {
     <div class="sidebar">
         <h2>SNS - Lab</h2>
         <a onclick="mostrar('certificados')">📋 Meus Certificados</a>
-        <button onclick="logout()" class="btn btn-danger" style="margin-top:20px;width:100%;">🚪 Sair</button>
+        <a onclick="window.location.href='/novo-certificado'" class="novo-btn">➕ Novo Certificado</a>
+        <button onclick="logout()" class="btn btn-danger">🚪 Sair</button>
     </div>
     
     <div class="main">
         <div id="welcome" class="welcome"></div>
         
         <div id="secaoCertificados" class="secao ativa">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div class="section-title">
                 <h2>📋 Meus Certificados</h2>
-                <button class="btn" onclick="window.location.href='/novo-certificado'">➕ Novo Certificado</button>
             </div>
             
             <table>
@@ -423,18 +474,22 @@ app.get('/lab-dashboard', (req, res) => {
 
         async function carregarDados() {
             try {
-                const rMe = await fetch("/api/labs/me", { headers: { "x-api-key": key } });
+                const rMe = await fetch("/api/labs/me", {
+                    headers: { "x-api-key": key }
+                });
                 const dMe = await rMe.json();
                 document.getElementById("welcome").innerHTML = "<h2>👋 Bem-vindo, " + dMe.nome + "</h2>";
                 await carregarCertificados();
             } catch (e) {
-                console.error('Erro:', e);
+                console.error('Erro ao carregar dados:', e);
             }
         }
 
         async function carregarCertificados() {
             try {
-                const rCert = await fetch("/api/certificados/lab", { headers: { "x-api-key": key } });
+                const rCert = await fetch("/api/certificados/lab", {
+                    headers: { "x-api-key": key }
+                });
                 const lista = await rCert.json();
                 
                 let html = "";
@@ -459,8 +514,8 @@ app.get('/lab-dashboard', (req, res) => {
                 }
                 document.getElementById("tabelaCertificados").innerHTML = html;
             } catch (e) {
-                console.error('Erro certificados:', e);
-                document.getElementById("tabelaCertificados").innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Erro ao carregar</td></tr>';
+                console.error('Erro ao carregar certificados:', e);
+                document.getElementById("tabelaCertificados").innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Erro ao carregar certificados</td></tr>';
             }
         }
 
@@ -468,11 +523,16 @@ app.get('/lab-dashboard', (req, res) => {
             try {
                 const response = await fetch('/api/certificados/pdf', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-api-key': key },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': key
+                    },
                     body: JSON.stringify({ numero: numero })
                 });
 
-                if (!response.ok) throw new Error('Erro ao gerar PDF');
+                if (!response.ok) {
+                    throw new Error('Erro ao gerar PDF');
+                }
 
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
@@ -490,26 +550,42 @@ app.get('/lab-dashboard', (req, res) => {
                 } else if (acao === 'imprimir') {
                     const printWindow = window.open(url, '_blank');
                     if (printWindow) {
-                        printWindow.onload = function() { printWindow.print(); };
+                        printWindow.onload = function() {
+                            printWindow.print();
+                        };
                     } else {
                         alert('Pop-up bloqueado. Permita pop-ups para este site.');
                     }
                 }
             } catch (error) {
                 console.error('Erro PDF:', error);
-                alert('Erro ao gerar o PDF.');
+                alert('Erro ao gerar o PDF. Tente novamente.');
             }
         }
 
-        function visualizarPDF(numero) { fetchPDF(numero, 'visualizar'); }
-        function baixarPDF(numero) { fetchPDF(numero, 'baixar'); }
-        function imprimirPDF(numero) { fetchPDF(numero, 'imprimir'); }
+        function visualizarPDF(numero) {
+            fetchPDF(numero, 'visualizar');
+        }
 
+        function baixarPDF(numero) {
+            fetchPDF(numero, 'baixar');
+        }
+
+        function imprimirPDF(numero) {
+            fetchPDF(numero, 'imprimir');
+        }
+
+        function mostrar(secao) {
+            // Apenas uma seção, então não faz nada
+            console.log('Seção: ' + secao);
+        }
+
+        // Bloquear Ctrl+P (imprimir página)
         window.addEventListener('keydown', function(e) {
             const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
             if (!isInput && (e.ctrlKey || e.metaKey) && e.key === 'p') {
                 e.preventDefault();
-                alert('📌 Para imprimir, use o botão 🖨️ na lista de certificados.');
+                alert('📌 Para imprimir um certificado, utilize o botão 🖨️ na lista.');
                 return false;
             }
         });
@@ -519,12 +595,12 @@ app.get('/lab-dashboard', (req, res) => {
             window.location.href = "/";
         }
 
+        // Iniciar
         carregarDados();
     </script>
 </body>
 </html>`);
 });
-
 // ==============================================
 // ROTAS DA API
 // ==============================================
