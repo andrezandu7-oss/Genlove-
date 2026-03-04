@@ -707,6 +707,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         
         // =========================================
                 // =========================================
+               // =========================================
         // ASSINATURAS
         // =========================================
         // Linha para assinatura do laborantin
@@ -732,14 +733,14 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         y += 50;
         
         // =========================================
-        // QR CODE DE VERIFICAÇÃO (CENTRADO)
+        // QR CODE DE VERIFICAÇÃO (CENTRADO COM AWAIT)
         // =========================================
         try {
             // Données simplifiées pour le QR code
-            const textoQR = `${numero}|${lab.nome}|${dados.paciente?.nomeCompleto || ''}|${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`;
+            const textoQR = `${numero}|${lab.nome}|${dados.paciente?.nomeCompleto || 'PACIENTE'}|${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`;
             
-            // Générer le QR code
-            const qrBuffer = QRCode.toBuffer(textoQR, {
+            // 👇 ATTENDRE que le QR soit généré (CRITIQUE)
+            const qrBuffer = await QRCode.toBuffer(textoQR, {
                 errorCorrectionLevel: 'H',
                 margin: 1,
                 width: 100,
@@ -747,14 +748,13 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             });
             
             // Position CENTRÉE (entre les deux signatures)
-            // Signature gauche: 70, Signature droite: 550, Centre = 310
-            const qrX = 310 - 50; // Centre moins la moitié du QR (100/2 = 50)
-            const qrY = y - 25;   // Légèrement au-dessus du texte "CÓDIGO DE VERIFICAÇÃO"
+            const qrX = 310 - 50; // Centre (310) - moitié du QR (50)
+            const qrY = y - 20;   // Position verticale
             
             // Afficher le QR code
             doc.image(qrBuffer, qrX, qrY, { width: 100 });
             
-            // Texte "SCAN" au-dessus du QR
+            // Texte au-dessus
             doc.fontSize(7)
                .fillColor('#006633')
                .text('SCAN PARA VERIFICAR', qrX, qrY - 12, { 
@@ -762,39 +762,23 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
                    align: 'center' 
                });
             
-            // Petit code de secours en dessous
-            const hashCurto = crypto.createHash('sha256')
-                .update(numero + lab.apiKey)
-                .digest('hex')
-                .substring(0, 4)
-                .toUpperCase();
-            
+            // Petit texte en dessous
             doc.fontSize(6)
                .fillColor('#999')
-               .text(`Ref: ${hashCurto}`, qrX, qrY + 110, { 
+               .text('válido por QR', qrX, qrY + 110, { 
                    width: 100, 
                    align: 'center' 
                });
             
+            console.log('✅ QR code gerado para:', numero);
+            
         } catch (qrError) {
-            console.error('❌ Erreur QR:', qrError);
+            console.error('❌ Erro ao gerar QR:', qrError);
             
-            // Fallback: afficher un code texte centré
-            const hashFallback = crypto.createHash('sha256')
-                .update(numero + lab.apiKey)
-                .digest('hex')
-                .substring(0, 16)
-                .toUpperCase();
-            
-            doc.fontSize(8)
-                .fillColor('#666')
-                .text('CÓDIGO DE VERIFICAÇÃO:', 220, y - 15)
-                .fontSize(10)
-                .fillColor('#006633')
-                .text(hashFallback, 230, y, { align: 'center' })
-                .fontSize(7)
-                .fillColor('#999')
-                .text('Use este código para verificar', 220, y + 15);
+            // Fallback mínimo (apenas uma mensagem discreta)
+            doc.fontSize(7)
+               .fillColor('#999')
+               .text('QR indisponível', 280, y - 10);
         }
         
         // =========================================
