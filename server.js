@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
+// DASHBOARD DO MINISTÉRIO (VERSION SIMPLIFIÉE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -323,10 +323,7 @@ app.get('/admin-dashboard', (req, res) => {
             display:flex;
             flex-direction:column;
         }
-        .sidebar h2 {
-            margin-bottom:30px;
-            text-align:center;
-        }
+        .sidebar h2 { margin-bottom:30px; text-align:center; }
         .sidebar button {
             display:block;
             width:100%;
@@ -341,9 +338,7 @@ app.get('/admin-dashboard', (req, res) => {
             border:none;
             background:none;
         }
-        .sidebar button:hover {
-            background:#004d26;
-        }
+        .sidebar button:hover { background:#004d26; }
         .sidebar .novo-btn {
             background:#ffa500;
             color:#006633;
@@ -351,17 +346,13 @@ app.get('/admin-dashboard', (req, res) => {
             text-align:center;
             margin:20px 0;
         }
-        .sidebar .novo-btn:hover {
-            background:#ff8c00;
-        }
+        .sidebar .novo-btn:hover { background:#ff8c00; }
         .sidebar .sair-btn {
             background:#dc3545;
             margin-top:auto;
             text-align:center;
         }
-        .sidebar .sair-btn:hover {
-            background:#c82333;
-        }
+        .sidebar .sair-btn:hover { background:#c82333; }
         .main {
             margin-left:270px;
             padding:30px;
@@ -373,12 +364,8 @@ app.get('/admin-dashboard', (req, res) => {
             border-left:5px solid #006633;
             margin-bottom:20px;
         }
-        .secao {
-            display:none;
-        }
-        .secao.active {
-            display:block;
-        }
+        .secao { display:none; }
+        .secao.active { display:block; }
         .stats-grid {
             display:grid;
             grid-template-columns:repeat(4,1fr);
@@ -392,16 +379,8 @@ app.get('/admin-dashboard', (req, res) => {
             box-shadow:0 2px 5px rgba(0,0,0,0.1);
             text-align:center;
         }
-        .stat-card h3 {
-            color:#666;
-            font-size:14px;
-            margin-bottom:10px;
-        }
-        .stat-card p {
-            color:#006633;
-            font-size:28px;
-            font-weight:bold;
-        }
+        .stat-card h3 { color:#666; font-size:14px; margin-bottom:10px; }
+        .stat-card p { color:#006633; font-size:28px; font-weight:bold; }
         table {
             width:100%;
             background:white;
@@ -427,30 +406,22 @@ app.get('/admin-dashboard', (req, res) => {
             cursor:pointer;
             margin:0 2px;
         }
-        .btn-acao:hover {
-            background:#e0e0e0;
-        }
+        .btn-acao:hover { background:#e0e0e0; }
         .status-badge {
             padding:4px 8px;
             border-radius:4px;
             font-size:12px;
             font-weight:bold;
         }
-        .status-ativo {
-            background:#e8f5e9;
-            color:#2e7d32;
-        }
-        .status-inativo {
-            background:#ffebee;
-            color:#c62828;
-        }
+        .status-ativo { background:#e8f5e9; color:#2e7d32; }
+        .status-inativo { background:#ffebee; color:#c62828; }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>SNS-Admin</h2>
-        <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
-        <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
+        <button onclick="mostrar('dashboard')">📊 Dashboard</button>
+        <button onclick="mostrar('labs')">🏥 Laboratórios</button>
         <button class="novo-btn" onclick="window.location.href='/novo-laboratorio'">+ NOVO LABORATÓRIO</button>
         <button class="sair-btn" onclick="logout()">Sair</button>
     </div>
@@ -460,41 +431,21 @@ app.get('/admin-dashboard', (req, res) => {
             <h2>👋 Bem-vindo, Administrador</h2>
         </div>
         
-        <div id="dashboardSection" class="secao active">
+        <div id="dashboard" class="secao active">
             <h2>Painel de Controle</h2>
             <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Laboratórios</h3>
-                    <p id="statsLabs">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Hospitais</h3>
-                    <p id="statsHospitais">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Empresas</h3>
-                    <p id="statsEmpresas">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Total</h3>
-                    <p id="statsTotal">0</p>
-                </div>
+                <div class="stat-card"><h3>Laboratórios</h3><p id="statsLabs">0</p></div>
+                <div class="stat-card"><h3>Hospitais</h3><p id="statsHospitais">0</p></div>
+                <div class="stat-card"><h3>Empresas</h3><p id="statsEmpresas">0</p></div>
+                <div class="stat-card"><h3>Total</h3><p id="statsTotal">0</p></div>
             </div>
         </div>
         
-        <div id="laboratoriosSection" class="secao">
+        <div id="labs" class="secao">
             <h2>Laboratórios</h2>
             <table>
                 <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>NIF</th>
-                        <th>Província</th>
-                        <th>Telefone</th>
-                        <th>Diretor</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
+                    <tr><th>Nome</th><th>NIF</th><th>Província</th><th>Telefone</th><th>Diretor</th><th>Status</th><th>Ações</th></tr>
                 </thead>
                 <tbody id="tabelaLabs">
                     <tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>
@@ -505,18 +456,13 @@ app.get('/admin-dashboard', (req, res) => {
 
     <script>
         var token = localStorage.getItem("token");
-        if (!token) {
-            window.location.href = "/ministerio";
-        }
+        if (!token) window.location.href = "/ministerio";
 
-        function mostrarSeccao(id) {
-            document.getElementById('dashboardSection').className = 'secao';
-            document.getElementById('laboratoriosSection').className = 'secao';
-            document.getElementById(id).className = 'secao active';
-            
-            if (id === 'laboratoriosSection') {
-                carregarLaboratorios();
-            }
+        function mostrar(secao) {
+            document.getElementById('dashboard').className = 'secao';
+            document.getElementById('labs').className = 'secao';
+            document.getElementById(secao).className = 'secao active';
+            if (secao === 'labs') carregarLabs();
         }
 
         function carregarStats() {
@@ -526,12 +472,50 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     var data = JSON.parse(xhr.responseText);
-                    document.getElementById('statsLabs').innerHTML = data.labs || '0';
-                    document.getElementById('statsHospitais').innerHTML = data.hospitais || '0';
-                    document.getElementById('statsEmpresas').innerHTML = data.empresas || '0';
-                    
-                    var total = (data.labs || 0) + (data.hospitais || 0) + (data.empresas || 0);
+                    document.getElementById('statsLabs').innerHTML = data.labs || 0;
+                    document.getElementById('statsHospitais').innerHTML = data.hospitais || 0;
+                    document.getElementById('statsEmpresas').innerHTML = data.empresas || 0;
+                    var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
                     document.getElementById('statsTotal').innerHTML = total;
+                }
+            };
+            xhr.send();
+        }
+
+        function carregarLabs() {
+            var tbody = document.getElementById('tabelaLabs');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/labs', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var lista = JSON.parse(xhr.responseText);
+                    if (!lista || lista.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório</td></tr>';
+                        return;
+                    }
+                    var html = '';
+                    for (var i = 0; i < lista.length; i++) {
+                        var l = lista[i];
+                        var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
+                        var statusText = l.ativo ? 'Ativo' : 'Inativo';
+                        var btnStatus = l.ativo ? '🔴' : '🟢';
+                        var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
+                        html += '<tr>';
+                        html += '<td>' + (l.nome || '') + '</td>';
+                        html += '<td>' + (l.nif || '') + '</td>';
+                        html += '<td>' + (l.provincia || '') + '</td>';
+                        html += '<td>' + (l.telefone || '') + '</td>';
+                        html += '<td>' + (l.diretor || '') + '</td>';
+                        html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                        html += '<td>';
+                        html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button> ';
+                        html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
+                        html += '</td>';
+                        html += '</tr>';
+                    }
+                    tbody.innerHTML = html;
                 }
             };
             xhr.send();
@@ -546,14 +530,10 @@ app.get('/admin-dashboard', (req, res) => {
                     var lista = JSON.parse(xhr.responseText);
                     var lab = null;
                     for (var i = 0; i < lista.length; i++) {
-                        if (lista[i]._id === id) {
-                            lab = lista[i];
-                            break;
-                        }
+                        if (lista[i]._id === id) { lab = lista[i]; break; }
                     }
-                    
                     if (lab) {
-                        var msg = 'LABORATÓRIO: ' + lab.nome + '\n';
+                        var msg = 'Laboratório: ' + lab.nome + '\n';
                         msg += 'NIF: ' + (lab.nif || 'N/I') + '\n';
                         msg += 'Província: ' + (lab.provincia || 'N/I') + '\n';
                         msg += 'Município: ' + (lab.municipio || 'N/I') + '\n';
@@ -573,53 +553,9 @@ app.get('/admin-dashboard', (req, res) => {
         function toggleStatus(id, ativoAtual) {
             var acao = ativoAtual ? 'desativar' : 'ativar';
             if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
-                // Aqui você pode implementar a chamada para atualizar o status
                 alert('Função em desenvolvimento: ' + acao);
-                carregarLaboratorios(); // recarrega a lista após a ação
+                carregarLabs(); // recarrega a lista
             }
-        }
-
-        function carregarLaboratorios() {
-            var tbody = document.getElementById('tabelaLabs');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
-            
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/labs', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var lista = JSON.parse(xhr.responseText);
-                    
-                    if (!lista || lista.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
-                        return;
-                    }
-                    
-                    var html = '';
-                    for (var i = 0; i < lista.length; i++) {
-                        var l = lista[i];
-                        var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
-                        var statusText = l.ativo ? 'Ativo' : 'Inativo';
-                        var btnStatus = l.ativo ? '🔴' : '🟢';
-                        var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
-                        
-                        html += '<tr>';
-                        html += '<td>' + (l.nome || '') + '</td>';
-                        html += '<td>' + (l.nif || '') + '</td>';
-                        html += '<td>' + (l.provincia || '') + '</td>';
-                        html += '<td>' + (l.telefone || '') + '</td>';
-                        html += '<td>' + (l.diretor || '') + '</td>';
-                        html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
-                        html += '<td>';
-                        html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button> ';
-                        html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
-                        html += '</td>';
-                        html += '</tr>';
-                    }
-                    tbody.innerHTML = html;
-                }
-            };
-            xhr.send();
         }
 
         function logout() {
