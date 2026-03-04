@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSÃO CORRIGIDA)
+// DASHBOARD DO MINISTÉRIO (VERSÃO FUNCIONAL)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -419,17 +419,6 @@ app.get('/admin-dashboard', (req, res) => {
             padding:12px;
             border-bottom:1px solid #ddd;
         }
-        .btn-acao {
-            background:#f0f0f0;
-            border:none;
-            padding:5px 10px;
-            border-radius:4px;
-            cursor:pointer;
-            margin:0 2px;
-        }
-        .btn-acao:hover {
-            background:#e0e0e0;
-        }
         .status-badge {
             padding:4px 8px;
             border-radius:4px;
@@ -456,13 +445,13 @@ app.get('/admin-dashboard', (req, res) => {
     </div>
     
     <div class="main">
-        <div id="welcome" class="welcome">
+        <div class="welcome">
             <h2>👋 Bem-vindo, Administrador</h2>
         </div>
         
         <div id="dashboardSection" class="secao active">
             <h2>Painel de Controle</h2>
-            <div class="stats-grid" id="statsContainer">
+            <div class="stats-grid">
                 <div class="stat-card">
                     <h3>Laboratórios</h3>
                     <p id="statsLabs">0</p>
@@ -493,11 +482,10 @@ app.get('/admin-dashboard', (req, res) => {
                         <th>Telefone</th>
                         <th>Diretor</th>
                         <th>Status</th>
-                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaLabs">
-                    <tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>
+                    <tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -512,13 +500,14 @@ app.get('/admin-dashboard', (req, res) => {
 
         // FUNÇÃO PARA MOSTRAR SEÇÕES
         function mostrarSeccao(id) {
-            document.getElementById('dashboardSection').className = 'secao';
-            document.getElementById('laboratoriosSection').className = 'secao';
+            var dashboard = document.getElementById('dashboardSection');
+            var laboratorios = document.getElementById('laboratoriosSection');
+            
+            dashboard.className = 'secao';
+            laboratorios.className = 'secao';
+            
             document.getElementById(id).className = 'secao active';
             
-            if (id === 'dashboardSection') {
-                carregarStats();
-            }
             if (id === 'laboratoriosSection') {
                 carregarLaboratorios();
             }
@@ -532,12 +521,12 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     var data = JSON.parse(xhr.responseText);
-                    document.getElementById('statsLabs').innerText = data.labs || 0;
-                    document.getElementById('statsHospitais').innerText = data.hospitais || 0;
-                    document.getElementById('statsEmpresas').innerText = data.empresas || 0;
+                    document.getElementById('statsLabs').innerHTML = data.labs || '0';
+                    document.getElementById('statsHospitais').innerHTML = data.hospitais || '0';
+                    document.getElementById('statsEmpresas').innerHTML = data.empresas || '0';
                     
                     var total = (data.labs || 0) + (data.hospitais || 0) + (data.empresas || 0);
-                    document.getElementById('statsTotal').innerText = total;
+                    document.getElementById('statsTotal').innerHTML = total;
                 }
             };
             xhr.send();
@@ -546,7 +535,7 @@ app.get('/admin-dashboard', (req, res) => {
         // CARREGAR LABORATÓRIOS
         function carregarLaboratorios() {
             var tbody = document.getElementById('tabelaLabs');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>';
             
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/labs', true);
@@ -556,7 +545,7 @@ app.get('/admin-dashboard', (req, res) => {
                     var lista = JSON.parse(xhr.responseText);
                     
                     if (!lista || lista.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                         return;
                     }
                     
@@ -567,16 +556,12 @@ app.get('/admin-dashboard', (req, res) => {
                         var statusText = l.ativo ? 'Ativo' : 'Inativo';
                         
                         html += '<tr>';
-                        html += '<td><strong>' + (l.nome || '') + '</strong></td>';
+                        html += '<td>' + (l.nome || '') + '</td>';
                         html += '<td>' + (l.nif || '') + '</td>';
                         html += '<td>' + (l.provincia || '') + '</td>';
                         html += '<td>' + (l.telefone || '') + '</td>';
                         html += '<td>' + (l.diretor || '') + '</td>';
                         html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
-                        html += '<td>';
-                        html += '<button class="btn-acao" onclick="alert(\'Detalhes em breve\')">👁️</button> ';
-                        html += '<button class="btn-acao" onclick="alert(\'Função em desenvolvimento\')">' + (l.ativo ? '🔴' : '🟢') + '</button>';
-                        html += '</td>';
                         html += '</tr>';
                     }
                     tbody.innerHTML = html;
