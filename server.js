@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (BOTÕES ATIVOS)
+// DASHBOARD DO MINISTÉRIO (VERSÃO CORRIGIDA)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -383,7 +383,6 @@ app.get('/admin-dashboard', (req, res) => {
             display:grid;
             grid-template-columns:repeat(4,1fr);
             gap:20px;
-            margin-bottom:30px;
             margin-top:20px;
         }
         .stat-card {
@@ -445,46 +444,6 @@ app.get('/admin-dashboard', (req, res) => {
             background:#ffebee;
             color:#c62828;
         }
-        .modal {
-            display:none;
-            position:fixed;
-            top:0;
-            left:0;
-            width:100%;
-            height:100%;
-            background:rgba(0,0,0,0.5);
-            z-index:1000;
-            align-items:center;
-            justify-content:center;
-        }
-        .modal-content {
-            background:white;
-            padding:30px;
-            border-radius:10px;
-            width:600px;
-            max-width:90%;
-            max-height:80vh;
-            overflow-y:auto;
-        }
-        .modal h3 {
-            color:#006633;
-            margin-bottom:20px;
-        }
-        .info-row {
-            display:flex;
-            margin-bottom:10px;
-            border-bottom:1px solid #eee;
-            padding-bottom:5px;
-        }
-        .info-label {
-            font-weight:bold;
-            width:40%;
-            color:#333;
-        }
-        .info-value {
-            width:60%;
-            color:#666;
-        }
     </style>
 </head>
 <body>
@@ -503,7 +462,7 @@ app.get('/admin-dashboard', (req, res) => {
         
         <div id="dashboardSection" class="secao active">
             <h2>Painel de Controle</h2>
-            <div class="stats-grid">
+            <div class="stats-grid" id="statsContainer">
                 <div class="stat-card">
                     <h3>Laboratórios</h3>
                     <p id="statsLabs">0</p>
@@ -544,25 +503,18 @@ app.get('/admin-dashboard', (req, res) => {
         </div>
     </div>
 
-    <div id="modalDetalhes" class="modal">
-        <div class="modal-content">
-            <h3>📋 Detalhes do Laboratório</h3>
-            <div id="conteudoDetalhes"></div>
-            <div style="text-align:right; margin-top:20px;">
-                <button class="btn-acao" onclick="fecharModal()">Fechar</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        const token = localStorage.getItem("token");
-        if (!token) window.location.href = "/ministerio";
+        // VERIFICAR TOKEN
+        var token = localStorage.getItem("token");
+        if (!token) {
+            window.location.href = "/ministerio";
+        }
 
-        // Função para mostrar seções
+        // FUNÇÃO PARA MOSTRAR SEÇÕES
         function mostrarSeccao(id) {
-            document.getElementById('dashboardSection').classList.remove('active');
-            document.getElementById('laboratoriosSection').classList.remove('active');
-            document.getElementById(id).classList.add('active');
+            document.getElementById('dashboardSection').className = 'secao';
+            document.getElementById('laboratoriosSection').className = 'secao';
+            document.getElementById(id).className = 'secao active';
             
             if (id === 'dashboardSection') {
                 carregarStats();
@@ -572,171 +524,75 @@ app.get('/admin-dashboard', (req, res) => {
             }
         }
 
-        // Carregar estatísticas
-        async function carregarStats() {
-            try {
-                const response = await fetch("/api/stats", {
-                    headers: { "Authorization": "Bearer " + token }
-                });
-                const data = await response.json();
-                
-                document.getElementById("statsLabs").innerText = data.labs || 0;
-                document.getElementById("statsHospitais").innerText = data.hospitais || 0;
-                document.getElementById("statsEmpresas").innerText = data.empresas || 0;
-                
-                const total = (data.labs || 0) + (data.hospitais || 0) + (data.empresas || 0);
-                document.getElementById("statsTotal").innerText = total;
-                
-            } catch (error) {
-                console.error('Erro ao carregar stats:', error);
-            }
+        // CARREGAR ESTATÍSTICAS
+        function carregarStats() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/stats', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    document.getElementById('statsLabs').innerText = data.labs || 0;
+                    document.getElementById('statsHospitais').innerText = data.hospitais || 0;
+                    document.getElementById('statsEmpresas').innerText = data.empresas || 0;
+                    
+                    var total = (data.labs || 0) + (data.hospitais || 0) + (data.empresas || 0);
+                    document.getElementById('statsTotal').innerText = total;
+                }
+            };
+            xhr.send();
         }
 
-        // Carregar laboratórios
-        async function carregarLaboratorios() {
-            const tbody = document.getElementById("tabelaLabs");
+        // CARREGAR LABORATÓRIOS
+        function carregarLaboratorios() {
+            var tbody = document.getElementById('tabelaLabs');
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
             
-            try {
-                const response = await fetch("/api/labs", {
-                    headers: { "Authorization": "Bearer " + token }
-                });
-                const lista = await response.json();
-                
-                if (!lista || lista.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
-                    return;
-                }
-                
-                let html = '';
-                for (let i = 0; i < lista.length; i++) {
-                    const l = lista[i];
-                    const statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
-                    const statusText = l.ativo ? 'Ativo' : 'Inativo';
-                    const statusButton = l.ativo ? '🔴' : '🟢';
-                    const statusTitle = l.ativo ? 'Desativar' : 'Ativar';
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/labs', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var lista = JSON.parse(xhr.responseText);
                     
-                    html += '<tr>';
-                    html += '<td><strong>' + (l.nome || '') + '</strong></td>';
-                    html += '<td>' + (l.nif || '') + '</td>';
-                    html += '<td>' + (l.provincia || '') + '</td>';
-                    html += '<td>' + (l.telefone || '') + '</td>';
-                    html += '<td>' + (l.diretor || '') + '</td>';
-                    html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
-                    html += '<td>';
-                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button> ';
-                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + statusTitle + '">' + statusButton + '</button>';
-                    html += '</td>';
-                    html += '</tr>';
-                }
-                tbody.innerHTML = html;
-                
-            } catch (error) {
-                console.error('Erro ao carregar laboratórios:', error);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar dados</td></tr>';
-            }
-        }
-
-        // Ver detalhes do laboratório
-        async function verDetalhes(id) {
-            try {
-                const response = await fetch("/api/labs", {
-                    headers: { "Authorization": "Bearer " + token }
-                });
-                const lista = await response.json();
-                
-                // Encontrar o laboratório pelo ID
-                let lab = null;
-                for (let i = 0; i < lista.length; i++) {
-                    if (lista[i]._id === id) {
-                        lab = lista[i];
-                        break;
+                    if (!lista || lista.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
+                        return;
                     }
+                    
+                    var html = '';
+                    for (var i = 0; i < lista.length; i++) {
+                        var l = lista[i];
+                        var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
+                        var statusText = l.ativo ? 'Ativo' : 'Inativo';
+                        
+                        html += '<tr>';
+                        html += '<td><strong>' + (l.nome || '') + '</strong></td>';
+                        html += '<td>' + (l.nif || '') + '</td>';
+                        html += '<td>' + (l.provincia || '') + '</td>';
+                        html += '<td>' + (l.telefone || '') + '</td>';
+                        html += '<td>' + (l.diretor || '') + '</td>';
+                        html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                        html += '<td>';
+                        html += '<button class="btn-acao" onclick="alert(\'Detalhes em breve\')">👁️</button> ';
+                        html += '<button class="btn-acao" onclick="alert(\'Função em desenvolvimento\')">' + (l.ativo ? '🔴' : '🟢') + '</button>';
+                        html += '</td>';
+                        html += '</tr>';
+                    }
+                    tbody.innerHTML = html;
                 }
-                
-                if (!lab) {
-                    alert('Laboratório não encontrado');
-                    return;
-                }
-                
-                // Formatar data de validade
-                let validade = 'N/I';
-                if (lab.validadeLicenca) {
-                    const data = new Date(lab.validadeLicenca);
-                    validade = data.toLocaleDateString('pt-PT');
-                }
-                
-                // Formatar data de criação
-                let criado = 'N/I';
-                if (lab.createdAt) {
-                    const data = new Date(lab.createdAt);
-                    criado = data.toLocaleDateString('pt-PT');
-                }
-                
-                // Construir HTML dos detalhes
-                let html = '';
-                html += '<div class="info-row"><span class="info-label">ID:</span><span class="info-value">' + (lab.labId || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Nome:</span><span class="info-value">' + (lab.nome || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">NIF:</span><span class="info-value">' + (lab.nif || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Tipo:</span><span class="info-value">' + (lab.tipo || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Província:</span><span class="info-value">' + (lab.provincia || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Município:</span><span class="info-value">' + (lab.municipio || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Endereço:</span><span class="info-value">' + (lab.endereco || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Telefone:</span><span class="info-value">' + (lab.telefone || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Telefone 2:</span><span class="info-value">' + (lab.telefone2 || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Email:</span><span class="info-value">' + (lab.email || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Website:</span><span class="info-value">' + (lab.website || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Diretor:</span><span class="info-value">' + (lab.diretor || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Resp. Técnico:</span><span class="info-value">' + (lab.responsavelTecnico || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Licença:</span><span class="info-value">' + (lab.licenca || 'N/I') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Validade:</span><span class="info-value">' + validade + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Status:</span><span class="info-value">' + (lab.ativo ? 'Ativo' : 'Inativo') + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Criado em:</span><span class="info-value">' + criado + '</span></div>';
-                html += '<div class="info-row"><span class="info-label">Total emissões:</span><span class="info-value">' + (lab.totalEmissoes || 0) + '</span></div>';
-                
-                document.getElementById('conteudoDetalhes').innerHTML = html;
-                document.getElementById('modalDetalhes').style.display = 'flex';
-                
-            } catch (error) {
-                console.error('Erro ao carregar detalhes:', error);
-                alert('Erro ao carregar detalhes do laboratório');
-            }
+            };
+            xhr.send();
         }
 
-        // Fechar modal
-        function fecharModal() {
-            document.getElementById('modalDetalhes').style.display = 'none';
-        }
-
-        // Alternar status (ativar/desativar)
-        async function toggleStatus(id, ativoAtual) {
-            const novoStatus = !ativoAtual;
-            const acao = novoStatus ? 'ativar' : 'desativar';
-            
-            if (!confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
-                return;
-            }
-            
-            try {
-                // Aqui você implementaria a chamada API para atualizar o status
-                // Por enquanto, apenas recarrega a lista
-                alert('Função em desenvolvimento: ' + acao + ' laboratório');
-                carregarLaboratorios();
-                
-            } catch (error) {
-                console.error('Erro ao ' + acao + ' laboratório:', error);
-                alert('Erro ao ' + acao + ' laboratório');
-            }
-        }
-
-        // Logout
+        // LOGOUT
         function logout() {
             localStorage.removeItem("token");
             localStorage.removeItem("labKey");
             window.location.href = "/";
         }
 
-        // Inicializar
+        // CARREGAR ESTATÍSTICAS AO INICIAR
         carregarStats();
     </script>
 </body>
