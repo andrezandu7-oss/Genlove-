@@ -730,11 +730,16 @@ doc.fontSize(10)
     .text(lab.diretor || '___________________', 350, y + 20);
 
 // =========================================
-// QR CODE (CENTRÉ ENTRE LES DEUX SIGNATURES)
+// QR CODE CENTRÉ ENTRE LES SIGNATURES
 // =========================================
 try {
-    // Données pour le QR code
-    const textoQR = `${numero}|${lab.nome}|${dados.paciente?.nomeCompleto || ''}|${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`;
+    // Données pour le QR code (version simplifiée)
+    const textoQR = JSON.stringify({
+        cert: numero,
+        lab: lab.nome,
+        pac: dados.paciente?.nomeCompleto || '',
+        data: new Date(dados.emitidoEm).toLocaleDateString('pt-PT')
+    });
     
     // Générer le QR code
     const qrBuffer = QRCode.toBuffer(textoQR, {
@@ -744,17 +749,31 @@ try {
         color: { dark: '#006633', light: '#FFFFFF' }
     });
     
-    // Position CENTRÉE entre les deux signatures (310 = milieu de la page)
-    const qrX = 310 - 50; // Centre moins la moitié de la largeur du QR (100/2 = 50)
-    const qrY = y - 30;    // Légèrement au-dessus des signatures
+    // Position centrée (entre 70 et 550 = milieu à 310)
+    const qrX = 310 - 50; // 310 (milieu) - 50 (moitié du QR)
+    const qrY = y - 35;   // Au-dessus des signatures
     
     // Afficher le QR code
     doc.image(qrBuffer, qrX, qrY, { width: 100 });
     
-    // Texte "SCAN" au-dessus du QR
-    doc.fontSize(8)
+    // Texte au-dessus du QR
+    doc.fontSize(7)
        .fillColor('#006633')
-       .text('SCANNEZ POUR VÉRIFIER', qrX, qrY - 15, { 
+       .text('SCANNEZ POUR VÉRIFIER', qrX, qrY - 12, { 
+           width: 100, 
+           align: 'center' 
+       });
+    
+    // Petit code en dessous (optionnel)
+    const hashCurto = crypto.createHash('sha256')
+        .update(numero + lab.apiKey)
+        .digest('hex')
+        .substring(0, 4)
+        .toUpperCase();
+    
+    doc.fontSize(5)
+       .fillColor('#999')
+       .text(hashCurto, qrX, qrY + 105, { 
            width: 100, 
            align: 'center' 
        });
@@ -771,28 +790,22 @@ try {
     
     doc.fontSize(8)
        .fillColor('#666')
-       .text('Código:', 285, y - 20)
-       .fontSize(10)
+       .text('CÓDIGO DE VERIFICAÇÃO:', 240, y - 25)
+       .fontSize(12)
        .fillColor('#006633')
-       .text(hashFallback, 260, y - 5, { align: 'center' });
+       .text(hashFallback, 260, y - 10);
 }
 
-y += 50; // Espace après les signatures et QR
-        
-        // =========================================
-        // RODAPÉ
-        // =========================================
-        doc.fontSize(8)
-            .fillColor('#666')
-            .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
-        
-        doc.end();
-        
-    } catch (error) {
-        console.error('❌ Erreur PDF:', error);
-        res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
-    }
-});
+y += 80; // Espace après les signatures et QR
+
+// =========================================
+// RODAPÉ (centré)
+// =========================================
+doc.fontSize(8)
+   .fillColor('#666')
+   .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
+
+doc.end();
 
 // =============================================
 // FORMULÁRIO NOVO
