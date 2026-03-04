@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (COM BOTÕES ATIVOS)
+// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -573,8 +573,9 @@ app.get('/admin-dashboard', (req, res) => {
         function toggleStatus(id, ativoAtual) {
             var acao = ativoAtual ? 'desativar' : 'ativar';
             if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
+                // Aqui você pode implementar a chamada para atualizar o status
                 alert('Função em desenvolvimento: ' + acao);
-                carregarLaboratorios();
+                carregarLaboratorios(); // recarrega a lista após a ação
             }
         }
 
