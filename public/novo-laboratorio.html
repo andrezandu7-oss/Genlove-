@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Laboratório - SNS Angola</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #006633;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .form-section h2 {
+            color: #006633;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #006633;
+        }
+        
+        .btn {
+            background: #006633;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .btn:hover {
+            background: #004d26;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            position: relative;
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border-radius: 10px;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #006633;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .review-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .review-table th,
+        .review-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .review-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+            color: #006633;
+        }
+        
+        .edit-btn {
+            background: none;
+            border: none;
+            color: #006633;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+        
+        .edit-btn:hover {
+            color: #004d26;
+        }
+        
+        .section-highlight {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #006633;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #006633;
+            margin: 10px 0;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Novo Laboratório</h1>
+        
+        <!-- Informações Básicas -->
+        <div class="form-section" id="sectionBasica">
+            <h2>Informações Básicas</h2>
+            <div class="form-group">
+                <label for="nome">Nome do Laboratório *</label>
+                <input type="text" id="nome" required>
+            </div>
+            <div class="form-group">
+                <label for="nif">NIF *</label>
+                <input type="text" id="nif" required pattern="\d{10}" placeholder="1234567890">
+            </div>
+            <div class="form-group">
+                <label for="tipo">Tipo *</label>
+                <select id="tipo" required>
+                    <option value="">Selecione...</option>
+                    <option value="publico">Público</option>
+                    <option value="privado">Privado</option>
+                    <option value="misto">Misto</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Localização -->
+        <div class="form-section" id="sectionLocalizacao">
+            <h2>Localização</h2>
+            <div class="form-group">
+                <label for="provincia">Província *</label>
+                <select id="provincia" required>
+                    <option value="">Selecione...</option>
+                    <option value="Luanda">Luanda</option>
+                    <option value="Benguela">Benguela</option>
+                    <option value="Huíla">Huíla</option>
+                    <option value="Cabinda">Cabinda</option>
+                    <option value="Outra">Outra</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="municipio">Município</label>
+                <input type="text" id="municipio" placeholder="Ex: Viana, Lubango...">
+            </div>
+            <div class="form-group">
+                <label for="endereco">Endereço Completo *</label>
+                <textarea id="endereco" rows="2" required placeholder="Rua, número, bairro..."></textarea>
+            </div>
+        </div>
+        
+        <!-- Contactos -->
+        <div class="form-section" id="sectionContactos">
+            <h2>Contactos</h2>
+            <div class="form-group">
+                <label for="telefone">Telefone *</label>
+                <input type="tel" id="telefone" required placeholder="+244 123 456 789">
+            </div>
+            <div class="form-group">
+                <label for="telefone2">Telefone Alternativo</label>
+                <input type="tel" id="telefone2" placeholder="+244 987 654 321">
+            </div>
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" required placeholder="laboratorio@exemplo.ao">
+            </div>
+            <div class="form-group">
+                <label for="website">Website</label>
+                <input type="url" id="website" placeholder="https://www.exemplo.ao">
+            </div>
+        </div>
+        
+        <!-- Responsáveis -->
+        <div class="form-section" id="sectionResponsaveis">
+            <h2>Responsáveis</h2>
+            <div class="form-group">
+                <label for="diretor">Nome do Diretor *</label>
+                <input type="text" id="diretor" required>
+            </div>
+            <div class="form-group">
+                <label for="responsavelTecnico">Responsável Técnico</label>
+                <input type="text" id="responsavelTecnico">
+            </div>
+        </div>
+        
+        <!-- Licenciamento -->
+        <div class="form-section" id="sectionLicenca">
+            <h2>Licenciamento</h2>
+            <div class="form-group">
+                <label for="licenca">Nº de Licença</label>
+                <input type="text" id="licenca" placeholder="Ex: LIC-2025-001">
+            </div>
+            <div class="form-group">
+                <label for="validadeLicenca">Validade da Licença</label>
+                <input type="date" id="validadeLicenca">
+            </div>
+        </div>
+        
+        <!-- Botões -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="window.location.href='/admin-dashboard'">Cancelar</button>
+            <button class="btn" onclick="revisarDados()">Pré-visualizar</button>
+        </div>
+    </div>
+    
+    <!-- Modal de revisão -->
+    <div id="modalRevisao" class="modal">
+        <div class="modal-content">
+            <h2 style="color: #006633; margin-bottom: 20px;">📋 Revisão do Laboratório</h2>
+            <div id="conteudoRevisao"></div>
+            <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="fecharModal()">Voltar</button>
+                <button class="btn" onclick="emitirLaboratorio()">Confirmar Criação</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <h3>Processando laboratório...</h3>
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <div id="timer" class="timer">5s</div>
+        <div id="loadingMessage"></div>
+    </div>
+    
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "/ministerio";
+        
+        let dadosAtuais = {};
+        
+        function coletarDados() {
+            return {
+                nome: document.getElementById('nome').value,
+                nif: document.getElementById('nif').value,
+                tipo: document.getElementById('tipo').value,
+                provincia: document.getElementById('provincia').value,
+                municipio: document.getElementById('municipio').value,
+                endereco: document.getElementById('endereco').value,
+                telefone: document.getElementById('telefone').value,
+                telefone2: document.getElementById('telefone2').value,
+                email: document.getElementById('email').value,
+                website: document.getElementById('website').value,
+                diretor: document.getElementById('diretor').value,
+                responsavelTecnico: document.getElementById('responsavelTecnico').value,
+                licenca: document.getElementById('licenca').value,
+                validadeLicenca: document.getElementById('validadeLicenca').value,
+                dataCriacao: new Date().toISOString()
+            };
+        }
+        
+        function validarDados(dados) {
+            if (!dados.nome) return 'Nome é obrigatório';
+            if (!dados.nif || !/^\d{10}$/.test(dados.nif)) return 'NIF inválido (10 dígitos)';
+            if (!dados.provincia) return 'Província é obrigatória';
+            if (!dados.endereco) return 'Endereço é obrigatório';
+            if (!dados.telefone) return 'Telefone é obrigatório';
+            if (!dados.email || !dados.email.includes('@')) return 'Email inválido';
+            if (!dados.diretor) return 'Nome do diretor é obrigatório';
+            return null;
+        }
+        
+        function revisarDados() {
+            const dados = coletarDados();
+            const erro = validarDados(dados);
+            if (erro) {
+                alert(erro);
+                return;
+            }
+            
+            dadosAtuais = dados;
+            
+            let html = '<table class="review-table">';
+            html += '<tr><th colspan="3">Informações Básicas</th></tr>';
+            html += '<tr><td><strong>Nome:</strong> ' + dados.nome + '</td><td><strong>NIF:</strong> ' + dados.nif + '</td><td><strong>Tipo:</strong> ' + dados.tipo + '</td></tr>';
+            
+            html += '<tr><th colspan="3">Localização</th></tr>';
+            html += '<tr><td><strong>Província:</strong> ' + dados.provincia + '</td><td><strong>Município:</strong> ' + (dados.municipio || '-') + '</td><td></td></tr>';
+            html += '<tr><td colspan="3"><strong>Endereço:</strong> ' + dados.endereco + '</td></tr>';
+            
+            html += '<tr><th colspan="3">Contactos</th></tr>';
+            html += '<tr><td><strong>Telefone:</strong> ' + dados.telefone + '</td><td><strong>Telefone 2:</strong> ' + (dados.telefone2 || '-') + '</td><td></td></tr>';
+            html += '<tr><td><strong>Email:</strong> ' + dados.email + '</td><td><strong>Website:</strong> ' + (dados.website || '-') + '</td><td></td></tr>';
+            
+            html += '<tr><th colspan="3">Responsáveis</th></tr>';
+            html += '<tr><td><strong>Diretor:</strong> ' + dados.diretor + '</td><td><strong>Resp. Técnico:</strong> ' + (dados.responsavelTecnico || '-') + '</td><td></td></tr>';
+            
+            html += '<tr><th colspan="3">Licenciamento</th></tr>';
+            html += '<tr><td><strong>Licença:</strong> ' + (dados.licenca || '-') + '</td><td><strong>Validade:</strong> ' + (dados.validadeLicenca || '-') + '</td><td></td></tr>';
+            html += '</table>';
+            
+            document.getElementById('conteudoRevisao').innerHTML = html;
+            document.getElementById('modalRevisao').style.display = 'block';
+        }
+        
+        function fecharModal() {
+            document.getElementById('modalRevisao').style.display = 'none';
+        }
+        
+        function editarSecao(secao) {
+            document.getElementById('modalRevisao').style.display = 'none';
+            // Implementar edição se necessário
+        }
+        
+        async function emitirLaboratorio() {
+            document.getElementById('modalRevisao').style.display = 'none';
+            
+            const loading = document.getElementById('loading');
+            const progressFill = document.getElementById('progressFill');
+            const timer = document.getElementById('timer');
+            const loadingMessage = document.getElementById('loadingMessage');
+            
+            loading.style.display = 'flex';
+            
+            for (let i = 0; i <= 10; i++) {
+                setTimeout(function() {
+                    progressFill.style.width = (i * 10) + '%';
+                    timer.innerText = (5 - Math.floor(i * 0.5)) + 's';
+                    if (i === 3) loadingMessage.innerHTML = '📝 Gerando API Key...';
+                    if (i === 6) loadingMessage.innerHTML = '🔒 Criando laboratório...';
+                    if (i === 9) loadingMessage.innerHTML = '📄 Preparando PDF...';
+                }, i * 500);
+            }
+            
+            try {
+                const response = await fetch('/api/labs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(dadosAtuais)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    setTimeout(function() {
+                        loadingMessage.innerHTML = '✅ Laboratório criado com sucesso!';
+                        gerarPDF(result.labId, result.apiKey);
+                        setTimeout(function() {
+                            window.location.href = '/admin-dashboard';
+                        }, 2000);
+                    }, 5000);
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                alert('Erro: ' + error.message);
+            }
+        }
+        
+        function gerarPDF(labId, apiKey) {
+            // Chamar API para gerar PDF com a chave
+            console.log('Laboratório criado:', labId, 'API Key:', apiKey);
+            // Implementar geração de PDF
+        }
+    </script>
+</body>
+</html>
