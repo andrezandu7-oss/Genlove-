@@ -353,10 +353,12 @@
     </div>
     
     <script>
-        const token = localStorage.getItem("token");
-        if (!token) window.location.href = "/ministerio";
+        var token = localStorage.getItem("token");
+        if (!token) {
+            window.location.href = "/ministerio";
+        }
         
-        let dadosAtuais = {};
+        var dadosAtuais = {};
         
         function coletarDados() {
             return {
@@ -385,14 +387,14 @@
             if (!dados.provincia) return 'Província é obrigatória';
             if (!dados.endereco) return 'Endereço é obrigatório';
             if (!dados.telefone) return 'Telefone é obrigatório';
-            if (!dados.email || !dados.email.includes('@')) return 'Email inválido';
+            if (!dados.email || dados.email.indexOf('@') === -1) return 'Email inválido';
             if (!dados.diretor) return 'Nome do diretor é obrigatório';
             return null;
         }
         
         function revisarDados() {
-            const dados = coletarDados();
-            const erro = validarDados(dados);
+            var dados = coletarDados();
+            var erro = validarDados(dados);
             if (erro) {
                 alert(erro);
                 return;
@@ -400,7 +402,7 @@
             
             dadosAtuais = dados;
             
-            let html = '<table class="review-table">';
+            var html = '<table class="review-table">';
             
             html += '<tr><th colspan="2">Informações Básicas</th></tr>';
             html += '<tr><td><strong>Nome:</strong> ' + dados.nome + '</td><td><strong>NIF:</strong> ' + dados.nif + '</td></tr>';
@@ -439,83 +441,81 @@
             if (secao === 'licenca') document.getElementById('sectionLicenca').scrollIntoView({ behavior: 'smooth' });
         }
         
-        async function emitirLaboratorio() {
+        function emitirLaboratorio() {
             document.getElementById('modalRevisao').style.display = 'none';
             
-            const loading = document.getElementById('loading');
-            const progressFill = document.getElementById('progressFill');
-            const timer = document.getElementById('timer');
-            const loadingMessage = document.getElementById('loadingMessage');
+            var loading = document.getElementById('loading');
+            var progressFill = document.getElementById('progressFill');
+            var timer = document.getElementById('timer');
+            var loadingMessage = document.getElementById('loadingMessage');
             
             loading.style.display = 'flex';
             
-            for (let i = 0; i <= 10; i++) {
-                setTimeout(function() {
-                    progressFill.style.width = (i * 10) + '%';
-                    timer.innerText = (5 - Math.floor(i * 0.5)) + 's';
-                    if (i === 3) loadingMessage.innerHTML = '📝 Gerando API Key...';
-                    if (i === 6) loadingMessage.innerHTML = '🔒 Criando laboratório...';
-                    if (i === 9) loadingMessage.innerHTML = '📄 Preparando PDF...';
-                }, i * 500);
+            for (var i = 0; i <= 10; i++) {
+                (function(i) {
+                    setTimeout(function() {
+                        progressFill.style.width = (i * 10) + '%';
+                        timer.innerText = (5 - Math.floor(i * 0.5)) + 's';
+                        if (i === 3) loadingMessage.innerHTML = '📝 Gerando API Key...';
+                        if (i === 6) loadingMessage.innerHTML = '🔒 Criando laboratório...';
+                        if (i === 9) loadingMessage.innerHTML = '📄 Preparando PDF...';
+                    }, i * 500);
+                })(i);
             }
             
-            try {
-                const response = await fetch('/api/labs', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify(dadosAtuais)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    setTimeout(function() {
-                        loadingMessage.innerHTML = '✅ Laboratório criado com sucesso!';
-                        gerarPDF(result.labId, result.apiKey);
-                        setTimeout(function() {
-                            window.location.href = '/admin-dashboard';
-                        }, 2000);
-                    }, 5000);
-                } else {
-                    throw new Error(result.error);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/labs', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var result = JSON.parse(xhr.responseText);
+                        if (result.success) {
+                            setTimeout(function() {
+                                loadingMessage.innerHTML = '✅ Laboratório criado com sucesso!';
+                                gerarPDF(result.labId, result.apiKey);
+                                setTimeout(function() {
+                                    window.location.href = '/admin-dashboard';
+                                }, 2000);
+                            }, 5000);
+                        } else {
+                            loading.style.display = 'none';
+                            alert('Erro: ' + (result.error || 'Erro desconhecido'));
+                        }
+                    } else {
+                        loading.style.display = 'none';
+                        alert('Erro ao criar laboratório');
+                    }
                 }
-            } catch (error) {
-                loading.style.display = 'none';
-                alert('Erro: ' + error.message);
-            }
+            };
+            xhr.send(JSON.stringify(dadosAtuais));
         }
         
         function gerarPDF(labId, apiKey) {
-            fetch('/api/labs/pdf', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify({
-                    labId: labId,
-                    apiKey: apiKey,
-                    dados: dadosAtuais
-                })
-            })
-            .then(function(response) { return response.blob(); })
-            .then(function(blob) {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'laboratorio-' + labId + '.pdf';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            })
-            .catch(function(error) {
-                console.error('Erro PDF:', error);
-                alert('Erro ao gerar PDF');
-            });
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/labs/pdf', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.responseType = 'blob';
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var blob = xhr.response;
+                    var url = window.URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'laboratorio-' + labId + '.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }
+            };
+            xhr.send(JSON.stringify({
+                labId: labId,
+                apiKey: apiKey,
+                dados: dadosAtuais
+            }));
         }
     </script>
 </body>
