@@ -284,7 +284,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO LABORATORIO (VERSION CORRIGÉE)
+// DASHBOARD DO LABORATORIO (VERSION DEBUG)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -362,6 +362,14 @@ app.get('/lab-dashboard', (req, res) => {
             align-items:center;
             margin-bottom:20px;
         }
+        .debug {
+            background:#f0f0f0;
+            padding:10px;
+            margin:10px 0;
+            border-left:3px solid #006633;
+            font-family:monospace;
+            display:none;
+        }
     </style>
 </head>
 <body>
@@ -373,6 +381,9 @@ app.get('/lab-dashboard', (req, res) => {
     
     <div class="main">
         <div id="welcome" class="welcome">Carregando...</div>
+        
+        <!-- Debug info (hidden by default) -->
+        <div id="debugInfo" class="debug"></div>
         
         <div class="header">
             <h2>📋 Meus Certificados</h2>
@@ -401,40 +412,58 @@ app.get('/lab-dashboard', (req, res) => {
 
         const tipos = ["", "GENÓTIPO", "BOA SAÚDE", "INCAPACIDADE", "APTIDÃO", "SAÚDE MATERNA", "PRÉ-NATAL", "EPIDEMIOLÓGICO", "CSD"];
 
+        function showDebug(msg) {
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.style.display = 'block';
+            debugDiv.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + msg + '</div>';
+            console.log(msg);
+        }
+
         async function carregarDados() {
             try {
-                // Carregar dados do laboratório
+                showDebug('Carregando dados do laboratório...');
+                
                 const rMe = await fetch("/api/labs/me", { 
                     headers: { "x-api-key": key } 
                 });
+                
+                if (!rMe.ok) {
+                    throw new Error('Erro ao carregar laboratório: ' + rMe.status);
+                }
+                
                 const dMe = await rMe.json();
+                showDebug('Laboratório: ' + dMe.nome);
                 document.getElementById("welcome").innerHTML = "<h2>👋 Bem-vindo, " + dMe.nome + "</h2>";
                 
-                // Carregar certificados
                 await carregarCertificados();
                 
             } catch (e) {
-                console.error('Erro:', e);
-                document.getElementById("welcome").innerHTML = "<h2>Erro ao carregar dados</h2>";
+                showDebug('ERRO: ' + e.message);
+                document.getElementById("welcome").innerHTML = "<h2>❌ Erro ao carregar dados</h2>";
             }
         }
 
         async function carregarCertificados() {
             try {
+                showDebug('Carregando certificados...');
+                
                 const rCert = await fetch("/api/certificados/lab", { 
                     headers: { "x-api-key": key } 
                 });
                 
+                showDebug('Resposta API: status ' + rCert.status);
+                
                 if (!rCert.ok) {
-                    throw new Error('Erro na resposta da API');
+                    throw new Error('Erro na API: ' + rCert.status);
                 }
                 
                 const lista = await rCert.json();
-                console.log('Certificados carregados:', lista); // Para debug
+                showDebug('Certificados recebidos: ' + lista.length);
                 
                 let html = "";
                 if (lista.length === 0) {
                     html = '<tr><td colspan="5" style="text-align:center; padding:30px;">📭 Nenhum certificado encontrado</td></tr>';
+                    showDebug('Nenhum certificado encontrado');
                 } else {
                     for (let i = 0; i < lista.length; i++) {
                         const c = lista[i];
@@ -451,17 +480,20 @@ app.get('/lab-dashboard', (req, res) => {
                         html += "</td>";
                         html += "</tr>";
                     }
+                    showDebug('HTML gerado para ' + lista.length + ' certificados');
                 }
                 document.getElementById("tabela").innerHTML = html;
                 
             } catch (e) {
-                console.error('Erro certificados:', e);
-                document.getElementById("tabela").innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">❌ Erro ao carregar certificados</td></tr>';
+                showDebug('ERRO certificados: ' + e.message);
+                document.getElementById("tabela").innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">❌ Erro: ' + e.message + '</td></tr>';
             }
         }
 
         async function fetchPDF(numero, acao) {
             try {
+                showDebug('PDF: ' + acao + ' ' + numero);
+                
                 const response = await fetch('/api/certificados/pdf', {
                     method: 'POST',
                     headers: { 
@@ -495,7 +527,7 @@ app.get('/lab-dashboard', (req, res) => {
                     }
                 }
             } catch (error) {
-                console.error('Erro PDF:', error);
+                showDebug('ERRO PDF: ' + error.message);
                 alert('❌ Erro ao gerar PDF');
             }
         }
