@@ -11,11 +11,10 @@ const cors = require('cors');
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
 const path = require('path');
-const QRCode = require('qrcode');
 require('dotenv').config();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
-
 
 // ========================
 // CONFIGURAÇÕES
@@ -441,4 +440,5 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
 app.listen(PORT, () => {
   console.log('✅ SNS Online na porta ' + PORT);
 });
+
 
