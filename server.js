@@ -709,103 +709,40 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         // =========================================
 // ASSINATURAS
 // =========================================
-// Linha para assinatura do laborantin (esquerda)
-doc.lineWidth(1)
-    .moveTo(70, y)
-    .lineTo(270, y)
-    .stroke();
+doc.lineWidth(1).moveTo(70, y).lineTo(270, y).stroke();
+doc.fontSize(10).text('Assinatura do Laborantin', 70, y + 5);
+doc.text(dados.laborantin?.nome || '___________________', 70, y + 20);
 
-doc.fontSize(10)
-    .text('Assinatura do Laborantin', 70, y + 5)
-    .text(dados.laborantin?.nome || '___________________', 70, y + 20);
-
-// Linha para assinatura do diretor (direita)
-doc.lineWidth(1)
-    .moveTo(350, y)
-    .lineTo(550, y)
-    .stroke();
-
-doc.fontSize(10)
-    .text('Assinatura do Diretor Clínico', 350, y + 5)
-    .text(lab.diretor || '___________________', 350, y + 20);
+doc.lineWidth(1).moveTo(350, y).lineTo(550, y).stroke();
+doc.fontSize(10).text('Assinatura do Diretor Clínico', 350, y + 5);
+doc.text(lab.diretor || '___________________', 350, y + 20);
 
 // =========================================
-// QR CODE (CENTRADO)
+// QR CODE (CENTRADO - VERSÃO SIMPLES)
 // =========================================
-try {
-    // Preparar dados para o QR code
-    const dadosQR = {
-        cert: numero,
-        lab: lab.nome,
-        paciente: dados.paciente?.nomeCompleto || '',
-        data: new Date(dados.emitidoEm).toLocaleDateString('pt-PT')
-    };
-    
-    const textoQR = JSON.stringify(dadosQR);
-    
-    // Gerar QR code
-    const qrBuffer = QRCode.toBuffer(textoQR, {
-        errorCorrectionLevel: 'H',
-        margin: 1,
-        width: 100,
-        color: { dark: '#006633', light: '#FFFFFF' }
-    });
-    
-    // Posição centralizada (entre 70 e 550)
-    const qrX = 310 - 50; // Centro (310) - metade do QR (50)
-    const qrY = y - 30;   // Acima das assinaturas
-    
-    // Inserir QR code
-    doc.image(qrBuffer, qrX, qrY, { width: 100 });
-    
-    // Texto acima do QR
-    doc.fontSize(7)
-       .fillColor('#006633')
-       .text('SCAN PARA VERIFICAR', qrX, qrY - 12, { 
-           width: 100, 
-           align: 'center' 
-       });
-    
-    // Código de verificação curto (opcional)
-    const hashCurto = crypto.createHash('sha256')
-        .update(numero + lab.apiKey)
-        .digest('hex')
-        .substring(0, 4)
-        .toUpperCase();
-    
-    doc.fontSize(6)
-       .fillColor('#999')
-       .text(`Ref: ${hashCurto}`, qrX, qrY + 110, { 
-           width: 100, 
-           align: 'center' 
-       });
-    
-} catch (qrError) {
-    console.error('❌ Erro ao gerar QR code:', qrError);
-    
-    // Fallback: código textual centralizado
-    const hashFallback = crypto.createHash('sha256')
-        .update(numero + lab.apiKey)
-        .digest('hex')
-        .substring(0, 8)
-        .toUpperCase();
-    
-    doc.fontSize(8)
-       .fillColor('#666')
-       .text('CÓDIGO DE VERIFICAÇÃO:', 250, y - 25)
-       .fontSize(12)
-       .fillColor('#006633')
-       .text(hashFallback, 270, y - 10);
-}
+const qrX = 247; // Posição fixa (centro: 297 - 50)
+const qrY = y - 35;
 
-y += 70; // Espaço após QR e assinaturas
+// Dados simples
+const textoQR = numero + '|' + lab.nome;
+
+QRCode.toBuffer(textoQR, { width: 100 }, function(err, qrBuffer) {
+    if (!err && qrBuffer) {
+        doc.image(qrBuffer, qrX, qrY, { width: 100 });
+        doc.fontSize(7).fillColor('#006633').text('SCAN', qrX, qrY - 10, { width: 100, align: 'center' });
+    } else {
+        // Fallback: código textual
+        const hash = crypto.createHash('sha256').update(numero).digest('hex').substring(0, 8).toUpperCase();
+        doc.fontSize(8).fillColor('#666').text('Código: ' + hash, qrX, qrY + 40);
+    }
+});
+
+y += 70;
 
 // =========================================
-// RODAPÉ (centralizado)
+// RODAPÉ
 // =========================================
-doc.fontSize(8)
-   .fillColor('#666')
-   .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
+doc.fontSize(8).fillColor('#666').text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
 
 doc.end();
 // =============================================
