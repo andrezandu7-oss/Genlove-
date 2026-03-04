@@ -12,7 +12,6 @@ const cors = require('cors');
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
 const path = require('path');
-const QRCode = require('qrcode');
 require('dotenv').config();
 
 const app = express();
@@ -707,44 +706,64 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         }
         
         // =========================================
-// ASSINATURAS
-// =========================================
-doc.lineWidth(1).moveTo(70, y).lineTo(270, y).stroke();
-doc.fontSize(10).text('Assinatura do Laborantin', 70, y + 5);
-doc.text(dados.laborantin?.nome || '___________________', 70, y + 20);
-
-doc.lineWidth(1).moveTo(350, y).lineTo(550, y).stroke();
-doc.fontSize(10).text('Assinatura do Diretor Clínico', 350, y + 5);
-doc.text(lab.diretor || '___________________', 350, y + 20);
-
-// =========================================
-// QR CODE (CENTRADO - VERSÃO SIMPLES)
-// =========================================
-const qrX = 247; // Posição fixa (centro: 297 - 50)
-const qrY = y - 35;
-
-// Dados simples
-const textoQR = numero + '|' + lab.nome;
-
-QRCode.toBuffer(textoQR, { width: 100 }, function(err, qrBuffer) {
-    if (!err && qrBuffer) {
-        doc.image(qrBuffer, qrX, qrY, { width: 100 });
-        doc.fontSize(7).fillColor('#006633').text('SCAN', qrX, qrY - 10, { width: 100, align: 'center' });
-    } else {
-        // Fallback: código textual
-        const hash = crypto.createHash('sha256').update(numero).digest('hex').substring(0, 8).toUpperCase();
-        doc.fontSize(8).fillColor('#666').text('Código: ' + hash, qrX, qrY + 40);
+        // ASSINATURAS
+        // =========================================
+        // Linha para assinatura do laborantin
+        doc.lineWidth(1)
+            .moveTo(70, y)
+            .lineTo(270, y)
+            .stroke();
+        
+        doc.fontSize(10)
+            .text('Assinatura do Laborantin', 70, y + 5)
+            .text(dados.laborantin?.nome || '___________________', 70, y + 20);
+        
+        // Linha para assinatura do diretor
+        doc.lineWidth(1)
+            .moveTo(350, y)
+            .lineTo(550, y)
+            .stroke();
+        
+        doc.fontSize(10)
+            .text('Assinatura do Diretor Clínico', 350, y + 5)
+            .text(lab.diretor || '___________________', 350, y + 20);
+        
+        y += 50;
+        
+        // =========================================
+        // CÓDIGO DE VERIFICAÇÃO
+        // =========================================
+        const hashVerificacao = crypto.createHash('sha256')
+            .update(numero + lab.apiKey)
+            .digest('hex')
+            .substring(0, 16)
+            .toUpperCase();
+        
+        doc.fontSize(8)
+            .fillColor('#666')
+            .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
+            .fontSize(10)
+            .fillColor('#006633')
+            .text(hashVerificacao, 50, y + 10)
+            .fontSize(7)
+            .fillColor('#999')
+            .text('Este código único verifica a autenticidade do certificado', 50, y + 25);
+        
+        // =========================================
+        // RODAPÉ
+        // =========================================
+        doc.fontSize(8)
+            .fillColor('#666')
+            .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
+        
+        doc.end();
+        
+    } catch (error) {
+        console.error('❌ Erreur PDF:', error);
+        res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
     }
 });
 
-y += 70;
-
-// =========================================
-// RODAPÉ
-// =========================================
-doc.fontSize(8).fillColor('#666').text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
-
-doc.end();
 // =============================================
 // FORMULÁRIO NOVO
 // =============================================
