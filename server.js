@@ -299,12 +299,10 @@ app.get('/lab-dashboard', (req, res) => {
             box-sizing: border-box;
             font-family: Arial, sans-serif;
         }
-        
         body {
             display: flex;
             background: #f5f5f5;
         }
-        
         .sidebar {
             width: 250px;
             background: #006633;
@@ -313,11 +311,9 @@ app.get('/lab-dashboard', (req, res) => {
             padding: 20px;
             position: fixed;
         }
-        
         .sidebar h2 {
             margin-bottom: 30px;
         }
-        
         .sidebar a {
             display: block;
             color: white;
@@ -327,24 +323,20 @@ app.get('/lab-dashboard', (req, res) => {
             border-radius: 5px;
             cursor: pointer;
         }
-        
         .sidebar a:hover {
             background: #004d26;
         }
-        
         .main {
             margin-left: 270px;
             padding: 30px;
             width: 100%;
         }
-        
         .welcome {
             background: #e8f5e9;
             padding: 20px;
             border-left: 5px solid #006633;
             margin-bottom: 20px;
         }
-        
         .btn {
             background: #006633;
             color: white;
@@ -353,34 +345,17 @@ app.get('/lab-dashboard', (req, res) => {
             cursor: pointer;
             border-radius: 5px;
             font-size: 14px;
-            margin: 0 2px;
         }
-        
         .btn:hover {
             background: #004d26;
         }
-        
         .btn-danger {
             background: #dc3545;
         }
-        
-        .btn-danger:hover {
-            background: #c82333;
-        }
-        
         .btn-sm {
             padding: 5px 10px;
             font-size: 12px;
         }
-        
-        .secao {
-            display: none;
-        }
-        
-        .secao.ativa {
-            display: block;
-        }
-        
         table {
             width: 100%;
             background: white;
@@ -388,23 +363,19 @@ app.get('/lab-dashboard', (req, res) => {
             margin-top: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        
         th {
             background: #006633;
             color: white;
             padding: 12px;
             text-align: left;
         }
-        
         td {
             padding: 12px;
             border-bottom: 1px solid #ddd;
         }
-        
         tr:hover {
             background: #f5f5f5;
         }
-        
         .acoes {
             display: flex;
             gap: 5px;
@@ -454,7 +425,7 @@ app.get('/lab-dashboard', (req, res) => {
             try {
                 const rMe = await fetch("/api/labs/me", { headers: { "x-api-key": key } });
                 const dMe = await rMe.json();
-                document.getElementById("welcome").innerHTML = `<h2>👋 Bem-vindo, ${dMe.nome}</h2>`;
+                document.getElementById("welcome").innerHTML = "<h2>👋 Bem-vindo, " + dMe.nome + "</h2>";
                 await carregarCertificados();
             } catch (e) {
                 console.error('Erro:', e);
@@ -470,22 +441,21 @@ app.get('/lab-dashboard', (req, res) => {
                 if (lista.length === 0) {
                     html = '<tr><td colspan="5" style="text-align:center;">Nenhum certificado encontrado</td></tr>';
                 } else {
-                    lista.forEach(c => {
+                    for (let i = 0; i < lista.length; i++) {
+                        const c = lista[i];
                         const dataEmissao = new Date(c.emitidoEm).toLocaleDateString('pt-PT');
-                        html += `
-                            <tr>
-                                <td><strong>${c.numero}</strong></td>
-                                <td>${tipos[c.tipo] || 'Desconhecido'}</td>
-                                <td>${c.paciente?.nomeCompleto || 'N/I'}</td>
-                                <td>${dataEmissao}</td>
-                                <td class="acoes">
-                                    <button class="btn btn-sm" onclick="visualizarPDF('${c.numero}')" title="Visualizar">👁️</button>
-                                    <button class="btn btn-sm" onclick="imprimirPDF('${c.numero}')" title="Imprimir">🖨️</button>
-                                    <button class="btn btn-sm" onclick="baixarPDF('${c.numero}')" title="Baixar">📥</button>
-                                </td>
-                            </tr>
-                        `;
-                    });
+                        html += '<tr>';
+                        html += '<td><strong>' + c.numero + '</strong></td>';
+                        html += '<td>' + (tipos[c.tipo] || 'Desconhecido') + '</td>';
+                        html += '<td>' + (c.paciente?.nomeCompleto || 'N/I') + '</td>';
+                        html += '<td>' + dataEmissao + '</td>';
+                        html += '<td class="acoes">';
+                        html += '<button class="btn btn-sm" onclick="visualizarPDF(\'' + c.numero + '\')" title="Visualizar">👁️</button>';
+                        html += '<button class="btn btn-sm" onclick="imprimirPDF(\'' + c.numero + '\')" title="Imprimir">🖨️</button>';
+                        html += '<button class="btn btn-sm" onclick="baixarPDF(\'' + c.numero + '\')" title="Baixar">📥</button>';
+                        html += '</td>';
+                        html += '</tr>';
+                    }
                 }
                 document.getElementById("tabelaCertificados").innerHTML = html;
             } catch (e) {
@@ -499,7 +469,7 @@ app.get('/lab-dashboard', (req, res) => {
                 const response = await fetch('/api/certificados/pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-api-key': key },
-                    body: JSON.stringify({ numero })
+                    body: JSON.stringify({ numero: numero })
                 });
 
                 if (!response.ok) throw new Error('Erro ao gerar PDF');
@@ -512,7 +482,7 @@ app.get('/lab-dashboard', (req, res) => {
                 } else if (acao === 'baixar') {
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `certificado-${numero}.pdf`;
+                    a.download = 'certificado-' + numero + '.pdf';
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -535,7 +505,6 @@ app.get('/lab-dashboard', (req, res) => {
         function baixarPDF(numero) { fetchPDF(numero, 'baixar'); }
         function imprimirPDF(numero) { fetchPDF(numero, 'imprimir'); }
 
-        // Bloqueio do Ctrl+P
         window.addEventListener('keydown', function(e) {
             const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
             if (!isInput && (e.ctrlKey || e.metaKey) && e.key === 'p') {
