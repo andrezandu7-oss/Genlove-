@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSÃO COMPLETA)
+// DASHBOARD DO MINISTÉRIO (VERSÃO CORRIGIDA)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -311,10 +311,10 @@ app.get('/admin-dashboard', (req, res) => {
     <meta charset="UTF-8">
     <title>Ministério da Saúde - SNS Angola</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Arial,sans-serif; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif; }
         body { display:flex; background:#f5f5f5; }
         .sidebar {
-            width:260px;
+            width:250px;
             background:#006633;
             color:white;
             height:100vh;
@@ -322,219 +322,186 @@ app.get('/admin-dashboard', (req, res) => {
             position:fixed;
             display:flex;
             flex-direction:column;
-            box-shadow:2px 0 10px rgba(0,0,0,0.1);
         }
         .sidebar h2 {
             margin-bottom:30px;
             text-align:center;
-            padding-bottom:15px;
-            border-bottom:1px solid rgba(255,255,255,0.2);
-            font-size:22px;
         }
-        .sidebar button, .sidebar .nav-link {
+        .sidebar button {
             display:block;
             width:100%;
-            color:rgba(255,255,255,0.9);
+            color:white;
             text-decoration:none;
-            padding:14px;
+            padding:12px;
             margin:5px 0;
-            border-radius:8px;
+            border-radius:5px;
             cursor:pointer;
             text-align:left;
-            font-size:15px;
+            font-size:16px;
             border:none;
             background:none;
-            transition:0.3s;
         }
         .sidebar button:hover {
-            background:rgba(255,255,255,0.1);
-            color:white;
+            background:#004d26;
         }
         .sidebar .novo-btn {
             background:#ffa500;
-            color:#00331a;
+            color:#006633;
             font-weight:bold;
-            margin:20px 0;
             text-align:center;
+            margin:20px 0;
         }
         .sidebar .novo-btn:hover {
-            background:#ffb833;
-            transform:translateY(-2px);
+            background:#ff8c00;
         }
         .sidebar .sair-btn {
-            background:#cc3300;
+            background:#dc3545;
             margin-top:auto;
             text-align:center;
-            color:white;
         }
         .sidebar .sair-btn:hover {
-            background:#e63900;
+            background:#c82333;
         }
         .main {
-            margin-left:260px;
-            padding:40px;
+            margin-left:270px;
+            padding:30px;
             width:100%;
         }
         .welcome {
-            background:white;
-            padding:25px;
-            border-left:6px solid #006633;
-            margin-bottom:30px;
-            border-radius:8px;
-            box-shadow:0 2px 10px rgba(0,0,0,0.05);
+            background:#e8f5e9;
+            padding:20px;
+            border-left:5px solid #006633;
+            margin-bottom:20px;
         }
         .secao {
             display:none;
-            animation:fadeIn 0.3s ease;
         }
         .secao.active {
             display:block;
         }
-        @keyframes fadeIn {
-            from{opacity:0;}
-            to{opacity:1;}
-        }
-        .card {
-            background:white;
-            padding:30px;
-            border-radius:12px;
-            box-shadow:0 4px 15px rgba(0,0,0,0.05);
-        }
-        table {
-            width:100%;
-            border-collapse:collapse;
-            margin-top:10px;
-        }
-        th {
-            background:#f8f9fa;
-            color:#333;
-            padding:15px;
-            text-align:left;
-            border-bottom:2px solid #eee;
-        }
-        td {
-            padding:15px;
-            border-bottom:1px solid #eee;
-            font-size:14px;
-        }
-        tr:hover {
-            background:#fafafa;
-        }
-        .btn-acao {
-            background:#f0f0f0;
-            border:none;
-            padding:8px;
-            border-radius:5px;
-            cursor:pointer;
-            transition:0.2s;
-            margin-right:5px;
-        }
-        .btn-acao:hover {
-            background:#e0e0e0;
-            transform:scale(1.1);
-        }
-        .status-badge {
-            background:#e8f5e9;
-            color:#2e7d32;
-            padding:4px 8px;
-            border-radius:4px;
-            font-weight:bold;
-            font-size:11px;
-        }
         .stats-grid {
             display:grid;
-            grid-template-columns:repeat(auto-fit, minmax(200px,1fr));
+            grid-template-columns:repeat(4,1fr);
             gap:20px;
             margin-bottom:30px;
         }
         .stat-card {
             background:white;
             padding:20px;
-            border-radius:10px;
-            box-shadow:0 2px 8px rgba(0,0,0,0.05);
+            border-radius:8px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
             text-align:center;
         }
         .stat-card h3 {
             color:#666;
             font-size:14px;
             margin-bottom:10px;
-            text-transform:uppercase;
         }
         .stat-card p {
             color:#006633;
-            font-size:32px;
+            font-size:28px;
             font-weight:bold;
         }
-        .detalhes-btn {
+        table {
+            width:100%;
+            background:white;
+            border-collapse:collapse;
+            margin-top:20px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        }
+        th {
             background:#006633;
             color:white;
+            padding:12px;
+            text-align:left;
+        }
+        td {
+            padding:12px;
+            border-bottom:1px solid #ddd;
+        }
+        .btn-acao {
+            background:#f0f0f0;
             border:none;
             padding:5px 10px;
             border-radius:4px;
             cursor:pointer;
-            font-size:12px;
+            margin:0 2px;
         }
-        .detalhes-btn:hover {
-            background:#004d26;
+        .btn-acao:hover {
+            background:#e0e0e0;
+        }
+        .status-badge {
+            padding:4px 8px;
+            border-radius:4px;
+            font-size:12px;
+            font-weight:bold;
+        }
+        .status-ativo {
+            background:#e8f5e9;
+            color:#2e7d32;
+        }
+        .status-inativo {
+            background:#ffebee;
+            color:#c62828;
         }
         .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
+            display:none;
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(0,0,0,0.5);
+            z-index:1000;
+            align-items:center;
+            justify-content:center;
         }
         .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            width: 600px;
-            max-width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
+            background:white;
+            padding:30px;
+            border-radius:10px;
+            width:600px;
+            max-width:90%;
+            max-height:80vh;
+            overflow-y:auto;
         }
         .modal h3 {
-            color: #006633;
-            margin-bottom: 20px;
+            color:#006633;
+            margin-bottom:20px;
         }
-        .modal .info-row {
-            display: flex;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 5px;
+        .info-row {
+            display:flex;
+            margin-bottom:10px;
+            border-bottom:1px solid #eee;
+            padding-bottom:5px;
         }
-        .modal .info-label {
-            font-weight: bold;
-            width: 40%;
-            color: #333;
+        .info-label {
+            font-weight:bold;
+            width:40%;
+            color:#333;
         }
-        .modal .info-value {
-            width: 60%;
-            color: #666;
+        .info-value {
+            width:60%;
+            color:#666;
         }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <h2>MINISTÉRIO DA SAÚDE</h2>
+        <h2>SNS-Admin</h2>
         <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
         <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
-        <button class="novo-btn" onclick="window.location.href='/novo-laboratorio'">➕ NOVO LABORATÓRIO</button>
-        <button class="sair-btn" onclick="logout()">🚪 Sair</button>
+        <button class="novo-btn" onclick="window.location.href='/novo-laboratorio'">+ NOVO LABORATÓRIO</button>
+        <button class="sair-btn" onclick="logout()">Sair</button>
     </div>
     
     <div class="main">
         <div id="welcome" class="welcome">
             <h2>👋 Bem-vindo, Administrador</h2>
-            <p>Sistema Nacional de Saúde - Ministério da Saúde</p>
         </div>
         
         <div id="dashboardSection" class="secao active">
+            <h2>Painel de Controle</h2>
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3>Laboratórios</h3>
@@ -553,39 +520,29 @@ app.get('/admin-dashboard', (req, res) => {
                     <p id="statsTotal">0</p>
                 </div>
             </div>
-            <div class="card">
-                <h3>Visão Geral do Sistema</h3>
-                <p style="margin-top:15px; color:#666;">Gerencie os laboratórios e visualize as estatísticas do Sistema Nacional de Saúde.</p>
-            </div>
         </div>
         
         <div id="laboratoriosSection" class="secao">
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>🏥 Laboratórios Registados</h2>
-                    <button class="btn-acao" onclick="carregarLaboratorios()">🔄 Atualizar</button>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>NIF</th>
-                            <th>Província</th>
-                            <th>Contacto</th>
-                            <th>Diretor</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaLabs">
-                        <tr><td colspan="7" style="text-align:center;">Carregando laboratórios...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <h2>Laboratórios</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>NIF</th>
+                        <th>Província</th>
+                        <th>Telefone</th>
+                        <th>Diretor</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaLabs">
+                    <tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Modal de detalhes -->
     <div id="modalDetalhes" class="modal">
         <div class="modal-content">
             <h3>📋 Detalhes do Laboratório</h3>
@@ -631,27 +588,31 @@ app.get('/admin-dashboard', (req, res) => {
                 const lista = await r.json();
                 
                 if (!lista || lista.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">Nenhum laboratório registado.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                     return;
                 }
                 
-                tbody.innerHTML = lista.map(l => `
-                    <tr>
-                        <td><strong>${l.nome}</strong></td>
-                        <td>${l.nif || 'N/I'}</td>
-                        <td>${l.provincia || 'N/I'}</td>
-                        <td>${l.telefone || 'N/I'}</td>
-                        <td>${l.diretor || 'N/I'}</td>
-                        <td><span class="status-badge" style="background:${l.ativo ? '#e8f5e9' : '#ffebee'}; color:${l.ativo ? '#2e7d32' : '#c62828'};">${l.ativo ? 'Ativo' : 'Inativo'}</span></td>
-                        <td>
-                            <button class="btn-acao" onclick="verDetalhes('${l._id}')" title="Detalhes">👁️</button>
-                            <button class="btn-acao" onclick="toggleStatus('${l._id}', ${l.ativo})" title="${l.ativo ? 'Desativar' : 'Ativar'}">${l.ativo ? '🔴' : '🟢'}</button>
-                        </td>
-                    </tr>
-                `).join('');
+                let html = '';
+                for (let i = 0; i < lista.length; i++) {
+                    const l = lista[i];
+                    html += '<tr>';
+                    html += '<td><strong>' + (l.nome || '') + '</strong></td>';
+                    html += '<td>' + (l.nif || '') + '</td>';
+                    html += '<td>' + (l.provincia || '') + '</td>';
+                    html += '<td>' + (l.telefone || '') + '</td>';
+                    html += '<td>' + (l.diretor || '') + '</td>';
+                    html += '<td><span class="status-badge ' + (l.ativo ? 'status-ativo' : 'status-inativo') + '">' + (l.ativo ? 'Ativo' : 'Inativo') + '</span></td>';
+                    html += '<td>';
+                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')">👁️</button>';
+                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')">' + (l.ativo ? '🔴' : '🟢') + '</button>';
+                    html += '</td>';
+                    html += '</tr>';
+                }
+                tbody.innerHTML = html;
+                
             } catch (e) {
                 console.error(e);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar laboratórios.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar</td></tr>';
             }
         }
 
@@ -661,32 +622,51 @@ app.get('/admin-dashboard', (req, res) => {
                     headers: { "Authorization": "Bearer " + token }
                 });
                 const lista = await r.json();
-                const lab = lista.find(l => l._id === id);
+                const lab = null;
+                for (let i = 0; i < lista.length; i++) {
+                    if (lista[i]._id === id) {
+                        lab = lista[i];
+                        break;
+                    }
+                }
                 
                 if (!lab) {
                     alert('Laboratório não encontrado');
                     return;
                 }
                 
-                const html = `
-                    <div class="info-row"><span class="info-label">ID:</span><span class="info-value">${lab.labId || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Nome:</span><span class="info-value">${lab.nome}</span></div>
-                    <div class="info-row"><span class="info-label">NIF:</span><span class="info-value">${lab.nif || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Tipo:</span><span class="info-value">${lab.tipo || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Província:</span><span class="info-value">${lab.provincia || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Município:</span><span class="info-value">${lab.municipio || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Endereço:</span><span class="info-value">${lab.endereco || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Telefone:</span><span class="info-value">${lab.telefone || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Telefone 2:</span><span class="info-value">${lab.telefone2 || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Email:</span><span class="info-value">${lab.email || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Website:</span><span class="info-value">${lab.website || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Diretor:</span><span class="info-value">${lab.diretor || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Resp. Técnico:</span><span class="info-value">${lab.responsavelTecnico || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Licença:</span><span class="info-value">${lab.licenca || 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Validade:</span><span class="info-value">${lab.validadeLicenca ? new Date(lab.validadeLicenca).toLocaleDateString('pt-PT') : 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Criado em:</span><span class="info-value">${lab.createdAt ? new Date(lab.createdAt).toLocaleDateString('pt-PT') : 'N/I'}</span></div>
-                    <div class="info-row"><span class="info-label">Total emissões:</span><span class="info-value">${lab.totalEmissoes || 0}</span></div>
-                `;
+                let html = '';
+                html += '<div class="info-row"><span class="info-label">ID:</span><span class="info-value">' + (lab.labId || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Nome:</span><span class="info-value">' + (lab.nome || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">NIF:</span><span class="info-value">' + (lab.nif || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Tipo:</span><span class="info-value">' + (lab.tipo || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Província:</span><span class="info-value">' + (lab.provincia || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Município:</span><span class="info-value">' + (lab.municipio || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Endereço:</span><span class="info-value">' + (lab.endereco || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Telefone:</span><span class="info-value">' + (lab.telefone || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Telefone 2:</span><span class="info-value">' + (lab.telefone2 || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Email:</span><span class="info-value">' + (lab.email || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Website:</span><span class="info-value">' + (lab.website || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Diretor:</span><span class="info-value">' + (lab.diretor || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Resp. Técnico:</span><span class="info-value">' + (lab.responsavelTecnico || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Licença:</span><span class="info-value">' + (lab.licenca || 'N/I') + '</span></div>';
+                
+                let validade = 'N/I';
+                if (lab.validadeLicenca) {
+                    const data = new Date(lab.validadeLicenca);
+                    validade = data.toLocaleDateString('pt-PT');
+                }
+                html += '<div class="info-row"><span class="info-label">Validade:</span><span class="info-value">' + validade + '</span></div>';
+                
+                html += '<div class="info-row"><span class="info-label">Status:</span><span class="info-value">' + (lab.ativo ? 'Ativo' : 'Inativo') + '</span></div>';
+                
+                let criado = 'N/I';
+                if (lab.createdAt) {
+                    const data = new Date(lab.createdAt);
+                    criado = data.toLocaleDateString('pt-PT');
+                }
+                html += '<div class="info-row"><span class="info-label">Criado em:</span><span class="info-value">' + criado + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Total emissões:</span><span class="info-value">' + (lab.totalEmissoes || 0) + '</span></div>';
                 
                 document.getElementById('conteudoDetalhes').innerHTML = html;
                 document.getElementById('modalDetalhes').style.display = 'flex';
@@ -702,7 +682,7 @@ app.get('/admin-dashboard', (req, res) => {
         }
 
         function toggleStatus(id, ativo) {
-            alert('Função ativar/desativar em desenvolvimento: ' + id);
+            alert('Função em desenvolvimento: ' + (ativo ? 'Desativar' : 'Ativar') + ' laboratório ' + id);
         }
 
         function logout() {
