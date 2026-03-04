@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSÃO CORRIGIDA)
+// DASHBOARD DO MINISTÉRIO (BOTÕES ATIVOS)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -384,6 +384,7 @@ app.get('/admin-dashboard', (req, res) => {
             grid-template-columns:repeat(4,1fr);
             gap:20px;
             margin-bottom:30px;
+            margin-top:20px;
         }
         .stat-card {
             background:white;
@@ -557,35 +558,50 @@ app.get('/admin-dashboard', (req, res) => {
         const token = localStorage.getItem("token");
         if (!token) window.location.href = "/ministerio";
 
+        // Função para mostrar seções
         function mostrarSeccao(id) {
-            document.querySelectorAll('.secao').forEach(s => s.classList.remove('active'));
+            document.getElementById('dashboardSection').classList.remove('active');
+            document.getElementById('laboratoriosSection').classList.remove('active');
             document.getElementById(id).classList.add('active');
-            if (id === 'dashboardSection') carregarStats();
-            if (id === 'laboratoriosSection') carregarLaboratorios();
-        }
-
-        async function carregarStats() {
-            try {
-                const r = await fetch("/api/stats", {
-                    headers: { "Authorization": "Bearer " + token }
-                });
-                const data = await r.json();
-                document.getElementById("statsLabs").innerText = data.labs || 0;
-                document.getElementById("statsHospitais").innerText = data.hospitais || 0;
-                document.getElementById("statsEmpresas").innerText = data.empresas || 0;
-                document.getElementById("statsTotal").innerText = (data.labs + data.hospitais + data.empresas) || 0;
-            } catch (e) {
-                console.error(e);
+            
+            if (id === 'dashboardSection') {
+                carregarStats();
+            }
+            if (id === 'laboratoriosSection') {
+                carregarLaboratorios();
             }
         }
 
-        async function carregarLaboratorios() {
-            const tbody = document.getElementById("tabelaLabs");
+        // Carregar estatísticas
+        async function carregarStats() {
             try {
-                const r = await fetch("/api/labs", {
+                const response = await fetch("/api/stats", {
                     headers: { "Authorization": "Bearer " + token }
                 });
-                const lista = await r.json();
+                const data = await response.json();
+                
+                document.getElementById("statsLabs").innerText = data.labs || 0;
+                document.getElementById("statsHospitais").innerText = data.hospitais || 0;
+                document.getElementById("statsEmpresas").innerText = data.empresas || 0;
+                
+                const total = (data.labs || 0) + (data.hospitais || 0) + (data.empresas || 0);
+                document.getElementById("statsTotal").innerText = total;
+                
+            } catch (error) {
+                console.error('Erro ao carregar stats:', error);
+            }
+        }
+
+        // Carregar laboratórios
+        async function carregarLaboratorios() {
+            const tbody = document.getElementById("tabelaLabs");
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
+            
+            try {
+                const response = await fetch("/api/labs", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const lista = await response.json();
                 
                 if (!lista || lista.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
@@ -595,34 +611,42 @@ app.get('/admin-dashboard', (req, res) => {
                 let html = '';
                 for (let i = 0; i < lista.length; i++) {
                     const l = lista[i];
+                    const statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
+                    const statusText = l.ativo ? 'Ativo' : 'Inativo';
+                    const statusButton = l.ativo ? '🔴' : '🟢';
+                    const statusTitle = l.ativo ? 'Desativar' : 'Ativar';
+                    
                     html += '<tr>';
                     html += '<td><strong>' + (l.nome || '') + '</strong></td>';
                     html += '<td>' + (l.nif || '') + '</td>';
                     html += '<td>' + (l.provincia || '') + '</td>';
                     html += '<td>' + (l.telefone || '') + '</td>';
                     html += '<td>' + (l.diretor || '') + '</td>';
-                    html += '<td><span class="status-badge ' + (l.ativo ? 'status-ativo' : 'status-inativo') + '">' + (l.ativo ? 'Ativo' : 'Inativo') + '</span></td>';
+                    html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
                     html += '<td>';
-                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')">👁️</button>';
-                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')">' + (l.ativo ? '🔴' : '🟢') + '</button>';
+                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button> ';
+                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + statusTitle + '">' + statusButton + '</button>';
                     html += '</td>';
                     html += '</tr>';
                 }
                 tbody.innerHTML = html;
                 
-            } catch (e) {
-                console.error(e);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar</td></tr>';
+            } catch (error) {
+                console.error('Erro ao carregar laboratórios:', error);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar dados</td></tr>';
             }
         }
 
+        // Ver detalhes do laboratório
         async function verDetalhes(id) {
             try {
-                const r = await fetch("/api/labs", {
+                const response = await fetch("/api/labs", {
                     headers: { "Authorization": "Bearer " + token }
                 });
-                const lista = await r.json();
-                const lab = null;
+                const lista = await response.json();
+                
+                // Encontrar o laboratório pelo ID
+                let lab = null;
                 for (let i = 0; i < lista.length; i++) {
                     if (lista[i]._id === id) {
                         lab = lista[i];
@@ -635,6 +659,21 @@ app.get('/admin-dashboard', (req, res) => {
                     return;
                 }
                 
+                // Formatar data de validade
+                let validade = 'N/I';
+                if (lab.validadeLicenca) {
+                    const data = new Date(lab.validadeLicenca);
+                    validade = data.toLocaleDateString('pt-PT');
+                }
+                
+                // Formatar data de criação
+                let criado = 'N/I';
+                if (lab.createdAt) {
+                    const data = new Date(lab.createdAt);
+                    criado = data.toLocaleDateString('pt-PT');
+                }
+                
+                // Construir HTML dos detalhes
                 let html = '';
                 html += '<div class="info-row"><span class="info-label">ID:</span><span class="info-value">' + (lab.labId || 'N/I') + '</span></div>';
                 html += '<div class="info-row"><span class="info-label">Nome:</span><span class="info-value">' + (lab.nome || 'N/I') + '</span></div>';
@@ -650,47 +689,54 @@ app.get('/admin-dashboard', (req, res) => {
                 html += '<div class="info-row"><span class="info-label">Diretor:</span><span class="info-value">' + (lab.diretor || 'N/I') + '</span></div>';
                 html += '<div class="info-row"><span class="info-label">Resp. Técnico:</span><span class="info-value">' + (lab.responsavelTecnico || 'N/I') + '</span></div>';
                 html += '<div class="info-row"><span class="info-label">Licença:</span><span class="info-value">' + (lab.licenca || 'N/I') + '</span></div>';
-                
-                let validade = 'N/I';
-                if (lab.validadeLicenca) {
-                    const data = new Date(lab.validadeLicenca);
-                    validade = data.toLocaleDateString('pt-PT');
-                }
                 html += '<div class="info-row"><span class="info-label">Validade:</span><span class="info-value">' + validade + '</span></div>';
-                
                 html += '<div class="info-row"><span class="info-label">Status:</span><span class="info-value">' + (lab.ativo ? 'Ativo' : 'Inativo') + '</span></div>';
-                
-                let criado = 'N/I';
-                if (lab.createdAt) {
-                    const data = new Date(lab.createdAt);
-                    criado = data.toLocaleDateString('pt-PT');
-                }
                 html += '<div class="info-row"><span class="info-label">Criado em:</span><span class="info-value">' + criado + '</span></div>';
                 html += '<div class="info-row"><span class="info-label">Total emissões:</span><span class="info-value">' + (lab.totalEmissoes || 0) + '</span></div>';
                 
                 document.getElementById('conteudoDetalhes').innerHTML = html;
                 document.getElementById('modalDetalhes').style.display = 'flex';
                 
-            } catch (e) {
-                console.error(e);
-                alert('Erro ao carregar detalhes');
+            } catch (error) {
+                console.error('Erro ao carregar detalhes:', error);
+                alert('Erro ao carregar detalhes do laboratório');
             }
         }
 
+        // Fechar modal
         function fecharModal() {
             document.getElementById('modalDetalhes').style.display = 'none';
         }
 
-        function toggleStatus(id, ativo) {
-            alert('Função em desenvolvimento: ' + (ativo ? 'Desativar' : 'Ativar') + ' laboratório ' + id);
+        // Alternar status (ativar/desativar)
+        async function toggleStatus(id, ativoAtual) {
+            const novoStatus = !ativoAtual;
+            const acao = novoStatus ? 'ativar' : 'desativar';
+            
+            if (!confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
+                return;
+            }
+            
+            try {
+                // Aqui você implementaria a chamada API para atualizar o status
+                // Por enquanto, apenas recarrega a lista
+                alert('Função em desenvolvimento: ' + acao + ' laboratório');
+                carregarLaboratorios();
+                
+            } catch (error) {
+                console.error('Erro ao ' + acao + ' laboratório:', error);
+                alert('Erro ao ' + acao + ' laboratório');
+            }
         }
 
+        // Logout
         function logout() {
             localStorage.removeItem("token");
             localStorage.removeItem("labKey");
             window.location.href = "/";
         }
 
+        // Inicializar
         carregarStats();
     </script>
 </body>
