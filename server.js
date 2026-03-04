@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSÃO FUNCIONAL)
+// DASHBOARD DO MINISTÉRIO (COM BOTÕES ATIVOS)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -419,6 +419,17 @@ app.get('/admin-dashboard', (req, res) => {
             padding:12px;
             border-bottom:1px solid #ddd;
         }
+        .btn-acao {
+            background:#f0f0f0;
+            border:none;
+            padding:5px 10px;
+            border-radius:4px;
+            cursor:pointer;
+            margin:0 2px;
+        }
+        .btn-acao:hover {
+            background:#e0e0e0;
+        }
         .status-badge {
             padding:4px 8px;
             border-radius:4px;
@@ -482,30 +493,25 @@ app.get('/admin-dashboard', (req, res) => {
                         <th>Telefone</th>
                         <th>Diretor</th>
                         <th>Status</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaLabs">
-                    <tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>
+                    <tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        // VERIFICAR TOKEN
         var token = localStorage.getItem("token");
         if (!token) {
             window.location.href = "/ministerio";
         }
 
-        // FUNÇÃO PARA MOSTRAR SEÇÕES
         function mostrarSeccao(id) {
-            var dashboard = document.getElementById('dashboardSection');
-            var laboratorios = document.getElementById('laboratoriosSection');
-            
-            dashboard.className = 'secao';
-            laboratorios.className = 'secao';
-            
+            document.getElementById('dashboardSection').className = 'secao';
+            document.getElementById('laboratoriosSection').className = 'secao';
             document.getElementById(id).className = 'secao active';
             
             if (id === 'laboratoriosSection') {
@@ -513,7 +519,6 @@ app.get('/admin-dashboard', (req, res) => {
             }
         }
 
-        // CARREGAR ESTATÍSTICAS
         function carregarStats() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/stats', true);
@@ -532,10 +537,50 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.send();
         }
 
-        // CARREGAR LABORATÓRIOS
+        function verDetalhes(id) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/labs', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var lista = JSON.parse(xhr.responseText);
+                    var lab = null;
+                    for (var i = 0; i < lista.length; i++) {
+                        if (lista[i]._id === id) {
+                            lab = lista[i];
+                            break;
+                        }
+                    }
+                    
+                    if (lab) {
+                        var msg = 'LABORATÓRIO: ' + lab.nome + '\n';
+                        msg += 'NIF: ' + (lab.nif || 'N/I') + '\n';
+                        msg += 'Província: ' + (lab.provincia || 'N/I') + '\n';
+                        msg += 'Município: ' + (lab.municipio || 'N/I') + '\n';
+                        msg += 'Endereço: ' + (lab.endereco || 'N/I') + '\n';
+                        msg += 'Telefone: ' + (lab.telefone || 'N/I') + '\n';
+                        msg += 'Email: ' + (lab.email || 'N/I') + '\n';
+                        msg += 'Diretor: ' + (lab.diretor || 'N/I') + '\n';
+                        msg += 'Licença: ' + (lab.licenca || 'N/I') + '\n';
+                        msg += 'Status: ' + (lab.ativo ? 'Ativo' : 'Inativo');
+                        alert(msg);
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function toggleStatus(id, ativoAtual) {
+            var acao = ativoAtual ? 'desativar' : 'ativar';
+            if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
+                alert('Função em desenvolvimento: ' + acao);
+                carregarLaboratorios();
+            }
+        }
+
         function carregarLaboratorios() {
             var tbody = document.getElementById('tabelaLabs');
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
             
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/labs', true);
@@ -545,7 +590,7 @@ app.get('/admin-dashboard', (req, res) => {
                     var lista = JSON.parse(xhr.responseText);
                     
                     if (!lista || lista.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                         return;
                     }
                     
@@ -554,6 +599,8 @@ app.get('/admin-dashboard', (req, res) => {
                         var l = lista[i];
                         var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
                         var statusText = l.ativo ? 'Ativo' : 'Inativo';
+                        var btnStatus = l.ativo ? '🔴' : '🟢';
+                        var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
                         
                         html += '<tr>';
                         html += '<td>' + (l.nome || '') + '</td>';
@@ -562,6 +609,10 @@ app.get('/admin-dashboard', (req, res) => {
                         html += '<td>' + (l.telefone || '') + '</td>';
                         html += '<td>' + (l.diretor || '') + '</td>';
                         html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                        html += '<td>';
+                        html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button> ';
+                        html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
+                        html += '</td>';
                         html += '</tr>';
                     }
                     tbody.innerHTML = html;
@@ -570,14 +621,12 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.send();
         }
 
-        // LOGOUT
         function logout() {
             localStorage.removeItem("token");
             localStorage.removeItem("labKey");
             window.location.href = "/";
         }
 
-        // CARREGAR ESTATÍSTICAS AO INICIAR
         carregarStats();
     </script>
 </body>
