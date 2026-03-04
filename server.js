@@ -284,7 +284,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO LABORATORIO (SIMPLIFICADO)
+// DASHBOARD DO LABORATORIO (VERSION CORRIGÉE)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -303,7 +303,7 @@ app.get('/lab-dashboard', (req, res) => {
             padding:20px;
             position:fixed;
         }
-        .sidebar h2 { margin-bottom:30px; }
+        .sidebar h2 { margin-bottom:30px; text-align:center; }
         .sidebar a {
             display:block;
             color:white;
@@ -312,6 +312,7 @@ app.get('/lab-dashboard', (req, res) => {
             margin:5px 0;
             border-radius:5px;
             cursor:pointer;
+            text-align:center;
         }
         .sidebar a:hover { background:#004d26; }
         .main {
@@ -335,11 +336,13 @@ app.get('/lab-dashboard', (req, res) => {
         }
         .btn-sm { padding:5px 10px; font-size:12px; }
         .btn-danger { background:#dc3545; }
+        .btn-danger:hover { background:#c82333; }
         table {
             width:100%;
             background:white;
             border-collapse:collapse;
             margin-top:20px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
         }
         th {
             background:#006633;
@@ -351,6 +354,7 @@ app.get('/lab-dashboard', (req, res) => {
             padding:12px;
             border-bottom:1px solid #ddd;
         }
+        tr:hover { background:#f5f5f5; }
         .acoes { display:flex; gap:5px; }
         .header {
             display:flex;
@@ -368,11 +372,11 @@ app.get('/lab-dashboard', (req, res) => {
     </div>
     
     <div class="main">
-        <div id="welcome" class="welcome"></div>
+        <div id="welcome" class="welcome">Carregando...</div>
         
         <div class="header">
             <h2>📋 Meus Certificados</h2>
-            <button class="btn" onclick="window.location.href='/novo-certificado'">➕ Novo</button>
+            <button class="btn" onclick="window.location.href='/novo-certificado'">➕ Novo Certificado</button>
         </div>
         
         <table>
@@ -385,7 +389,9 @@ app.get('/lab-dashboard', (req, res) => {
                     <th>Ações</th>
                 </tr>
             </thead>
-            <tbody id="tabela"></tbody>
+            <tbody id="tabela">
+                <tr><td colspan="5" style="text-align:center;">Carregando certificados...</td></tr>
+            </tbody>
         </table>
     </div>
 
@@ -397,29 +403,51 @@ app.get('/lab-dashboard', (req, res) => {
 
         async function carregarDados() {
             try {
-                const rMe = await fetch("/api/labs/me", { headers: { "x-api-key": key } });
+                // Carregar dados do laboratório
+                const rMe = await fetch("/api/labs/me", { 
+                    headers: { "x-api-key": key } 
+                });
                 const dMe = await rMe.json();
                 document.getElementById("welcome").innerHTML = "<h2>👋 Bem-vindo, " + dMe.nome + "</h2>";
                 
-                const rCert = await fetch("/api/certificados/lab", { headers: { "x-api-key": key } });
+                // Carregar certificados
+                await carregarCertificados();
+                
+            } catch (e) {
+                console.error('Erro:', e);
+                document.getElementById("welcome").innerHTML = "<h2>Erro ao carregar dados</h2>";
+            }
+        }
+
+        async function carregarCertificados() {
+            try {
+                const rCert = await fetch("/api/certificados/lab", { 
+                    headers: { "x-api-key": key } 
+                });
+                
+                if (!rCert.ok) {
+                    throw new Error('Erro na resposta da API');
+                }
+                
                 const lista = await rCert.json();
+                console.log('Certificados carregados:', lista); // Para debug
                 
                 let html = "";
                 if (lista.length === 0) {
-                    html = '<tr><td colspan="5" style="text-align:center;">Nenhum certificado</td></tr>';
+                    html = '<tr><td colspan="5" style="text-align:center; padding:30px;">📭 Nenhum certificado encontrado</td></tr>';
                 } else {
                     for (let i = 0; i < lista.length; i++) {
                         const c = lista[i];
-                        const data = new Date(c.emitidoEm).toLocaleDateString();
+                        const data = new Date(c.emitidoEm).toLocaleDateString('pt-PT');
                         html += "<tr>";
-                        html += "<td>" + c.numero + "</td>";
-                        html += "<td>" + (tipos[c.tipo] || "") + "</td>";
-                        html += "<td>" + (c.paciente?.nomeCompleto || "") + "</td>";
+                        html += "<td><strong>" + c.numero + "</strong></td>";
+                        html += "<td>" + (tipos[c.tipo] || "Desconhecido") + "</td>";
+                        html += "<td>" + (c.paciente?.nomeCompleto || "N/I") + "</td>";
                         html += "<td>" + data + "</td>";
                         html += "<td class='acoes'>";
-                        html += "<button class='btn btn-sm' onclick='visualizarPDF(\"" + c.numero + "\")'>👁️</button>";
-                        html += "<button class='btn btn-sm' onclick='imprimirPDF(\"" + c.numero + "\")'>🖨️</button>";
-                        html += "<button class='btn btn-sm' onclick='baixarPDF(\"" + c.numero + "\")'>📥</button>";
+                        html += "<button class='btn btn-sm' onclick='visualizarPDF(\"" + c.numero + "\")' title='Visualizar'>👁️</button>";
+                        html += "<button class='btn btn-sm' onclick='imprimirPDF(\"" + c.numero + "\")' title='Imprimir'>🖨️</button>";
+                        html += "<button class='btn btn-sm' onclick='baixarPDF(\"" + c.numero + "\")' title='Baixar'>📥</button>";
                         html += "</td>";
                         html += "</tr>";
                     }
@@ -427,7 +455,8 @@ app.get('/lab-dashboard', (req, res) => {
                 document.getElementById("tabela").innerHTML = html;
                 
             } catch (e) {
-                console.error(e);
+                console.error('Erro certificados:', e);
+                document.getElementById("tabela").innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">❌ Erro ao carregar certificados</td></tr>';
             }
         }
 
@@ -435,36 +464,52 @@ app.get('/lab-dashboard', (req, res) => {
             try {
                 const response = await fetch('/api/certificados/pdf', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-api-key': key },
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'x-api-key': key 
+                    },
                     body: JSON.stringify({ numero })
                 });
+                
+                if (!response.ok) throw new Error('Erro na resposta');
+                
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
-                if (acao === 'ver') window.open(url, '_blank');
-                if (acao === 'baixar') {
+                
+                if (acao === 'visualizar') {
+                    window.open(url, '_blank');
+                } else if (acao === 'baixar') {
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = 'certificado-' + numero + '.pdf';
+                    document.body.appendChild(a);
                     a.click();
-                }
-                if (acao === 'imprimir') {
-                    const win = window.open(url, '_blank');
-                    win.onload = () => win.print();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                } else if (acao === 'imprimir') {
+                    const printWindow = window.open(url, '_blank');
+                    if (printWindow) {
+                        printWindow.onload = function() { 
+                            printWindow.print(); 
+                        };
+                    }
                 }
             } catch (error) {
-                alert('Erro ao gerar PDF');
+                console.error('Erro PDF:', error);
+                alert('❌ Erro ao gerar PDF');
             }
         }
 
-        function visualizarPDF(n) { fetchPDF(n, 'ver'); }
-        function baixarPDF(n) { fetchPDF(n, 'baixar'); }
-        function imprimirPDF(n) { fetchPDF(n, 'imprimir'); }
+        function visualizarPDF(numero) { fetchPDF(numero, 'visualizar'); }
+        function baixarPDF(numero) { fetchPDF(numero, 'baixar'); }
+        function imprimirPDF(numero) { fetchPDF(numero, 'imprimir'); }
 
         function logout() {
             localStorage.removeItem("labKey");
             window.location.href = "/";
         }
 
+        // Iniciar
         carregarDados();
     </script>
 </body>
