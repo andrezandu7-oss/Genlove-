@@ -66,6 +66,8 @@ function gerarNumeroCertificado(tipo) {
 // =======================
 // MODELOS DE DADOS
 // =======================
+
+// USER (Administrador)
 const userSchema = new mongoose.Schema({
     nome: String,
     email: { type: String, unique: true },
@@ -73,22 +75,42 @@ const userSchema = new mongoose.Schema({
     role: { type: String, default: 'admin' }
 });
 
+// LABORATÓRIO (COM CAMPOS COMPLETOS)
 const labSchema = new mongoose.Schema({
     labId: { type: String, unique: true },
+    
+    // Informações Básicas
     nome: { type: String, required: true },
     nif: { type: String, required: true, unique: true },
-    tipo: { type: String, enum: ['laboratorio', 'hospital', 'clinica'] },
+    tipo: { type: String, enum: ['Público', 'Privado', 'Misto'], required: true },
+    
+    // Localização
     provincia: { type: String, required: true },
-    endereco: String,
+    municipio: String,
+    endereco: { type: String, required: true },
+    
+    // Contactos
+    telefone: { type: String, required: true },
+    telefone2: String,
     email: { type: String, required: true },
-    telephone: String,
-    diretor: String,
+    website: String,
+    
+    // Responsáveis
+    diretor: { type: String, required: true },
+    responsavelTecnico: String,
+    
+    // Licenciamento
+    licenca: String,
+    validadeLicenca: Date,
+    
+    // Chave e status
     apiKey: { type: String, unique: true },
     ativo: { type: Boolean, default: true },
     totalEmissoes: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now }
 });
 
+// HOSPITAL
 const hospitalSchema = new mongoose.Schema({
     nome: { type: String, required: true },
     nif: { type: String, unique: true, required: true },
@@ -100,6 +122,7 @@ const hospitalSchema = new mongoose.Schema({
     ativo: { type: Boolean, default: true }
 });
 
+// EMPRESA
 const empresaSchema = new mongoose.Schema({
     nome: { type: String, required: true },
     nif: { type: String, unique: true, required: true },
@@ -111,7 +134,7 @@ const empresaSchema = new mongoose.Schema({
     ativo: { type: Boolean, default: true }
 });
 
-// SCHÉMA CERTIFICAT AMÉLIORÉ avec calculs automatiques
+// CERTIFICADO (com calculos automáticos)
 const certificateSchema = new mongoose.Schema({
     numero: { type: String, unique: true },
     tipo: Number,
@@ -127,18 +150,20 @@ const certificateSchema = new mongoose.Schema({
         registro: String
     },
     dados: mongoose.Schema.Types.Mixed,
-    // Champs calculés automatiquement
+    
+    // Campos calculados automaticamente
     imc: Number,
     idade: Number,
     classificacaoIMC: String,
+    
     hash: { type: String, unique: true },
     emitidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab' },
     emitidoEm: { type: Date, default: Date.now }
 });
 
-// MIDDLEWARE DE CALCUL AUTOMATIQUE (s'exécute AVANT sauvegarde)
+// MIDDLEWARE DE CÁLCULO AUTOMÁTICO (executa ANTES de salvar)
 certificateSchema.pre('save', function(next) {
-    // Calculer l'âge à partir de la date de naissance
+    // Calcular idade a partir da data de nascimento
     if (this.paciente && this.paciente.dataNascimento) {
         const hoje = new Date();
         const nascimento = new Date(this.paciente.dataNascimento);
@@ -149,26 +174,25 @@ certificateSchema.pre('save', function(next) {
         }
         this.idade = idade;
     }
-    
-    // Calculer IMC si les données sont présentes
+
+    // Calcular IMC se os dados estiverem presentes
     if (this.dados && this.dados.peso && this.dados.altura) {
         const peso = parseFloat(this.dados.peso);
         const altura = parseFloat(this.dados.altura);
         if (peso && altura && altura > 0) {
             this.imc = parseFloat((peso / (altura * altura)).toFixed(2));
-            
-            // Classifier l'IMC
+
+            // Classificar IMC
             if (this.imc < 18.5) this.classificacaoIMC = "Abaixo do peso";
             else if (this.imc < 25) this.classificacaoIMC = "Peso normal";
             else if (this.imc < 30) this.classificacaoIMC = "Sobrepeso";
             else this.classificacaoIMC = "Obesidade";
         }
     }
-    
     next();
 });
 
-// MÉTHODE D'INSTANCE POUR PRÉPARER LES DONNÉES PDF
+// MÉTODO DE INSTÂNCIA PARA PREPARAR DADOS DO PDF
 certificateSchema.methods.prepararParaPDF = function() {
     return {
         numero: this.numero,
@@ -183,6 +207,7 @@ certificateSchema.methods.prepararParaPDF = function() {
     };
 };
 
+// CRIAÇÃO DOS MODELOS
 const User = mongoose.model('User', userSchema);
 const Lab = mongoose.model('Lab', labSchema);
 const Hospital = mongoose.model('Hospital', hospitalSchema);
