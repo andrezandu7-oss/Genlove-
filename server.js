@@ -731,23 +731,86 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         y += 50;
         
         // =========================================
-        // CÓDIGO DE VERIFICAÇÃO
         // =========================================
-        const hashVerificacao = crypto.createHash('sha256')
-            .update(numero + lab.apiKey)
-            .digest('hex')
-            .substring(0, 16)
-            .toUpperCase();
-        
-        doc.fontSize(8)
-            .fillColor('#666')
-            .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
-            .fontSize(10)
-            .fillColor('#006633')
-            .text(hashVerificacao, 50, y + 10)
-            .fontSize(7)
-            .fillColor('#999')
-            .text('Este código único verifica a autenticidade do certificado', 50, y + 25);
+// QR CODE DE VERIFICAÇÃO
+// =========================================
+try {
+    // Préparer les données pour le QR code
+    const dadosQR = {
+        numero: numero,
+        paciente: dados.paciente?.nomeCompleto || 'N/I',
+        bi: dados.paciente?.bi || 'N/I',
+        data: new Date(dados.emitidoEm).toLocaleDateString('pt-PT'),
+        laboratorio: lab.nome,
+        laborantin: dados.laborantin?.nome || 'N/I'
+    };
+    
+    // Convertir en JSON
+    const textoQR = JSON.stringify(dadosQR);
+    
+    // Générer le QR code en buffer
+    const qrBuffer = await QRCode.toBuffer(textoQR, {
+        errorCorrectionLevel: 'H',      // Haute correction d'erreurs
+        margin: 1,                       // Marge de 1 module
+        width: 120,                       // Largeur 120px
+        color: {
+            dark: '#006633',  // Vert SNS pour le QR code
+            light: '#FFFFFF'   // Blanc pour le fond
+        }
+    });
+    
+    // Position du QR code (à droite)
+    const qrX = doc.page.width - 160; // 160px depuis la droite
+    
+    // Afficher le QR code
+    doc.image(qrBuffer, qrX, y, { width: 120 });
+    
+    // Titre au-dessus du QR code
+    doc.fontSize(8)
+       .fillColor('#006633')
+       .text('SCANNEZ LE QR CODE', qrX, y - 15, { 
+           width: 120, 
+           align: 'center' 
+       });
+    
+    // Texte explicatif à gauche
+    doc.fontSize(8)
+       .fillColor('#666')
+       .text('Pour vérifier', 50, y + 20)
+       .text('l\'authenticité de', 50, y + 35)
+       .text('ce certificat', 50, y + 50);
+    
+    // Petit code de secours en dessous (optionnel)
+    const hashCurto = crypto.createHash('sha256')
+        .update(numero + lab.apiKey)
+        .digest('hex')
+        .substring(0, 8)
+        .toUpperCase();
+    
+    doc.fontSize(6)
+       .fillColor('#999')
+       .text(`Ref: ${hashCurto}`, 50, y + 75);
+    
+} catch (qrError) {
+    console.error('❌ Erreur génération QR code:', qrError);
+    
+    // Fallback: afficher un code en texte si le QR échoue
+    const hashFallback = crypto.createHash('sha256')
+        .update(numero + lab.apiKey)
+        .digest('hex')
+        .substring(0, 16)
+        .toUpperCase();
+    
+    doc.fontSize(8)
+       .fillColor('#666')
+       .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
+       .fontSize(10)
+       .fillColor('#006633')
+       .text(hashFallback, 50, y + 10)
+       .fontSize(7)
+       .fillColor('#999')
+       .text('Este código único verifica a autenticidade', 50, y + 25);
+}
         
         // =========================================
         // RODAPÉ
