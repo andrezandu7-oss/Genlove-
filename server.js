@@ -709,7 +709,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         // =========================================
 // ASSINATURAS
 // =========================================
-// Linha para assinatura do laborantin (gauche)
+// Linha para assinatura do laborantin (esquerda)
 doc.lineWidth(1)
     .moveTo(70, y)
     .lineTo(270, y)
@@ -719,7 +719,7 @@ doc.fontSize(10)
     .text('Assinatura do Laborantin', 70, y + 5)
     .text(dados.laborantin?.nome || '___________________', 70, y + 20);
 
-// Linha para assinatura do diretor (droite)
+// Linha para assinatura do diretor (direita)
 doc.lineWidth(1)
     .moveTo(350, y)
     .lineTo(550, y)
@@ -730,18 +730,20 @@ doc.fontSize(10)
     .text(lab.diretor || '___________________', 350, y + 20);
 
 // =========================================
-// QR CODE CENTRÉ ENTRE LES SIGNATURES
+// QR CODE (CENTRADO)
 // =========================================
 try {
-    // Données pour le QR code (version simplifiée)
-    const textoQR = JSON.stringify({
+    // Preparar dados para o QR code
+    const dadosQR = {
         cert: numero,
         lab: lab.nome,
-        pac: dados.paciente?.nomeCompleto || '',
+        paciente: dados.paciente?.nomeCompleto || '',
         data: new Date(dados.emitidoEm).toLocaleDateString('pt-PT')
-    });
+    };
     
-    // Générer le QR code
+    const textoQR = JSON.stringify(dadosQR);
+    
+    // Gerar QR code
     const qrBuffer = QRCode.toBuffer(textoQR, {
         errorCorrectionLevel: 'H',
         margin: 1,
@@ -749,39 +751,39 @@ try {
         color: { dark: '#006633', light: '#FFFFFF' }
     });
     
-    // Position centrée (entre 70 et 550 = milieu à 310)
-    const qrX = 310 - 50; // 310 (milieu) - 50 (moitié du QR)
-    const qrY = y - 35;   // Au-dessus des signatures
+    // Posição centralizada (entre 70 e 550)
+    const qrX = 310 - 50; // Centro (310) - metade do QR (50)
+    const qrY = y - 30;   // Acima das assinaturas
     
-    // Afficher le QR code
+    // Inserir QR code
     doc.image(qrBuffer, qrX, qrY, { width: 100 });
     
-    // Texte au-dessus du QR
+    // Texto acima do QR
     doc.fontSize(7)
        .fillColor('#006633')
-       .text('SCANNEZ POUR VÉRIFIER', qrX, qrY - 12, { 
+       .text('SCAN PARA VERIFICAR', qrX, qrY - 12, { 
            width: 100, 
            align: 'center' 
        });
     
-    // Petit code en dessous (optionnel)
+    // Código de verificação curto (opcional)
     const hashCurto = crypto.createHash('sha256')
         .update(numero + lab.apiKey)
         .digest('hex')
         .substring(0, 4)
         .toUpperCase();
     
-    doc.fontSize(5)
+    doc.fontSize(6)
        .fillColor('#999')
-       .text(hashCurto, qrX, qrY + 105, { 
+       .text(`Ref: ${hashCurto}`, qrX, qrY + 110, { 
            width: 100, 
            align: 'center' 
        });
     
 } catch (qrError) {
-    console.error('❌ Erreur QR:', qrError);
+    console.error('❌ Erro ao gerar QR code:', qrError);
     
-    // Fallback: code texte centré
+    // Fallback: código textual centralizado
     const hashFallback = crypto.createHash('sha256')
         .update(numero + lab.apiKey)
         .digest('hex')
@@ -790,23 +792,22 @@ try {
     
     doc.fontSize(8)
        .fillColor('#666')
-       .text('CÓDIGO DE VERIFICAÇÃO:', 240, y - 25)
+       .text('CÓDIGO DE VERIFICAÇÃO:', 250, y - 25)
        .fontSize(12)
        .fillColor('#006633')
-       .text(hashFallback, 260, y - 10);
+       .text(hashFallback, 270, y - 10);
 }
 
-y += 80; // Espace après les signatures et QR
+y += 70; // Espaço após QR e assinaturas
 
 // =========================================
-// RODAPÉ (centré)
+// RODAPÉ (centralizado)
 // =========================================
 doc.fontSize(8)
    .fillColor('#666')
    .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
 
 doc.end();
-
 // =============================================
 // FORMULÁRIO NOVO
 // =============================================
