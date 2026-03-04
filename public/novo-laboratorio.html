@@ -244,9 +244,9 @@
                 <label for="tipo">Tipo *</label>
                 <select id="tipo" required>
                     <option value="">Selecione...</option>
-                    <option value="publico">Público</option>
-                    <option value="privado">Privado</option>
-                    <option value="misto">Misto</option>
+                    <option value="Público">Público</option>
+                    <option value="Privado">Privado</option>
+                    <option value="Misto">Misto</option>
                 </select>
             </div>
         </div>
@@ -381,6 +381,7 @@
         function validarDados(dados) {
             if (!dados.nome) return 'Nome é obrigatório';
             if (!dados.nif || !/^\d{10}$/.test(dados.nif)) return 'NIF inválido (10 dígitos)';
+            if (!dados.tipo) return 'Tipo é obrigatório';
             if (!dados.provincia) return 'Província é obrigatória';
             if (!dados.endereco) return 'Endereço é obrigatório';
             if (!dados.telefone) return 'Telefone é obrigatório';
@@ -400,22 +401,25 @@
             dadosAtuais = dados;
             
             let html = '<table class="review-table">';
-            html += '<tr><th colspan="3">Informações Básicas</th></tr>';
-            html += '<tr><td><strong>Nome:</strong> ' + dados.nome + '</td><td><strong>NIF:</strong> ' + dados.nif + '</td><td><strong>Tipo:</strong> ' + dados.tipo + '</td></tr>';
             
-            html += '<tr><th colspan="3">Localização</th></tr>';
-            html += '<tr><td><strong>Província:</strong> ' + dados.provincia + '</td><td><strong>Município:</strong> ' + (dados.municipio || '-') + '</td><td></td></tr>';
-            html += '<tr><td colspan="3"><strong>Endereço:</strong> ' + dados.endereco + '</td></tr>';
+            html += '<tr><th colspan="2">Informações Básicas</th></tr>';
+            html += '<tr><td><strong>Nome:</strong> ' + dados.nome + '</td><td><strong>NIF:</strong> ' + dados.nif + '</td></tr>';
+            html += '<tr><td colspan="2"><strong>Tipo:</strong> ' + dados.tipo + '</td></tr>';
             
-            html += '<tr><th colspan="3">Contactos</th></tr>';
-            html += '<tr><td><strong>Telefone:</strong> ' + dados.telefone + '</td><td><strong>Telefone 2:</strong> ' + (dados.telefone2 || '-') + '</td><td></td></tr>';
-            html += '<tr><td><strong>Email:</strong> ' + dados.email + '</td><td><strong>Website:</strong> ' + (dados.website || '-') + '</td><td></td></tr>';
+            html += '<tr><th colspan="2">Localização</th></tr>';
+            html += '<tr><td><strong>Província:</strong> ' + dados.provincia + '</td><td><strong>Município:</strong> ' + (dados.municipio || '-') + '</td></tr>';
+            html += '<tr><td colspan="2"><strong>Endereço:</strong> ' + dados.endereco + '</td></tr>';
             
-            html += '<tr><th colspan="3">Responsáveis</th></tr>';
-            html += '<tr><td><strong>Diretor:</strong> ' + dados.diretor + '</td><td><strong>Resp. Técnico:</strong> ' + (dados.responsavelTecnico || '-') + '</td><td></td></tr>';
+            html += '<tr><th colspan="2">Contactos</th></tr>';
+            html += '<tr><td><strong>Telefone:</strong> ' + dados.telefone + '</td><td><strong>Telefone 2:</strong> ' + (dados.telefone2 || '-') + '</td></tr>';
+            html += '<tr><td><strong>Email:</strong> ' + dados.email + '</td><td><strong>Website:</strong> ' + (dados.website || '-') + '</td></tr>';
             
-            html += '<tr><th colspan="3">Licenciamento</th></tr>';
-            html += '<tr><td><strong>Licença:</strong> ' + (dados.licenca || '-') + '</td><td><strong>Validade:</strong> ' + (dados.validadeLicenca || '-') + '</td><td></td></tr>';
+            html += '<tr><th colspan="2">Responsáveis</th></tr>';
+            html += '<tr><td><strong>Diretor:</strong> ' + dados.diretor + '</td><td><strong>Resp. Técnico:</strong> ' + (dados.responsavelTecnico || '-') + '</td></tr>';
+            
+            html += '<tr><th colspan="2">Licenciamento</th></tr>';
+            html += '<tr><td><strong>Licença:</strong> ' + (dados.licenca || '-') + '</td><td><strong>Validade:</strong> ' + (dados.validadeLicenca || '-') + '</td></tr>';
+            
             html += '</table>';
             
             document.getElementById('conteudoRevisao').innerHTML = html;
@@ -428,7 +432,11 @@
         
         function editarSecao(secao) {
             document.getElementById('modalRevisao').style.display = 'none';
-            // Implementar edição se necessário
+            if (secao === 'basica') document.getElementById('sectionBasica').scrollIntoView({ behavior: 'smooth' });
+            if (secao === 'localizacao') document.getElementById('sectionLocalizacao').scrollIntoView({ behavior: 'smooth' });
+            if (secao === 'contactos') document.getElementById('sectionContactos').scrollIntoView({ behavior: 'smooth' });
+            if (secao === 'responsaveis') document.getElementById('sectionResponsaveis').scrollIntoView({ behavior: 'smooth' });
+            if (secao === 'licenca') document.getElementById('sectionLicenca').scrollIntoView({ behavior: 'smooth' });
         }
         
         async function emitirLaboratorio() {
@@ -481,9 +489,33 @@
         }
         
         function gerarPDF(labId, apiKey) {
-            // Chamar API para gerar PDF com a chave
-            console.log('Laboratório criado:', labId, 'API Key:', apiKey);
-            // Implementar geração de PDF
+            fetch('/api/labs/pdf', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    labId: labId,
+                    apiKey: apiKey,
+                    dados: dadosAtuais
+                })
+            })
+            .then(function(response) { return response.blob(); })
+            .then(function(blob) {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'laboratorio-' + labId + '.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(function(error) {
+                console.error('Erro PDF:', error);
+                alert('Erro ao gerar PDF');
+            });
         }
     </script>
 </body>
