@@ -478,25 +478,25 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
 
         // Première ligne - centrée
         doc.fontSize(20)
-           .text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+            .text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
 
         // Deuxième ligne - centrée
         doc.fontSize(16)
-           .text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+            .text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
 
         // Troisième ligne - centrée et plus grande
         doc.fontSize(24)
-           .text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
+            .text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
 
         // Ligne de séparation centrée
         doc.strokeColor('#006633')
-           .lineWidth(2)
-           .moveTo(doc.page.width / 2 - 250, 150)
-           .lineTo(doc.page.width / 2 + 250, 150)
-           .stroke();
+            .lineWidth(2)
+            .moveTo(doc.page.width / 2 - 250, 150)
+            .lineTo(doc.page.width / 2 + 250, 150)
+            .stroke();
 
         let y = 180;
-        
+
         // =========================================
         // LABORATÓRIO EMISSOR
         // =========================================
@@ -510,7 +510,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telephone || 'Não informado'}`, 50, y + 35);
 
         y += 60;
-        
+
         // =========================================
         // NUMÉRO DO CERTIFICADO
         // =========================================
@@ -523,34 +523,34 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, y + 15);
 
         y += 40;
-        
+
         // =========================================
         // RESPONSÁVEL PELA EMISSÃO (LABORANTIN)
         // =========================================
         doc.fillColor('#006633')
             .fontSize(12)
             .text('RESPONSÁVEL PELA EMISSÃO:', 50, y);
-        
+
         y += 20;
         doc.fillColor('#000')
             .fontSize(11)
             .text(`Nome: ${dados.laborantin?.nome || 'Não informado'}`, 70, y);
         y += 15;
-        
+
         if (dados.laborantin?.registro) {
             doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
             y += 25;
         } else {
             y += 10;
         }
-        
+
         // =========================================
         // DADOS DO PACIENTE
         // =========================================
         doc.fillColor('#006633')
             .fontSize(12)
             .text('DADOS DO PACIENTE:', 50, y);
-        
+
         y += 20;
         doc.fillColor('#000')
             .fontSize(11)
@@ -558,37 +558,37 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         y += 15;
         doc.text(`BI: ${dados.paciente?.bi || 'Não informado'}`, 70, y);
         y += 15;
-        
+
         if (dados.paciente?.dataNascimento) {
             doc.text(`Data Nascimento: ${new Date(dados.paciente.dataNascimento).toLocaleDateString('pt-PT')}`, 70, y);
             y += 15;
         }
-        
+
         if (dados.idade) {
             doc.text(`Idade: ${dados.idade} anos`, 70, y);
             y += 15;
         }
-        
+
         if (dados.paciente?.genero) {
             const genero = dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino';
             doc.text(`Género: ${genero}`, 70, y);
             y += 15;
         }
-        
+
         if (dados.paciente?.telefone) {
             doc.text(`Telefone: ${dados.paciente.telefone}`, 70, y);
             y += 20;
         }
-        
+
         // =========================================
         // DADOS MÉDICOS (AVEC "NÃO SOLICITADO")
         // =========================================
         doc.fillColor('#006633')
             .fontSize(12)
             .text('DADOS MÉDICOS:', 50, y);
-        
+
         y += 20;
-        
+
         // Titre du type de certificat
         const tipos = {
             1: 'CERTIFICADO DE GENÓTIPO',
@@ -600,13 +600,13 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             7: 'CERTIFICADO EPIDEMIOLÓGICO',
             8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
         };
-        
+
         doc.fillColor('#333')
             .fontSize(12)
             .text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
-        
+
         y += 25;
-        
+
         if (dados.dados) {
             // Liste de tous les examens possibles pour ce type de certificat
             const todosExames = {
@@ -619,12 +619,12 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
                 7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos'],
                 8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais', 'recomendacoes']
             };
-            
+
             const examesTipo = todosExames[dados.tipo] || [];
-            
+
             // Préparer tous les examens avec leur statut
             const todosExamesFormatados = [];
-            
+
             for (let i = 0; i < examesTipo.length; i++) {
                 const exame = examesTipo[i];
                 
@@ -649,7 +649,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
                     });
                 }
             }
-            
+
             // Afficher tous les examens en 2 colonnes
             if (todosExamesFormatados.length > 0) {
                 const metade = Math.ceil(todosExamesFormatados.length / 2);
@@ -697,17 +697,15 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
                 y = (yCol1 > yCol2 ? yCol1 : yCol2) + 10;
             }
         }
-        
+
         if (dados.imc) {
             doc.fontSize(11)
                 .fillColor('#000')
                 .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
             y += 25;
         }
-        
+
         // =========================================
-                // =========================================
-               // =========================================
         // ASSINATURAS
         // =========================================
         // Linha para assinatura do laborantin
@@ -715,23 +713,23 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             .moveTo(70, y)
             .lineTo(270, y)
             .stroke();
-        
+
         doc.fontSize(10)
             .text('Assinatura do Laborantin', 70, y + 5)
             .text(dados.laborantin?.nome || '___________________', 70, y + 20);
-        
+
         // Linha para assinatura do diretor
         doc.lineWidth(1)
             .moveTo(350, y)
             .lineTo(550, y)
             .stroke();
-        
+
         doc.fontSize(10)
             .text('Assinatura do Diretor Clínico', 350, y + 5)
             .text(lab.diretor || '___________________', 350, y + 20);
-        
+
         y += 50;
-        
+
         // =========================================
         // QR CODE DE VERIFICAÇÃO (CENTRADO COM AWAIT)
         // =========================================
@@ -739,7 +737,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             // Données simplifiées pour le QR code
             const textoQR = `${numero}|${lab.nome}|${dados.paciente?.nomeCompleto || 'PACIENTE'}|${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`;
             
-            // 👇 ATTENDRE que le QR soit généré (CRITIQUE)
+            // ATTENDRE que le QR soit généré
             const qrBuffer = await QRCode.toBuffer(textoQR, {
                 errorCorrectionLevel: 'H',
                 margin: 1,
@@ -749,7 +747,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             
             // Position CENTRÉE (entre les deux signatures)
             const qrX = 310 - 50; // Centre (310) - moitié du QR (50)
-            const qrY = y - 20;   // Position verticale
+            const qrY = y - 30;   // Position verticale
             
             // Afficher le QR code
             doc.image(qrBuffer, qrX, qrY, { width: 100 });
@@ -775,21 +773,32 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         } catch (qrError) {
             console.error('❌ Erro ao gerar QR:', qrError);
             
-            // Fallback mínimo (apenas uma mensagem discreta)
-            doc.fontSize(7)
-               .fillColor('#999')
-               .text('QR indisponível', 280, y - 10);
+            // Fallback: código textual
+            const hashFallback = crypto.createHash('sha256')
+                .update(numero + lab.apiKey)
+                .digest('hex')
+                .substring(0, 8)
+                .toUpperCase();
+            
+            doc.fontSize(8)
+               .fillColor('#666')
+               .text('Código:', 280, y - 20)
+               .fontSize(12)
+               .fillColor('#006633')
+               .text(hashFallback, 260, y - 5, { align: 'center' });
         }
-        
+
+        y += 70;
+
         // =========================================
         // RODAPÉ
         // =========================================
         doc.fontSize(8)
-            .fillColor('#666')
-            .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
-        
+           .fillColor('#666')
+           .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
+
         doc.end();
-        
+
     } catch (error) {
         console.error('❌ Erreur PDF:', error);
         res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
