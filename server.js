@@ -284,7 +284,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO LABORATORIO (SANS STATISTIQUES)
+// DASHBOARD DO LABORATORIO (SIMPLIFICADO)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -329,15 +329,11 @@ app.get('/lab-dashboard', (req, res) => {
             background:#006633;
             color:white;
             border:none;
-            padding:10px 20px;
+            padding:8px 15px;
             cursor:pointer;
             border-radius:5px;
         }
-        .btn-sm {
-            padding:5px 10px;
-            font-size:12px;
-            margin:0 2px;
-        }
+        .btn-sm { padding:5px 10px; font-size:12px; }
         .btn-danger { background:#dc3545; }
         table {
             width:100%;
@@ -356,7 +352,6 @@ app.get('/lab-dashboard', (req, res) => {
             border-bottom:1px solid #ddd;
         }
         .acoes { display:flex; gap:5px; }
-        th:last-child, td:last-child { text-align:center; }
         .header {
             display:flex;
             justify-content:space-between;
@@ -377,7 +372,7 @@ app.get('/lab-dashboard', (req, res) => {
         
         <div class="header">
             <h2>📋 Meus Certificados</h2>
-            <button class="btn" onclick="window.location.href='/novo-certificado'">➕ Novo Certificado</button>
+            <button class="btn" onclick="window.location.href='/novo-certificado'">➕ Novo</button>
         </div>
         
         <table>
@@ -411,20 +406,20 @@ app.get('/lab-dashboard', (req, res) => {
                 
                 let html = "";
                 if (lista.length === 0) {
-                    html = '<tr><td colspan="5" style="text-align:center;">Nenhum certificado encontrado</td></tr>';
+                    html = '<tr><td colspan="5" style="text-align:center;">Nenhum certificado</td></tr>';
                 } else {
                     for (let i = 0; i < lista.length; i++) {
                         const c = lista[i];
-                        const dataEmissao = new Date(c.emitidoEm).toLocaleDateString();
+                        const data = new Date(c.emitidoEm).toLocaleDateString();
                         html += "<tr>";
-                        html += "<td><strong>" + c.numero + "</strong></td>";
-                        html += "<td>" + (tipos[c.tipo] || "Desconhecido") + "</td>";
-                        html += "<td>" + (c.paciente?.nomeCompleto || "N/I") + "</td>";
-                        html += "<td>" + dataEmissao + "</td>";
+                        html += "<td>" + c.numero + "</td>";
+                        html += "<td>" + (tipos[c.tipo] || "") + "</td>";
+                        html += "<td>" + (c.paciente?.nomeCompleto || "") + "</td>";
+                        html += "<td>" + data + "</td>";
                         html += "<td class='acoes'>";
-                        html += "<button class='btn btn-sm' onclick='visualizarPDF(\"" + c.numero + "\")' title='Visualizar'>👁️</button>";
-                        html += "<button class='btn btn-sm' onclick='imprimirPDF(\"" + c.numero + "\")' title='Imprimir'>🖨️</button>";
-                        html += "<button class='btn btn-sm' onclick='baixarPDF(\"" + c.numero + "\")' title='Baixar'>📥</button>";
+                        html += "<button class='btn btn-sm' onclick='visualizarPDF(\"" + c.numero + "\")'>👁️</button>";
+                        html += "<button class='btn btn-sm' onclick='imprimirPDF(\"" + c.numero + "\")'>🖨️</button>";
+                        html += "<button class='btn btn-sm' onclick='baixarPDF(\"" + c.numero + "\")'>📥</button>";
                         html += "</td>";
                         html += "</tr>";
                     }
@@ -433,7 +428,6 @@ app.get('/lab-dashboard', (req, res) => {
                 
             } catch (e) {
                 console.error(e);
-                document.getElementById("tabela").innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Erro ao carregar</td></tr>';
             }
         }
 
@@ -442,47 +436,29 @@ app.get('/lab-dashboard', (req, res) => {
                 const response = await fetch('/api/certificados/pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-api-key': key },
-                    body: JSON.stringify({ numero: numero })
+                    body: JSON.stringify({ numero })
                 });
-                if (!response.ok) throw new Error('Erro ao gerar PDF');
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
-                if (acao === 'visualizar') {
-                    window.open(url, '_blank');
-                } else if (acao === 'baixar') {
+                if (acao === 'ver') window.open(url, '_blank');
+                if (acao === 'baixar') {
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = 'certificado-' + numero + '.pdf';
-                    document.body.appendChild(a);
                     a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                } else if (acao === 'imprimir') {
-                    const printWindow = window.open(url, '_blank');
-                    if (printWindow) {
-                        printWindow.onload = function() { printWindow.print(); };
-                    } else {
-                        alert('Pop-up bloqueado. Permita pop-ups para este site.');
-                    }
+                }
+                if (acao === 'imprimir') {
+                    const win = window.open(url, '_blank');
+                    win.onload = () => win.print();
                 }
             } catch (error) {
-                console.error('Erro PDF:', error);
-                alert('Erro ao gerar o PDF.');
+                alert('Erro ao gerar PDF');
             }
         }
 
-        function visualizarPDF(numero) { fetchPDF(numero, 'visualizar'); }
-        function baixarPDF(numero) { fetchPDF(numero, 'baixar'); }
-        function imprimirPDF(numero) { fetchPDF(numero, 'imprimir'); }
-
-        window.addEventListener('keydown', function(e) {
-            const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
-            if (!isInput && (e.ctrlKey || e.metaKey) && e.key === 'p') {
-                e.preventDefault();
-                alert('📌 Para imprimir, use o botão 🖨️ na lista.');
-                return false;
-            }
-        });
+        function visualizarPDF(n) { fetchPDF(n, 'ver'); }
+        function baixarPDF(n) { fetchPDF(n, 'baixar'); }
+        function imprimirPDF(n) { fetchPDF(n, 'imprimir'); }
 
         function logout() {
             localStorage.removeItem("labKey");
