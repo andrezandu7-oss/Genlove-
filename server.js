@@ -12,6 +12,7 @@ const cors = require('cors');
 const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
 const path = require('path');
+const QRCode = require('qrcode');
 require('dotenv').config();
 
 const app = express();
