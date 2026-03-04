@@ -284,7 +284,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO LABORATORIO (ORDRE CORRIGÉ)
+// DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -311,8 +311,9 @@ app.get('/lab-dashboard', (req, res) => {
             padding-bottom:10px;
             border-bottom:1px solid #4d8c5c;
         }
-        .sidebar a, .sidebar .novo-link {
+        .sidebar button, .sidebar .nav-link {
             display:block;
+            width:100%;
             color:white;
             text-decoration:none;
             padding:12px;
@@ -321,21 +322,22 @@ app.get('/lab-dashboard', (req, res) => {
             cursor:pointer;
             text-align:center;
             font-size:16px;
+            border:none;
+            background:none;
         }
-        .sidebar a:hover { background:#004d26; }
-        .sidebar .novo-link {
+        .sidebar .nav-link:hover { background:#004d26; }
+        .sidebar .novo-btn {
             background:#ffa500;
             color:#006633;
             font-weight:bold;
-            margin-top:10px;
-            margin-bottom:10px;
+            margin:15px 0;
         }
-        .sidebar .novo-link:hover { background:#ff8c00; }
-        .sidebar button {
+        .sidebar .novo-btn:hover { background:#ff8c00; }
+        .sidebar .sair-btn {
+            background:#dc3545;
             margin-top:auto;
-            width:100%;
-            padding:12px;
         }
+        .sidebar .sair-btn:hover { background:#c82333; }
         .main {
             margin-left:270px;
             padding:30px;
@@ -356,8 +358,6 @@ app.get('/lab-dashboard', (req, res) => {
             border-radius:5px;
         }
         .btn-sm { padding:5px 10px; font-size:12px; }
-        .btn-danger { background:#dc3545; }
-        .btn-danger:hover { background:#c82333; }
         table {
             width:100%;
             background:white;
@@ -383,29 +383,44 @@ app.get('/lab-dashboard', (req, res) => {
             align-items:center;
             margin-bottom:20px;
         }
+        #dashboardSection, #certificadosSection {
+            display:none;
+        }
+        #dashboardSection.active, #certificadosSection.active {
+            display:block;
+        }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>SNS - Lab</h2>
         
-        <!-- ORDRE DEMANDÉ : -->
-        <!-- 1. Dashboard -->
-        <a onclick="window.location.href='/lab-dashboard'">📊 Dashboard</a>
+        <!-- 1. BOUTON DASHBOARD -->
+        <button class="nav-link" onclick="mostrarDashboard()">📊 Dashboard</button>
         
-        <!-- 2. Histórico / Certificados -->
-        <a onclick="mostrarCertificados()">📋 Histórico de Certificados</a>
+        <!-- 2. BOUTON HISTÓRICO -->
+        <button class="nav-link" onclick="mostrarHistorico()">📋 Histórico de Certificados</button>
         
-        <!-- 3. +Novo Certificado (en évidence) -->
-        <a onclick="window.location.href='/novo-certificado'" class="novo-link">➕ NOVO CERTIFICADO</a>
+        <!-- 3. BOUTON NOVO CERTIFICADO -->
+        <button class="novo-btn" onclick="novoCertificado()">➕ NOVO CERTIFICADO</button>
         
-        <!-- 4. Sair (en bas) -->
-        <button onclick="logout()" class="btn btn-danger">🚪 Sair</button>
+        <!-- 4. BOUTON SAIR -->
+        <button class="sair-btn" onclick="logout()">🚪 Sair</button>
     </div>
     
     <div class="main">
         <div id="welcome" class="welcome">Carregando...</div>
         
+        <!-- SECTION DASHBOARD -->
+        <div id="dashboardSection">
+            <h2>📊 Dashboard</h2>
+            <div style="background:white; padding:30px; text-align:center; border-radius:10px;">
+                <p style="font-size:18px; color:#666;">Bem-vindo ao Sistema Nacional de Saúde</p>
+                <p style="margin-top:20px;">Use o menu ao lado para navegar</p>
+            </div>
+        </div>
+        
+        <!-- SECTION HISTÓRICO -->
         <div id="certificadosSection">
             <div class="header">
                 <h2>📋 Histórico de Certificados</h2>
@@ -434,10 +449,37 @@ app.get('/lab-dashboard', (req, res) => {
 
         const tipos = ["", "GENÓTIPO", "BOA SAÚDE", "INCAPACIDADE", "APTIDÃO", "SAÚDE MATERNA", "PRÉ-NATAL", "EPIDEMIOLÓGICO", "CSD"];
 
-        function mostrarCertificados() {
-            carregarCertificados();
+        // =========================================
+        // FUNÇÕES DOS BOTÕES
+        // =========================================
+        
+        // 1. Dashboard
+        function mostrarDashboard() {
+            document.getElementById('dashboardSection').classList.add('active');
+            document.getElementById('certificadosSection').classList.remove('active');
+        }
+        
+        // 2. Histórico
+        function mostrarHistorico() {
+            document.getElementById('dashboardSection').classList.remove('active');
+            document.getElementById('certificadosSection').classList.add('active');
+            carregarCertificados(); // Carrega os certificados ao entrar
+        }
+        
+        // 3. Novo Certificado
+        function novoCertificado() {
+            window.location.href = '/novo-certificado';
+        }
+        
+        // 4. Sair
+        function logout() {
+            localStorage.removeItem("labKey");
+            window.location.href = "/";
         }
 
+        // =========================================
+        // CARREGAR DADOS
+        // =========================================
         async function carregarDados() {
             try {
                 const rMe = await fetch("/api/labs/me", { 
@@ -445,7 +487,10 @@ app.get('/lab-dashboard', (req, res) => {
                 });
                 const dMe = await rMe.json();
                 document.getElementById("welcome").innerHTML = "<h2>👋 Bem-vindo, " + dMe.nome + "</h2>";
-                await carregarCertificados();
+                
+                // Mostrar dashboard por padrão
+                mostrarDashboard();
+                
             } catch (e) {
                 console.error('Erro:', e);
             }
@@ -487,6 +532,9 @@ app.get('/lab-dashboard', (req, res) => {
             }
         }
 
+        // =========================================
+        // FUNÇÕES PDF
+        // =========================================
         async function fetchPDF(numero, acao) {
             try {
                 const response = await fetch('/api/certificados/pdf', {
@@ -531,11 +579,6 @@ app.get('/lab-dashboard', (req, res) => {
         function baixarPDF(numero) { fetchPDF(numero, 'baixar'); }
         function imprimirPDF(numero) { fetchPDF(numero, 'imprimir'); }
 
-        function logout() {
-            localStorage.removeItem("labKey");
-            window.location.href = "/";
-        }
-
         // Bloquear Ctrl+P
         window.addEventListener('keydown', function(e) {
             const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
@@ -546,12 +589,12 @@ app.get('/lab-dashboard', (req, res) => {
             }
         });
 
+        // Iniciar
         carregarDados();
     </script>
 </body>
 </html>`);
 });
-
 // ==============================================
 // ROTAS DA API
 // ==============================================
