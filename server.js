@@ -706,6 +706,7 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         }
         
         // =========================================
+                // =========================================
         // ASSINATURAS
         // =========================================
         // Linha para assinatura do laborantin
@@ -731,23 +732,70 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         y += 50;
         
         // =========================================
-        // CÓDIGO DE VERIFICAÇÃO
+        // QR CODE DE VERIFICAÇÃO (CENTRADO)
         // =========================================
-        const hashVerificacao = crypto.createHash('sha256')
-            .update(numero + lab.apiKey)
-            .digest('hex')
-            .substring(0, 16)
-            .toUpperCase();
-        
-        doc.fontSize(8)
-            .fillColor('#666')
-            .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
-            .fontSize(10)
-            .fillColor('#006633')
-            .text(hashVerificacao, 50, y + 10)
-            .fontSize(7)
-            .fillColor('#999')
-            .text('Este código único verifica a autenticidade do certificado', 50, y + 25);
+        try {
+            // Données simplifiées pour le QR code
+            const textoQR = `${numero}|${lab.nome}|${dados.paciente?.nomeCompleto || ''}|${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`;
+            
+            // Générer le QR code
+            const qrBuffer = QRCode.toBuffer(textoQR, {
+                errorCorrectionLevel: 'H',
+                margin: 1,
+                width: 100,
+                color: { dark: '#006633', light: '#FFFFFF' }
+            });
+            
+            // Position CENTRÉE (entre les deux signatures)
+            // Signature gauche: 70, Signature droite: 550, Centre = 310
+            const qrX = 310 - 50; // Centre moins la moitié du QR (100/2 = 50)
+            const qrY = y - 25;   // Légèrement au-dessus du texte "CÓDIGO DE VERIFICAÇÃO"
+            
+            // Afficher le QR code
+            doc.image(qrBuffer, qrX, qrY, { width: 100 });
+            
+            // Texte "SCAN" au-dessus du QR
+            doc.fontSize(7)
+               .fillColor('#006633')
+               .text('SCAN PARA VERIFICAR', qrX, qrY - 12, { 
+                   width: 100, 
+                   align: 'center' 
+               });
+            
+            // Petit code de secours en dessous
+            const hashCurto = crypto.createHash('sha256')
+                .update(numero + lab.apiKey)
+                .digest('hex')
+                .substring(0, 4)
+                .toUpperCase();
+            
+            doc.fontSize(6)
+               .fillColor('#999')
+               .text(`Ref: ${hashCurto}`, qrX, qrY + 110, { 
+                   width: 100, 
+                   align: 'center' 
+               });
+            
+        } catch (qrError) {
+            console.error('❌ Erreur QR:', qrError);
+            
+            // Fallback: afficher un code texte centré
+            const hashFallback = crypto.createHash('sha256')
+                .update(numero + lab.apiKey)
+                .digest('hex')
+                .substring(0, 16)
+                .toUpperCase();
+            
+            doc.fontSize(8)
+                .fillColor('#666')
+                .text('CÓDIGO DE VERIFICAÇÃO:', 220, y - 15)
+                .fontSize(10)
+                .fillColor('#006633')
+                .text(hashFallback, 230, y, { align: 'center' })
+                .fontSize(7)
+                .fillColor('#999')
+                .text('Use este código para verificar', 220, y + 15);
+        }
         
         // =========================================
         // RODAPÉ
@@ -763,7 +811,6 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
     }
 });
-
 // =============================================
 // FORMULÁRIO NOVO
 // =============================================
