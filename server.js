@@ -707,111 +707,77 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
         }
         
         // =========================================
-        // ASSINATURAS
-        // =========================================
-        // Linha para assinatura do laborantin
-        doc.lineWidth(1)
-            .moveTo(70, y)
-            .lineTo(270, y)
-            .stroke();
-        
-        doc.fontSize(10)
-            .text('Assinatura do Laborantin', 70, y + 5)
-            .text(dados.laborantin?.nome || '___________________', 70, y + 20);
-        
-        // Linha para assinatura do diretor
-        doc.lineWidth(1)
-            .moveTo(350, y)
-            .lineTo(550, y)
-            .stroke();
-        
-        doc.fontSize(10)
-            .text('Assinatura do Diretor Clínico', 350, y + 5)
-            .text(lab.diretor || '___________________', 350, y + 20);
-        
-        y += 50;
-        
-        // =========================================
-        // =========================================
-// QR CODE DE VERIFICAÇÃO
+// ASSINATURAS
+// =========================================
+// Linha para assinatura do laborantin (gauche)
+doc.lineWidth(1)
+    .moveTo(70, y)
+    .lineTo(270, y)
+    .stroke();
+
+doc.fontSize(10)
+    .text('Assinatura do Laborantin', 70, y + 5)
+    .text(dados.laborantin?.nome || '___________________', 70, y + 20);
+
+// Linha para assinatura do diretor (droite)
+doc.lineWidth(1)
+    .moveTo(350, y)
+    .lineTo(550, y)
+    .stroke();
+
+doc.fontSize(10)
+    .text('Assinatura do Diretor Clínico', 350, y + 5)
+    .text(lab.diretor || '___________________', 350, y + 20);
+
+// =========================================
+// QR CODE (CENTRÉ ENTRE LES DEUX SIGNATURES)
 // =========================================
 try {
-    // Préparer les données pour le QR code
-    const dadosQR = {
-        numero: numero,
-        paciente: dados.paciente?.nomeCompleto || 'N/I',
-        bi: dados.paciente?.bi || 'N/I',
-        data: new Date(dados.emitidoEm).toLocaleDateString('pt-PT'),
-        laboratorio: lab.nome,
-        laborantin: dados.laborantin?.nome || 'N/I'
-    };
+    // Données pour le QR code
+    const textoQR = `${numero}|${lab.nome}|${dados.paciente?.nomeCompleto || ''}|${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`;
     
-    // Convertir en JSON
-    const textoQR = JSON.stringify(dadosQR);
-    
-    // Générer le QR code en buffer
-    const qrBuffer = await QRCode.toBuffer(textoQR, {
-        errorCorrectionLevel: 'H',      // Haute correction d'erreurs
-        margin: 1,                       // Marge de 1 module
-        width: 120,                       // Largeur 120px
-        color: {
-            dark: '#006633',  // Vert SNS pour le QR code
-            light: '#FFFFFF'   // Blanc pour le fond
-        }
+    // Générer le QR code
+    const qrBuffer = QRCode.toBuffer(textoQR, {
+        errorCorrectionLevel: 'H',
+        margin: 1,
+        width: 100,
+        color: { dark: '#006633', light: '#FFFFFF' }
     });
     
-    // Position du QR code (à droite)
-    const qrX = doc.page.width - 160; // 160px depuis la droite
+    // Position CENTRÉE entre les deux signatures (310 = milieu de la page)
+    const qrX = 310 - 50; // Centre moins la moitié de la largeur du QR (100/2 = 50)
+    const qrY = y - 30;    // Légèrement au-dessus des signatures
     
     // Afficher le QR code
-    doc.image(qrBuffer, qrX, y, { width: 120 });
+    doc.image(qrBuffer, qrX, qrY, { width: 100 });
     
-    // Titre au-dessus du QR code
+    // Texte "SCAN" au-dessus du QR
     doc.fontSize(8)
        .fillColor('#006633')
-       .text('SCANNEZ LE QR CODE', qrX, y - 15, { 
-           width: 120, 
+       .text('SCANNEZ POUR VÉRIFIER', qrX, qrY - 15, { 
+           width: 100, 
            align: 'center' 
        });
     
-    // Texte explicatif à gauche
-    doc.fontSize(8)
-       .fillColor('#666')
-       .text('Pour vérifier', 50, y + 20)
-       .text('l\'authenticité de', 50, y + 35)
-       .text('ce certificat', 50, y + 50);
+} catch (qrError) {
+    console.error('❌ Erreur QR:', qrError);
     
-    // Petit code de secours en dessous (optionnel)
-    const hashCurto = crypto.createHash('sha256')
+    // Fallback: code texte centré
+    const hashFallback = crypto.createHash('sha256')
         .update(numero + lab.apiKey)
         .digest('hex')
         .substring(0, 8)
         .toUpperCase();
     
-    doc.fontSize(6)
-       .fillColor('#999')
-       .text(`Ref: ${hashCurto}`, 50, y + 75);
-    
-} catch (qrError) {
-    console.error('❌ Erreur génération QR code:', qrError);
-    
-    // Fallback: afficher un code en texte si le QR échoue
-    const hashFallback = crypto.createHash('sha256')
-        .update(numero + lab.apiKey)
-        .digest('hex')
-        .substring(0, 16)
-        .toUpperCase();
-    
     doc.fontSize(8)
        .fillColor('#666')
-       .text('CÓDIGO DE VERIFICAÇÃO:', 50, y)
+       .text('Código:', 285, y - 20)
        .fontSize(10)
        .fillColor('#006633')
-       .text(hashFallback, 50, y + 10)
-       .fontSize(7)
-       .fillColor('#999')
-       .text('Este código único verifica a autenticidade', 50, y + 25);
+       .text(hashFallback, 260, y - 5, { align: 'center' });
 }
+
+y += 50; // Espace après les signatures et QR
         
         // =========================================
         // RODAPÉ
