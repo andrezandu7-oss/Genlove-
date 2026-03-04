@@ -302,10 +302,419 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTERIO
+// DASHBOARD DO MINISTÉRIO (VERSÃO COMPLETA)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
-    res.send('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Admin - SNS</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}body{display:flex;background:#f5f5f5;}.sidebar{width:250px;background:#006633;color:white;height:100vh;padding:20px;position:fixed;}.sidebar a{display:block;color:white;text-decoration:none;padding:10px;margin:5px 0;border-radius:5px;cursor:pointer;}.sidebar a:hover{background:#004d26;}.main{margin-left:270px;padding:30px;width:100%;}.btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;}.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;}.modal-content{background:white;padding:20px;border-radius:10px;width:400px;}table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}th,td{padding:10px;border-bottom:1px solid #ddd;}</style></head><body><div class="sidebar"><h2>SNS-Admin</h2><a onclick="mostrar(\'dashboard\')">Dashboard</a><a onclick="mostrar(\'labs\')">Laboratórios</a><button onclick="logout()" class="btn" style="background:red;width:100%;margin-top:20px;">Sair</button></div><div class="main"><div id="dashboard"><h2>Painel de Controle</h2><p id="stats">Carregando estatisticas...</p></div><div id="labs" style="display:none;"><h2>Laboratórios <button class="btn" onclick="document.getElementById(\'modalLab\').style.display=\'flex\'">+ Novo</button></h2><table><thead><tr><th>Nome</th><th>NIF</th><th>Status</th><th>Ações</th></tr></thead><tbody id="labTable"></tbody></table></div></div><div id="modalLab" class="modal"><div class="modal-content"><h3>Novo Laboratório</h3><input id="lNome" style="width:100%;margin:5px 0;padding:8px;" placeholder="Nome"><input id="lNIF" style="width:100%;margin:5px 0;padding:8px;" placeholder="NIF"><input id="lProv" style="width:100%;margin:5px 0;padding:8px;" placeholder="Província"><input id="lEmail" style="width:100%;margin:5px 0;padding:8px;" placeholder="Email"><button class="btn" onclick="criarLab()">Criar</button><button class="btn" style="background:gray;" onclick="document.getElementById(\'modalLab\').style.display=\'none\'">Cancelar</button></div></div><script>const token=localStorage.getItem("token");if(!token)window.location.href="/ministerio";function mostrar(id){document.getElementById("dashboard").style.display=id==="dashboard"?"block":"none";document.getElementById("labs").style.display=id==="labs"?"block":"none";if(id==="labs")carregarLabs();}async function carregarLabs(){const r=await fetch("/api/labs",{headers:{"Authorization":"Bearer "+token}});const labs=await r.json();let html="";labs.forEach(l=>{html+=`<tr><td>${l.nome}</td><td>${l.nif}</td><td>${l.ativo?"Ativo":"Inativo"}</td><td><button onclick="ativar(\'${l._id}\',${l.ativo})">${l.ativo?"Desativar":"Ativar"}</button></td></tr>`;});document.getElementById("labTable").innerHTML=html;}async function criarLab(){const d={nome:document.getElementById("lNome").value,nif:document.getElementById("lNIF").value,provincia:document.getElementById("lProv").value,email:document.getElementById("lEmail").value,tipo:"laboratorio"};const r=await fetch("/api/labs",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(d)});const res=await r.json();if(res.success){alert("API Key: "+res.apiKey);location.reload();}}function logout(){localStorage.removeItem("token");location.href="/";}</script></body></html>');
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ministério da Saúde - SNS Angola</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',Arial,sans-serif; }
+        body { display:flex; background:#f5f5f5; }
+        .sidebar {
+            width:260px;
+            background:#006633;
+            color:white;
+            height:100vh;
+            padding:20px;
+            position:fixed;
+            display:flex;
+            flex-direction:column;
+            box-shadow:2px 0 10px rgba(0,0,0,0.1);
+        }
+        .sidebar h2 {
+            margin-bottom:30px;
+            text-align:center;
+            padding-bottom:15px;
+            border-bottom:1px solid rgba(255,255,255,0.2);
+            font-size:22px;
+        }
+        .sidebar button, .sidebar .nav-link {
+            display:block;
+            width:100%;
+            color:rgba(255,255,255,0.9);
+            text-decoration:none;
+            padding:14px;
+            margin:5px 0;
+            border-radius:8px;
+            cursor:pointer;
+            text-align:left;
+            font-size:15px;
+            border:none;
+            background:none;
+            transition:0.3s;
+        }
+        .sidebar button:hover {
+            background:rgba(255,255,255,0.1);
+            color:white;
+        }
+        .sidebar .novo-btn {
+            background:#ffa500;
+            color:#00331a;
+            font-weight:bold;
+            margin:20px 0;
+            text-align:center;
+        }
+        .sidebar .novo-btn:hover {
+            background:#ffb833;
+            transform:translateY(-2px);
+        }
+        .sidebar .sair-btn {
+            background:#cc3300;
+            margin-top:auto;
+            text-align:center;
+            color:white;
+        }
+        .sidebar .sair-btn:hover {
+            background:#e63900;
+        }
+        .main {
+            margin-left:260px;
+            padding:40px;
+            width:100%;
+        }
+        .welcome {
+            background:white;
+            padding:25px;
+            border-left:6px solid #006633;
+            margin-bottom:30px;
+            border-radius:8px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.05);
+        }
+        .secao {
+            display:none;
+            animation:fadeIn 0.3s ease;
+        }
+        .secao.active {
+            display:block;
+        }
+        @keyframes fadeIn {
+            from{opacity:0;}
+            to{opacity:1;}
+        }
+        .card {
+            background:white;
+            padding:30px;
+            border-radius:12px;
+            box-shadow:0 4px 15px rgba(0,0,0,0.05);
+        }
+        table {
+            width:100%;
+            border-collapse:collapse;
+            margin-top:10px;
+        }
+        th {
+            background:#f8f9fa;
+            color:#333;
+            padding:15px;
+            text-align:left;
+            border-bottom:2px solid #eee;
+        }
+        td {
+            padding:15px;
+            border-bottom:1px solid #eee;
+            font-size:14px;
+        }
+        tr:hover {
+            background:#fafafa;
+        }
+        .btn-acao {
+            background:#f0f0f0;
+            border:none;
+            padding:8px;
+            border-radius:5px;
+            cursor:pointer;
+            transition:0.2s;
+            margin-right:5px;
+        }
+        .btn-acao:hover {
+            background:#e0e0e0;
+            transform:scale(1.1);
+        }
+        .status-badge {
+            background:#e8f5e9;
+            color:#2e7d32;
+            padding:4px 8px;
+            border-radius:4px;
+            font-weight:bold;
+            font-size:11px;
+        }
+        .stats-grid {
+            display:grid;
+            grid-template-columns:repeat(auto-fit, minmax(200px,1fr));
+            gap:20px;
+            margin-bottom:30px;
+        }
+        .stat-card {
+            background:white;
+            padding:20px;
+            border-radius:10px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.05);
+            text-align:center;
+        }
+        .stat-card h3 {
+            color:#666;
+            font-size:14px;
+            margin-bottom:10px;
+            text-transform:uppercase;
+        }
+        .stat-card p {
+            color:#006633;
+            font-size:32px;
+            font-weight:bold;
+        }
+        .detalhes-btn {
+            background:#006633;
+            color:white;
+            border:none;
+            padding:5px 10px;
+            border-radius:4px;
+            cursor:pointer;
+            font-size:12px;
+        }
+        .detalhes-btn:hover {
+            background:#004d26;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 600px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal h3 {
+            color: #006633;
+            margin-bottom: 20px;
+        }
+        .modal .info-row {
+            display: flex;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .modal .info-label {
+            font-weight: bold;
+            width: 40%;
+            color: #333;
+        }
+        .modal .info-value {
+            width: 60%;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>MINISTÉRIO DA SAÚDE</h2>
+        <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
+        <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
+        <button class="novo-btn" onclick="window.location.href='/novo-laboratorio'">➕ NOVO LABORATÓRIO</button>
+        <button class="sair-btn" onclick="logout()">🚪 Sair</button>
+    </div>
+    
+    <div class="main">
+        <div id="welcome" class="welcome">
+            <h2>👋 Bem-vindo, Administrador</h2>
+            <p>Sistema Nacional de Saúde - Ministério da Saúde</p>
+        </div>
+        
+        <div id="dashboardSection" class="secao active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Laboratórios</h3>
+                    <p id="statsLabs">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Hospitais</h3>
+                    <p id="statsHospitais">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Empresas</h3>
+                    <p id="statsEmpresas">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total</h3>
+                    <p id="statsTotal">0</p>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Visão Geral do Sistema</h3>
+                <p style="margin-top:15px; color:#666;">Gerencie os laboratórios e visualize as estatísticas do Sistema Nacional de Saúde.</p>
+            </div>
+        </div>
+        
+        <div id="laboratoriosSection" class="secao">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>🏥 Laboratórios Registados</h2>
+                    <button class="btn-acao" onclick="carregarLaboratorios()">🔄 Atualizar</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>NIF</th>
+                            <th>Província</th>
+                            <th>Contacto</th>
+                            <th>Diretor</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaLabs">
+                        <tr><td colspan="7" style="text-align:center;">Carregando laboratórios...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de detalhes -->
+    <div id="modalDetalhes" class="modal">
+        <div class="modal-content">
+            <h3>📋 Detalhes do Laboratório</h3>
+            <div id="conteudoDetalhes"></div>
+            <div style="text-align:right; margin-top:20px;">
+                <button class="btn-acao" onclick="fecharModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "/ministerio";
+
+        function mostrarSeccao(id) {
+            document.querySelectorAll('.secao').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (id === 'dashboardSection') carregarStats();
+            if (id === 'laboratoriosSection') carregarLaboratorios();
+        }
+
+        async function carregarStats() {
+            try {
+                const r = await fetch("/api/stats", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const data = await r.json();
+                document.getElementById("statsLabs").innerText = data.labs || 0;
+                document.getElementById("statsHospitais").innerText = data.hospitais || 0;
+                document.getElementById("statsEmpresas").innerText = data.empresas || 0;
+                document.getElementById("statsTotal").innerText = (data.labs + data.hospitais + data.empresas) || 0;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function carregarLaboratorios() {
+            const tbody = document.getElementById("tabelaLabs");
+            try {
+                const r = await fetch("/api/labs", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const lista = await r.json();
+                
+                if (!lista || lista.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">Nenhum laboratório registado.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = lista.map(l => `
+                    <tr>
+                        <td><strong>${l.nome}</strong></td>
+                        <td>${l.nif || 'N/I'}</td>
+                        <td>${l.provincia || 'N/I'}</td>
+                        <td>${l.telefone || 'N/I'}</td>
+                        <td>${l.diretor || 'N/I'}</td>
+                        <td><span class="status-badge" style="background:${l.ativo ? '#e8f5e9' : '#ffebee'}; color:${l.ativo ? '#2e7d32' : '#c62828'};">${l.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                        <td>
+                            <button class="btn-acao" onclick="verDetalhes('${l._id}')" title="Detalhes">👁️</button>
+                            <button class="btn-acao" onclick="toggleStatus('${l._id}', ${l.ativo})" title="${l.ativo ? 'Desativar' : 'Ativar'}">${l.ativo ? '🔴' : '🟢'}</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar laboratórios.</td></tr>';
+            }
+        }
+
+        async function verDetalhes(id) {
+            try {
+                const r = await fetch("/api/labs", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const lista = await r.json();
+                const lab = lista.find(l => l._id === id);
+                
+                if (!lab) {
+                    alert('Laboratório não encontrado');
+                    return;
+                }
+                
+                const html = `
+                    <div class="info-row"><span class="info-label">ID:</span><span class="info-value">${lab.labId || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Nome:</span><span class="info-value">${lab.nome}</span></div>
+                    <div class="info-row"><span class="info-label">NIF:</span><span class="info-value">${lab.nif || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Tipo:</span><span class="info-value">${lab.tipo || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Província:</span><span class="info-value">${lab.provincia || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Município:</span><span class="info-value">${lab.municipio || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Endereço:</span><span class="info-value">${lab.endereco || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Telefone:</span><span class="info-value">${lab.telefone || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Telefone 2:</span><span class="info-value">${lab.telefone2 || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Email:</span><span class="info-value">${lab.email || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Website:</span><span class="info-value">${lab.website || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Diretor:</span><span class="info-value">${lab.diretor || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Resp. Técnico:</span><span class="info-value">${lab.responsavelTecnico || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Licença:</span><span class="info-value">${lab.licenca || 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Validade:</span><span class="info-value">${lab.validadeLicenca ? new Date(lab.validadeLicenca).toLocaleDateString('pt-PT') : 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Criado em:</span><span class="info-value">${lab.createdAt ? new Date(lab.createdAt).toLocaleDateString('pt-PT') : 'N/I'}</span></div>
+                    <div class="info-row"><span class="info-label">Total emissões:</span><span class="info-value">${lab.totalEmissoes || 0}</span></div>
+                `;
+                
+                document.getElementById('conteudoDetalhes').innerHTML = html;
+                document.getElementById('modalDetalhes').style.display = 'flex';
+                
+            } catch (e) {
+                console.error(e);
+                alert('Erro ao carregar detalhes');
+            }
+        }
+
+        function fecharModal() {
+            document.getElementById('modalDetalhes').style.display = 'none';
+        }
+
+        function toggleStatus(id, ativo) {
+            alert('Função ativar/desativar em desenvolvimento: ' + id);
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("labKey");
+            window.location.href = "/";
+        }
+
+        carregarStats();
+    </script>
+</body>
+</html>`);
 });
 
 // ================================================
