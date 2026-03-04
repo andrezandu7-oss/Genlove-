@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (COM BOTÕES ATIVOS)
+// DASHBOARD DO MINISTÉRIO (VERSÃO FINAL)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -449,8 +449,8 @@ app.get('/admin-dashboard', (req, res) => {
 <body>
     <div class="sidebar">
         <h2>SNS-Admin</h2>
-        <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
-        <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
+        <button onclick="mostrarDashboard()">📊 Dashboard</button>
+        <button onclick="mostrarLaboratorios()">🏥 Laboratórios</button>
         <button class="novo-btn" onclick="window.location.href='/novo-laboratorio'">+ NOVO LABORATÓRIO</button>
         <button class="sair-btn" onclick="logout()">Sair</button>
     </div>
@@ -460,7 +460,7 @@ app.get('/admin-dashboard', (req, res) => {
             <h2>👋 Bem-vindo, Administrador</h2>
         </div>
         
-        <div id="dashboardSection" class="secao active">
+        <div id="dashboardSection">
             <h2>Painel de Controle</h2>
             <div class="stats-grid">
                 <div class="stat-card">
@@ -482,7 +482,7 @@ app.get('/admin-dashboard', (req, res) => {
             </div>
         </div>
         
-        <div id="laboratoriosSection" class="secao">
+        <div id="laboratoriosSection" style="display:none;">
             <h2>Laboratórios</h2>
             <table>
                 <thead>
@@ -493,36 +493,41 @@ app.get('/admin-dashboard', (req, res) => {
                         <th>Telefone</th>
                         <th>Diretor</th>
                         <th>Status</th>
-                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabelaLabs">
-                    <tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>
+                    <tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
     <script>
-        var token = localStorage.getItem("token");
+        // Verificar token
+        var token = window.localStorage.getItem("token");
         if (!token) {
             window.location.href = "/ministerio";
         }
 
-        function mostrarSeccao(id) {
-            document.getElementById('dashboardSection').className = 'secao';
-            document.getElementById('laboratoriosSection').className = 'secao';
-            document.getElementById(id).className = 'secao active';
-            
-            if (id === 'laboratoriosSection') {
-                carregarLaboratorios();
-            }
+        // Funções de navegação
+        function mostrarDashboard() {
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('laboratoriosSection').style.display = 'none';
+            carregarStats();
         }
 
+        function mostrarLaboratorios() {
+            document.getElementById('dashboardSection').style.display = 'none';
+            document.getElementById('laboratoriosSection').style.display = 'block';
+            carregarLaboratorios();
+        }
+
+        // Carregar estatísticas
         function carregarStats() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/stats', true);
             xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     var data = JSON.parse(xhr.responseText);
@@ -537,60 +542,21 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.send();
         }
 
-        function verDetalhes(id) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/labs', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var lista = JSON.parse(xhr.responseText);
-                    var lab = null;
-                    for (var i = 0; i < lista.length; i++) {
-                        if (lista[i]._id === id) {
-                            lab = lista[i];
-                            break;
-                        }
-                    }
-                    
-                    if (lab) {
-                        var msg = 'LABORATÓRIO: ' + lab.nome + '\n';
-                        msg += 'NIF: ' + (lab.nif || 'N/I') + '\n';
-                        msg += 'Província: ' + (lab.provincia || 'N/I') + '\n';
-                        msg += 'Município: ' + (lab.municipio || 'N/I') + '\n';
-                        msg += 'Endereço: ' + (lab.endereco || 'N/I') + '\n';
-                        msg += 'Telefone: ' + (lab.telefone || 'N/I') + '\n';
-                        msg += 'Email: ' + (lab.email || 'N/I') + '\n';
-                        msg += 'Diretor: ' + (lab.diretor || 'N/I') + '\n';
-                        msg += 'Licença: ' + (lab.licenca || 'N/I') + '\n';
-                        msg += 'Status: ' + (lab.ativo ? 'Ativo' : 'Inativo');
-                        alert(msg);
-                    }
-                }
-            };
-            xhr.send();
-        }
-
-        function toggleStatus(id, ativoAtual) {
-            var acao = ativoAtual ? 'desativar' : 'ativar';
-            if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
-                alert('Função em desenvolvimento: ' + acao);
-                carregarLaboratorios();
-            }
-        }
-
+        // Carregar laboratórios
         function carregarLaboratorios() {
             var tbody = document.getElementById('tabelaLabs');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>';
             
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/labs', true);
             xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
                     var lista = JSON.parse(xhr.responseText);
                     
                     if (!lista || lista.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                         return;
                     }
                     
@@ -599,20 +565,14 @@ app.get('/admin-dashboard', (req, res) => {
                         var l = lista[i];
                         var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
                         var statusText = l.ativo ? 'Ativo' : 'Inativo';
-                        var btnStatus = l.ativo ? '🔴' : '🟢';
-                        var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
                         
                         html += '<tr>';
-                        html += '<td>' + (l.nome || '') + '</td>';
-                        html += '<td>' + (l.nif || '') + '</td>';
-                        html += '<td>' + (l.provincia || '') + '</td>';
-                        html += '<td>' + (l.telefone || '') + '</td>';
-                        html += '<td>' + (l.diretor || '') + '</td>';
+                        html += '<td>' + (l.nome || '-') + '</td>';
+                        html += '<td>' + (l.nif || '-') + '</td>';
+                        html += '<td>' + (l.provincia || '-') + '</td>';
+                        html += '<td>' + (l.telefone || '-') + '</td>';
+                        html += '<td>' + (l.diretor || '-') + '</td>';
                         html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
-                        html += '<td>';
-                        html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button> ';
-                        html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
-                        html += '</td>';
                         html += '</tr>';
                     }
                     tbody.innerHTML = html;
@@ -621,12 +581,14 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.send();
         }
 
+        // Logout
         function logout() {
-            localStorage.removeItem("token");
-            localStorage.removeItem("labKey");
+            window.localStorage.removeItem("token");
+            window.localStorage.removeItem("labKey");
             window.location.href = "/";
         }
 
+        // Iniciar
         carregarStats();
     </script>
 </body>
