@@ -284,7 +284,7 @@ app.get('/admin-dashboard', (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO LABORATORIO (VERSION DEBUG)
+// DASHBOARD DO LABORATORIO
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -293,260 +293,146 @@ app.get('/lab-dashboard', (req, res) => {
     <meta charset="UTF-8">
     <title>Laboratório - SNS</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
-        body { display:flex; background:#f5f5f5; }
-        .sidebar {
-            width:250px;
-            background:#006633;
-            color:white;
-            height:100vh;
-            padding:20px;
-            position:fixed;
-        }
-        .sidebar h2 { margin-bottom:30px; text-align:center; }
-        .sidebar a {
-            display:block;
-            color:white;
-            text-decoration:none;
-            padding:12px;
-            margin:5px 0;
-            border-radius:5px;
-            cursor:pointer;
-            text-align:center;
-        }
-        .sidebar a:hover { background:#004d26; }
-        .main {
-            margin-left:270px;
-            padding:30px;
-            width:100%;
-        }
-        .welcome {
-            background:#e8f5e9;
-            padding:20px;
-            border-left:5px solid #006633;
-            margin-bottom:20px;
-        }
-        .btn {
-            background:#006633;
-            color:white;
-            border:none;
-            padding:8px 15px;
-            cursor:pointer;
-            border-radius:5px;
-        }
-        .btn-sm { padding:5px 10px; font-size:12px; }
-        .btn-danger { background:#dc3545; }
-        .btn-danger:hover { background:#c82333; }
-        table {
-            width:100%;
-            background:white;
-            border-collapse:collapse;
-            margin-top:20px;
-            box-shadow:0 2px 5px rgba(0,0,0,0.1);
-        }
-        th {
-            background:#006633;
-            color:white;
-            padding:12px;
-            text-align:left;
-        }
-        td {
-            padding:12px;
-            border-bottom:1px solid #ddd;
-        }
-        tr:hover { background:#f5f5f5; }
-        .acoes { display:flex; gap:5px; }
-        .header {
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            margin-bottom:20px;
-        }
-        .debug {
-            background:#f0f0f0;
-            padding:10px;
-            margin:10px 0;
-            border-left:3px solid #006633;
-            font-family:monospace;
-            display:none;
+        *{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}
+        body{display:flex;background:#f5f5f5;}
+        .sidebar{width:250px;background:#006633;color:white;height:100vh;padding:20px;position:fixed;}
+        .sidebar h2{margin-bottom:30px;}
+        .sidebar a{display:block;color:white;text-decoration:none;padding:12px;margin:5px 0;border-radius:5px;cursor:pointer;}
+        .sidebar a:hover{background:#004d26;}
+        .main{margin-left:270px;padding:30px;width:100%;}
+        .welcome{background:#e8f5e9;padding:20px;border-left:5px solid #006633;margin-bottom:20px;}
+        .btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;}
+        .btn-danger{background:#dc3545;}
+        .secao{display:none;}
+        .secao.ativa{display:block;}
+        .card-container{display:flex;gap:15px;margin-top:20px;margin-bottom:30px;}
+        .card{background:white;padding:20px;border-radius:10px;flex:1;border-top:4px solid #006633;box-shadow:0 2px 5px rgba(0,0,0,0.1);text-align:center;}
+        .card h4{color:#666;font-size:14px;text-transform:uppercase;margin-bottom:10px;}
+        .card p{font-size:28px;font-weight:bold;color:#006633;}
+        table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}
+        th{background:#006633;color:white;padding:12px;text-align:left;}
+        td{padding:12px;border-bottom:1px solid #ddd;}
+
+        /* SOLUTION POUR SUPPRIMER LE MENU SUR LE PDF/IMPRESSION */
+        @media print {
+            .sidebar, .btn, .btn-danger, .welcome {
+                display: none !important;
+            }
+            .main {
+                margin-left: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+            body {
+                background: white !important;
+            }
+            .card {
+                border: 1px solid #eee !important;
+                box-shadow: none !important;
+            }
         }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>SNS - Lab</h2>
-        <a onclick="window.location.href='/lab-dashboard'">📋 Meus Certificados</a>
-        <button onclick="logout()" class="btn btn-danger" style="margin-top:20px;width:100%;">🚪 Sair</button>
+        <a onclick="mostrar('dashboard')">Relatórios</a>
+        <a onclick="mostrar('certificados')">Meus Certificados</a>
+        <button onclick="logout()" class="btn btn-danger" style="margin-top:20px;width:100%;">Sair</button>
     </div>
-    
+
     <div class="main">
-        <div id="welcome" class="welcome">Carregando...</div>
+        <div id="welcome" class="welcome"></div>
         
-        <!-- Debug info (hidden by default) -->
-        <div id="debugInfo" class="debug"></div>
-        
-        <div class="header">
-            <h2>📋 Meus Certificados</h2>
-            <button class="btn" onclick="window.location.href='/novo-certificado'">➕ Novo Certificado</button>
+        <div id="secaoDashboard" class="secao ativa">
+            <h2>Relatórios de Emissão</h2>
+            <div class="card-container">
+                <div class="card">
+                    <h4>Hoje</h4>
+                    <p id="statDiario">0</p>
+                </div>
+                <div class="card">
+                    <h4>Este Mês</h4>
+                    <p id="statMensal">0</p>
+                </div>
+                <div class="card">
+                    <h4>Este Ano</h4>
+                    <p id="statAnual">0</p>
+                </div>
+                <div class="card" style="border-top-color:#ffa500;">
+                    <h4>Total Geral</h4>
+                    <p id="statTotal" style="color:#ffa500;">0</p>
+                </div>
+            </div>
         </div>
-        
-        <table>
-            <thead>
-                <tr>
-                    <th>Número</th>
-                    <th>Tipo</th>
-                    <th>Paciente</th>
-                    <th>Data</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="tabela">
-                <tr><td colspan="5" style="text-align:center;">Carregando certificados...</td></tr>
-            </tbody>
-        </table>
+
+        <div id="secaoCertificados" class="secao">
+            <h2>Certificados 
+                <button class="btn" style="float:right;" onclick="window.location.href='/novo-certificado'">+ Novo</button>
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Tipo</th>
+                        <th>Paciente</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
         const key = localStorage.getItem("labKey");
-        if (!key) window.location.href = "/lab-login";
+        if(!key) window.location.href="/lab-login";
+        
+        const tipos = ["","GENÓTIPO","BOA SAÚDE","INCAPACIDADE","APTIDÃO","SAÚDE MATERNA","PRÉ-NATAL","EPIDEMIOLÓGICO","CSD"];
 
-        const tipos = ["", "GENÓTIPO", "BOA SAÚDE", "INCAPACIDADE", "APTIDÃO", "SAÚDE MATERNA", "PRÉ-NATAL", "EPIDEMIOLÓGICO", "CSD"];
-
-        function showDebug(msg) {
-            const debugDiv = document.getElementById('debugInfo');
-            debugDiv.style.display = 'block';
-            debugDiv.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + msg + '</div>';
-            console.log(msg);
-        }
-
-        async function carregarDados() {
+        async function carregarDados(){
             try {
-                showDebug('Carregando dados do laboratório...');
-                
-                const rMe = await fetch("/api/labs/me", { 
-                    headers: { "x-api-key": key } 
-                });
-                
-                if (!rMe.ok) {
-                    throw new Error('Erro ao carregar laboratório: ' + rMe.status);
-                }
-                
+                const rMe = await fetch("/api/labs/me", {headers:{"x-api-key":key}});
                 const dMe = await rMe.json();
-                showDebug('Laboratório: ' + dMe.nome);
-                document.getElementById("welcome").innerHTML = "<h2>👋 Bem-vindo, " + dMe.nome + "</h2>";
-                
-                await carregarCertificados();
-                
-            } catch (e) {
-                showDebug('ERRO: ' + e.message);
-                document.getElementById("welcome").innerHTML = "<h2>❌ Erro ao carregar dados</h2>";
-            }
-        }
+                document.getElementById("welcome").innerHTML = "<h2>Bem-vindo, "+dMe.nome+"</h2>";
 
-        async function carregarCertificados() {
-            try {
-                showDebug('Carregando certificados...');
-                
-                const rCert = await fetch("/api/certificados/lab", { 
-                    headers: { "x-api-key": key } 
-                });
-                
-                showDebug('Resposta API: status ' + rCert.status);
-                
-                if (!rCert.ok) {
-                    throw new Error('Erro na API: ' + rCert.status);
-                }
-                
+                const rStats = await fetch("/api/certificados/stats-detalhes", {headers:{"x-api-key":key}});
+                const dStats = await rStats.json();
+                document.getElementById("statDiario").innerText = dStats.diario;
+                document.getElementById("statMensal").innerText = dStats.mensal;
+                document.getElementById("statAnual").innerText = dStats.anual;
+                document.getElementById("statTotal").innerText = dStats.total;
+
+                const rCert = await fetch("/api/certificados/lab", {headers:{"x-api-key":key}});
                 const lista = await rCert.json();
-                showDebug('Certificados recebidos: ' + lista.length);
-                
                 let html = "";
-                if (lista.length === 0) {
-                    html = '<tr><td colspan="5" style="text-align:center; padding:30px;">📭 Nenhum certificado encontrado</td></tr>';
-                    showDebug('Nenhum certificado encontrado');
-                } else {
-                    for (let i = 0; i < lista.length; i++) {
-                        const c = lista[i];
-                        const data = new Date(c.emitidoEm).toLocaleDateString('pt-PT');
-                        html += "<tr>";
-                        html += "<td><strong>" + c.numero + "</strong></td>";
-                        html += "<td>" + (tipos[c.tipo] || "Desconhecido") + "</td>";
-                        html += "<td>" + (c.paciente?.nomeCompleto || "N/I") + "</td>";
-                        html += "<td>" + data + "</td>";
-                        html += "<td class='acoes'>";
-                        html += "<button class='btn btn-sm' onclick='visualizarPDF(\"" + c.numero + "\")' title='Visualizar'>👁️</button>";
-                        html += "<button class='btn btn-sm' onclick='imprimirPDF(\"" + c.numero + "\")' title='Imprimir'>🖨️</button>";
-                        html += "<button class='btn btn-sm' onclick='baixarPDF(\"" + c.numero + "\")' title='Baixar'>📥</button>";
-                        html += "</td>";
-                        html += "</tr>";
-                    }
-                    showDebug('HTML gerado para ' + lista.length + ' certificados');
-                }
-                document.getElementById("tabela").innerHTML = html;
-                
-            } catch (e) {
-                showDebug('ERRO certificados: ' + e.message);
-                document.getElementById("tabela").innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">❌ Erro: ' + e.message + '</td></tr>';
-            }
-        }
-
-        async function fetchPDF(numero, acao) {
-            try {
-                showDebug('PDF: ' + acao + ' ' + numero);
-                
-                const response = await fetch('/api/certificados/pdf', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json', 
-                        'x-api-key': key 
-                    },
-                    body: JSON.stringify({ numero })
+                lista.forEach(c => {
+                    html += "<tr><td>"+c.numero+"</td><td>"+tipos[c.tipo]+"</td><td>"+c.paciente.nomeCompleto+"</td><td>"+new Date(c.emitidoEm).toLocaleDateString()+"</td></tr>";
                 });
-                
-                if (!response.ok) throw new Error('Erro na resposta');
-                
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                
-                if (acao === 'visualizar') {
-                    window.open(url, '_blank');
-                } else if (acao === 'baixar') {
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'certificado-' + numero + '.pdf';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                } else if (acao === 'imprimir') {
-                    const printWindow = window.open(url, '_blank');
-                    if (printWindow) {
-                        printWindow.onload = function() { 
-                            printWindow.print(); 
-                        };
-                    }
-                }
-            } catch (error) {
-                showDebug('ERRO PDF: ' + error.message);
-                alert('❌ Erro ao gerar PDF');
+                document.getElementById("tabela").innerHTML = html || "<tr><td colspan='4'>Nenhum certificado.</td></tr>";
+            } catch(e) {
+                console.error(e);
             }
         }
 
-        function visualizarPDF(numero) { fetchPDF(numero, 'visualizar'); }
-        function baixarPDF(numero) { fetchPDF(numero, 'baixar'); }
-        function imprimirPDF(numero) { fetchPDF(numero, 'imprimir'); }
-
-        function logout() {
-            localStorage.removeItem("labKey");
-            window.location.href = "/";
+        function mostrar(s){
+            document.getElementById("secaoDashboard").classList.remove("ativa");
+            document.getElementById("secaoCertificados").classList.remove("ativa");
+            if(s==="dashboard") document.getElementById("secaoDashboard").classList.add("ativa");
+            if(s==="certificados") document.getElementById("secaoCertificados").classList.add("ativa");
         }
 
-        // Iniciar
+        function logout(){
+            localStorage.removeItem("labKey");
+            window.location.href="/";
+        }
+
         carregarDados();
     </script>
 </body>
 </html>`);
 });
+
 // ==============================================
 // ROTAS DA API
 // ==============================================
