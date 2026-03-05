@@ -279,10 +279,180 @@ app.post('/api/labs/verificar', async (req, res) => {
 // ================================================
 // DASHBOARD DO MINISTERIO
 // ================================================
-app.get('/admin-dashboard', (req, res) => {
-    res.send('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Admin - SNS</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}body{display:flex;background:#f5f5f5;}.sidebar{width:250px;background:#006633;color:white;height:100vh;padding:20px;position:fixed;}.sidebar a{display:block;color:white;text-decoration:none;padding:10px;margin:5px 0;border-radius:5px;cursor:pointer;}.sidebar a:hover{background:#004d26;}.main{margin-left:270px;padding:30px;width:100%;}.btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;}.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;}.modal-content{background:white;padding:20px;border-radius:10px;width:400px;}table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}th,td{padding:10px;border-bottom:1px solid #ddd;}</style></head><body><div class="sidebar"><h2>SNS-Admin</h2><a onclick="mostrar(\'dashboard\')">Dashboard</a><a onclick="mostrar(\'labs\')">Laboratórios</a><button onclick="logout()" class="btn" style="background:red;width:100%;margin-top:20px;">Sair</button></div><div class="main"><div id="dashboard"><h2>Painel de Controle</h2><p id="stats">Carregando estatisticas...</p></div><div id="labs" style="display:none;"><h2>Laboratórios <button class="btn" onclick="document.getElementById(\'modalLab\').style.display=\'flex\'">+ Novo</button></h2><table><thead><tr><th>Nome</th><th>NIF</th><th>Status</th><th>Ações</th></tr></thead><tbody id="labTable"></tbody></table></div></div><div id="modalLab" class="modal"><div class="modal-content"><h3>Novo Laboratório</h3><input id="lNome" style="width:100%;margin:5px 0;padding:8px;" placeholder="Nome"><input id="lNIF" style="width:100%;margin:5px 0;padding:8px;" placeholder="NIF"><input id="lProv" style="width:100%;margin:5px 0;padding:8px;" placeholder="Província"><input id="lEmail" style="width:100%;margin:5px 0;padding:8px;" placeholder="Email"><button class="btn" onclick="criarLab()">Criar</button><button class="btn" style="background:gray;" onclick="document.getElementById(\'modalLab\').style.display=\'none\'">Cancelar</button></div></div><script>const token=localStorage.getItem("token");if(!token)window.location.href="/ministerio";function mostrar(id){document.getElementById("dashboard").style.display=id==="dashboard"?"block":"none";document.getElementById("labs").style.display=id==="labs"?"block":"none";if(id==="labs")carregarLabs();}async function carregarLabs(){const r=await fetch("/api/labs",{headers:{"Authorization":"Bearer "+token}});const labs=await r.json();let html="";labs.forEach(l=>{html+=`<tr><td>${l.nome}</td><td>${l.nif}</td><td>${l.ativo?"Ativo":"Inativo"}</td><td><button onclick="ativar(\'${l._id}\',${l.ativo})">${l.ativo?"Desativar":"Ativar"}</button></td></tr>`;});document.getElementById("labTable").innerHTML=html;}async function criarLab(){const d={nome:document.getElementById("lNome").value,nif:document.getElementById("lNIF").value,provincia:document.getElementById("lProv").value,email:document.getElementById("lEmail").value,tipo:"laboratorio"};const r=await fetch("/api/labs",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(d)});const res=await r.json();if(res.success){alert("API Key: "+res.apiKey);location.reload();}}function logout(){localStorage.removeItem("token");location.href="/";}</script></body></html>');
-});
+app.getadmin-dashboard, req, res res.send`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ministério - SNS</title>
+<style>
+*margin0padding0box-sizingborder-boxfont-family'Segoe UI',Arial,sans-serif
+bodysdisplayflexbackgroundf5f5f5min-height100vh
+.sidebarswidth260pxbackground006633colorwhiteheight100vhpadding20pxpositionfixed
+displayflexflex-directioncolumnbox-shadow2px0 10pxrgba0,0,0,0.1
+.sidebarh2margin-bottom30pxtext-aligncenterpadding-bottom15pxborder-bottom1px
+solidrgba255,255,255,0.2font-size22px
+.sidebarbutton,sidebar.nav-linkdisplayblockwidth100colorrgba255,255,255,0.9
+text-decorationnonepadding14pxmargin5px0border-radius8pxcursorpointertext-alignleft
+font-size15pxbordernonebackgroundnonetransition0.3s
+.sidebarbuttonhoverbackgroundrgba255,255,255,0.1colorwhite
+.sidebar.novo-btnbackgroundffa500color00331afont-weightboldmargin20px0text-aligncenter
+.sidebar.novo-btnhoverbackgroundffb833transformtranslateY-2px
+.sidebar.sair-btnbackgroundcc3300margin-topautotext-aligncentercolorwhite
+.sidebar.sair-btnhoverbackgrounde63900
+.mainmargin-left260pxpadding40pxwidth100
+.welcomebackgroundwhitepadding25pxborder-left6pxsolid006633margin-bottom30px
+border-radius8pxbox-shadow0 2px10pxrgba0,0,0,0.05
+.secaodisplaynoneanimationfadeIn0.3sease
+.secao.activedisplayblock
+@keyframesfadeInfromopacity0toopacity1
+.cardbackgroundwhitepadding30pxborder-radius12pxbox-shadow0 4px15pxrgba0,0,0,0.05
+tablewidth100border-collapsecollapsemargin-top10px
+thbackgroundf8f9facolor333padding15pxtext-alignleftborder-bottom2pxsolid#eee
+tdpadding15pxborder-bottom1pxsolid#eeefont-size14px
+trhoverbackgroundfafafa
+.btn-acaobackgroundf0f0f0bordernonepadding8pxborder-radius5pxcursorpointer
+transition0.2smargin-right5px
+.btn-acaohoverbackgrounde0e0e0transformscale1.1
+.status-badgebackground#e8f5e9color#2e7d32padding4px8pxborder-radius4px
+font-weightboldfont-size11px
+.modaldisplaynonepositionfixedtop0left0width100height100backgroundrgba0,0,0,0.5
+displayflexalign-itemscenterjustify-contentcenter
+.modal-contentbackgroundwhitepadding20pxborder-radius10pxwidth400px
+inputwidth100margin5px0padding8pxborder1pxsolid#dddborder-radius5px
+.btnbackgroun006633colorwhitebordernonepadding10px20pxcursorpointerborder-radius5px
+.btnhoverbackground004d26
+style
+</head>
+<body>
+<div class="sidebar">
+<h2>SNS - MINISTÉRIO</h2>
+<button onclick="mostrardashboard">Dashboard</button>
+<button onclick="mostrarlabs">Histórico</button>
+<button class="novo-btn" onclick="document.getElementById('modalLab').style.display='flex'">Novo Laboratório</button>
+<button class="sair-btn" onclick="logout()">Sair</button>
+</div>
 
+<div class="main">
+<div id="welcome" class="welcome">
+<h2>Carregando...</h2>
+</div>
+
+<div id="dashboard" class="secao active">
+<div class="card">
+<h3>Painel de Controle</h3>
+<p style="margin-top15pxcolor666">Sistema Nacional de Saúde - Ministério da Saúde</p>
+</div>
+</div>
+
+<div id="labs" class="secao">
+<div class="card">
+<div style="displayflexjustify-contentspace-betweenalign-items-centermargin-bottom20px">
+<h2>Laboratórios Registrados</h2>
+<button class="btn" onclick="carregarLabs()">Atualizar</button>
+</div>
+<table>
+<thead>
+<tr>
+<th>Nome</th><th>NIF</th><th>Status</th><th>Província</th><th>Ações</th>
+</tr>
+</thead>
+<tbody id="labTable">
+<tr><td colspan="5" style="text-aligncenterpadding40px">Carregando laboratórios...</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div id="modalLab" class="modal">
+<div class="modal-content">
+<h3>Novo Laboratório</h3>
+<input id="lNome" placeholder="Nome">
+<input id="lNIF" placeholder="NIF">
+<input id="lProv" placeholder="Província">
+<input id="lEmail" placeholder="Email">
+<button class="btn" onclick="criarLab()">Criar</button>
+<button class="btn" style="backgroundgray" onclick="document.getElementById('modalLab').style.display='none'">Cancelar</button>
+</div>
+</div>
+
+<script>
+const token=localStorage.getItem('token')
+if(!token)window.location.href='/ministerio'
+
+function mostrar(id){
+document.getElementById('dashboard').style.display=id==='dashboard'?'block':'none'
+document.getElementById('labs').style.display=id==='labs'?'block':'none'
+if(id==='labs')carregarLabs()
+}
+
+async function carregarLabs(){
+const tbody=document.getElementById('labTable')
+try{
+const r=await fetch('/api/labs',{headers:{'Authorization':'Bearer '+token}})
+const labs=await r.json()
+tbody.innerHTML=labs.map(l=`
+<tr>
+<td>${l.nome}</td>
+<td>${l.nif}</td>
+<td><span class="status-badge">${l.ativo?'Ativo':'Inativo'}</span></td>
+<td>${l.provincia}</td>
+<td>
+<button class="btn-acao" onclick="toggleLab('${l._id}',${l.ativo})">
+${l.ativo?'Desativar':'Ativar'}
+</button>
+</td>
+</tr>
+`).join('')
+}catch(e){
+tbody.innerHTML='<tr><td colspan="5" style="colorredtext-aligncenter">Erro ao carregar</td></tr>'
+}
+}
+
+async function criarLab(){
+const d={
+nome:document.getElementById('lNome').value,
+nif:document.getElementById('lNIF').value,
+provincia:document.getElementById('lProv').value,
+email:document.getElementById('lEmail').value,
+tipo:'laboratorio'
+}
+try{
+const r=await fetch('/api/labs',{
+method:'POST',
+headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+body:JSON.stringify(d)
+})
+const res=await r.json()
+if(res.success){
+alert('Laboratório criado! API Key: '+res.apiKey)
+document.getElementById('modalLab').style.display='none'
+carregarLabs()
+}
+}catch(e){alert('Erro ao criar laboratório')}
+}
+
+async function toggleLab(id,ativo){
+try{
+await fetch('/api/labs/'+id+'/toggle',{
+method:'PUT',
+headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+body:JSON.stringify({ativo:!ativo})
+})
+carregarLabs()
+}catch(e){alert('Erro')}
+}
+
+function logout(){
+localStorage.removeItem('token')
+window.location.href='/ministerio'
+}
+
+document.getElementById('welcome').innerHTML='<h2>Olá, Ministério da Saúde</h2><p>SNS Angola - Painel Administrativo</p>'
+</script>
+</body>
+</html>`
 // ================================================
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
