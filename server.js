@@ -78,31 +78,25 @@ const userSchema = new mongoose.Schema({
 // LABORATÓRIO (COM CAMPOS COMPLETOS)
 const labSchema = new mongoose.Schema({
     labId: { type: String, unique: true },
-    
     // Informações Básicas
     nome: { type: String, required: true },
     nif: { type: String, required: true, unique: true },
     tipo: { type: String, enum: ['Público', 'Privado', 'Misto'], required: true },
-    
     // Localização
     provincia: { type: String, required: true },
     municipio: String,
     endereco: { type: String, required: true },
-    
     // Contactos
-    telefone: { type: String, required: true },
-    telefone2: String,
+    telephone: { type: String, required: true },
+    telephone2: String,
     email: { type: String, required: true },
     website: String,
-    
     // Responsáveis
     diretor: { type: String, required: true },
     responsavelTecnico: String,
-    
     // Licenciamento
-    licenca: String,
-    validadeLicenca: Date,
-    
+    licença: String,
+    validadeLicença: Date,
     // Chave e status
     apiKey: { type: String, unique: true },
     ativo: { type: Boolean, default: true },
