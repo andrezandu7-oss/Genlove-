@@ -965,6 +965,92 @@ app.get('/api/labs', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Erro ao listar laboratórios' });
     }
 });
+// =============================================
+// ROUTE POUR OBTENIR LE PDF D'UN LABORATOIRE (PAR ID)
+// =============================================
+app.get('/api/labs/:id/pdf', authMiddleware, async (req, res) => {
+    try {
+        const lab = await Lab.findById(req.params.id);
+        if (!lab) {
+            return res.status(404).json({ error: 'Laboratório não encontrado' });
+        }
+
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=lab-${lab.labId || lab._id}.pdf`);
+        doc.pipe(res);
+
+        // --- Construction du PDF (identique à la route /api/labs/pdf) ---
+        doc.fillColor('#006633');
+        doc.fontSize(20).text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+        doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+        doc.fontSize(24).text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
+        doc.strokeColor('#006633').lineWidth(2).moveTo(50, 150).lineTo(550, 150).stroke();
+
+        let y = 180;
+        doc.fillColor('#006633').fontSize(18).text('CREDENCIAÇÃO DE LABORATÓRIO', 0, y, { align: 'center' });
+        y += 30;
+
+        doc.fillColor('#006633').fontSize(14).text('Laboratório:', 50, y);
+        y += 20;
+        doc.fillColor('#000').fontSize(12).text(lab.nome, 70, y);
+        y += 20;
+        doc.text('NIF: ' + (lab.nif || 'N/I'), 70, y);
+        y += 20;
+        doc.text('Província: ' + (lab.provincia || 'N/I') + (lab.municipio ? ' - ' + lab.municipio : ''), 70, y);
+        y += 20;
+        doc.text('Endereço: ' + (lab.endereco || 'N/I'), 70, y);
+        y += 20;
+        doc.text('Telefone: ' + (lab.telefone || 'N/I') + (lab.telefone2 ? ' / ' + lab.telefone2 : ''), 70, y);
+        y += 20;
+        doc.text('Email: ' + (lab.email || 'N/I'), 70, y);
+        if (lab.website) {
+            y += 20;
+            doc.text('Website: ' + lab.website, 70, y);
+        }
+        y += 20;
+        doc.text('Diretor: ' + (lab.diretor || 'N/I'), 70, y);
+        if (lab.responsavelTecnico) {
+            y += 20;
+            doc.text('Responsável Técnico: ' + lab.responsavelTecnico, 70, y);
+        }
+        if (lab.licenca) {
+            y += 20;
+            doc.text('Licença: ' + lab.licenca + (lab.validadeLicenca ? ' (válida até ' + new Date(lab.validadeLicenca).toLocaleDateString('pt-PT') + ')' : ''), 70, y);
+        }
+
+        y += 40;
+        doc.fillColor('#006633').fontSize(16).text('CHAVE DE ACESSO API', 0, y, { align: 'center' });
+        y += 30;
+
+        doc.roundedRect(100, y, 400, 50, 10).fillAndStroke('#e8f5e9', '#006633');
+        doc.fillColor('#006633').fontSize(14).text('API Key:', 120, y + 10);
+        doc.fillColor('#000').fontSize(18).font('Courier').text(lab.apiKey, 120, y + 25);
+
+        y += 70;
+        doc.fillColor('#dc3545').fontSize(12).text('⚠️ ATENÇÃO - CONFIDENCIAL ⚠️', 0, y, { align: 'center' });
+        y += 20;
+        doc.fillColor('#666').fontSize(10)
+            .text('Esta chave de acesso é pessoal e intransferível.', 0, y, { align: 'center' });
+        y += 15;
+        doc.text('Não compartilhe esta chave com terceiros.', 0, y, { align: 'center' });
+        y += 15;
+        doc.text('O titular é responsável por todas as operações realizadas com esta chave.', 0, y, { align: 'center' });
+        y += 15;
+        doc.text('Em caso de perda ou suspeita de uso indevido, contacte imediatamente o Ministério da Saúde.', 0, y, { align: 'center' });
+
+        y += 30;
+        doc.fillColor('#666').fontSize(10).text('Documento emitido em: ' + new Date().toLocaleDateString('pt-PT'), 50, y);
+
+        doc.fontSize(8).fillColor('#999')
+            .text('Documento oficial do Ministério da Saúde - República de Angola', 0, 780, { align: 'center' });
+
+        doc.end();
+    } catch (error) {
+        console.error('Erreur PDF Lab:', error);
+        res.status(500).json({ error: 'Erro ao gerar PDF' });
+    }
+});
 // Stats detalhados para laboratório
 app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
     try {
