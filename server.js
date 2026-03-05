@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
+// DASHBOARD DO MINISTÉRIO (VERSION FINALE - CORRIGÉE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -409,24 +409,6 @@ app.get('/admin-dashboard', (req, res) => {
         }
         .status-ativo { background:#e8f5e9; color:#2e7d32; }
         .status-inativo { background:#ffebee; color:#c62828; }
-        .pagination {
-            display:flex;
-            justify-content:center;
-            gap:10px;
-            margin-top:20px;
-        }
-        .pagination button {
-            padding:8px 12px;
-            border:none;
-            background:#006633;
-            color:white;
-            border-radius:5px;
-            cursor:pointer;
-        }
-        .pagination button:disabled {
-            background:#ccc;
-            cursor:not-allowed;
-        }
         .filtros {
             display:flex;
             gap:10px;
@@ -517,13 +499,6 @@ app.get('/admin-dashboard', (req, res) => {
                         <tr><td colspan="7" style="text-align:center;">Aguardando...</td></tr>
                     </tbody>
                 </table>
-                
-                <!-- Paginação -->
-                <div class="pagination" id="paginacao">
-                    <button id="prevPage" onclick="mudarPagina(-1)" disabled>Anterior</button>
-                    <span id="pageInfo">Página 1</span>
-                    <button id="nextPage" onclick="mudarPagina(1)" disabled>Próxima</button>
-                </div>
             </div>
         </div>
     </div>
@@ -536,11 +511,6 @@ app.get('/admin-dashboard', (req, res) => {
             window.location.href = "/ministerio";
         }
 
-        // Variáveis de paginação
-        var currentPage = 1;
-        var totalPages = 1;
-        var limit = 10;
-
         function mostrarSeccao(id) {
             document.getElementById('dashboardSection').className = 'secao';
             document.getElementById('laboratoriosSection').className = 'secao';
@@ -549,7 +519,7 @@ app.get('/admin-dashboard', (req, res) => {
                 carregarLaboratorios();
             }
             if (id === 'dashboardSection') {
-                carregarStats();  // 👈 Recharge les stats à chaque affichage
+                carregarStats();
             }
         }
 
@@ -571,37 +541,34 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.send();
         }
 
-        // Carregar laboratórios com paginação e filtros
-        function carregarLaboratorios(pagina = 1) {
-            console.log("Carregando laboratórios, página", pagina);
-            currentPage = pagina;
+        // Carregar laboratórios (sem paginação)
+        function carregarLaboratorios() {
             var tbody = document.getElementById('tabelaLabs');
             var spinner = document.getElementById('spinnerLabs');
-            tbody.innerHTML = ''; // Limpa a tabela
-            spinner.style.display = 'block'; // Mostra spinner
-            
+            tbody.innerHTML = '';
+            spinner.style.display = 'block';
+
             var provincia = document.getElementById('filtroProvincia').value;
             var status = document.getElementById('filtroStatus').value;
-            
-            var url = '/api/labs?page=' + currentPage + '&limit=' + limit;
-            if (provincia) url += '&provincia=' + encodeURIComponent(provincia);
-            if (status !== '') url += '&ativo=' + status;
-            
+
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
+            xhr.open('GET', '/api/labs', true);
             xhr.setRequestHeader('Authorization', 'Bearer ' + token);
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
                     spinner.style.display = 'none';
-                    console.log("Resposta recebida, status:", xhr.status);
                     if (xhr.status === 200) {
                         try {
-                            var resposta = JSON.parse(xhr.responseText);
-                            var lista = resposta.labs;
-                            totalPages = resposta.pages;
-                            console.log("Laboratórios recebidos:", lista);
-                            
-                            if (!lista || lista.length === 0) {
+                            var lista = JSON.parse(xhr.responseText); // tableau direct
+                            // Filtrer côté client
+                            if (provincia) {
+                                lista = lista.filter(l => l.provincia === provincia);
+                            }
+                            if (status !== '') {
+                                var ativo = (status === 'true');
+                                lista = lista.filter(l => l.ativo === ativo);
+                            }
+                            if (lista.length === 0) {
                                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                             } else {
                                 var html = '';
@@ -611,7 +578,6 @@ app.get('/admin-dashboard', (req, res) => {
                                     var statusText = l.ativo ? 'Ativo' : 'Inativo';
                                     var btnStatus = l.ativo ? '🔴' : '🟢';
                                     var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
-                                    
                                     html += '<tr>';
                                     html += '<td><strong>' + (l.nome || '') + '</strong></td>';
                                     html += '<td>' + (l.nif || '') + '</td>';
@@ -627,33 +593,16 @@ app.get('/admin-dashboard', (req, res) => {
                                 }
                                 tbody.innerHTML = html;
                             }
-                            
-                            // Atualizar paginação
-                            atualizarPaginacao();
                         } catch (e) {
-                            console.error("Erro ao parsear JSON:", e);
-                            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro nos dados recebidos</td></tr>';
+                            console.error(e);
+                            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro nos dados</td></tr>';
                         }
                     } else {
-                        console.error("Erro HTTP:", xhr.status);
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + xhr.status + '</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar</td></tr>';
                     }
                 }
             };
             xhr.send();
-        }
-
-        function atualizarPaginacao() {
-            document.getElementById('pageInfo').innerText = 'Página ' + currentPage + ' de ' + totalPages;
-            document.getElementById('prevPage').disabled = currentPage <= 1;
-            document.getElementById('nextPage').disabled = currentPage >= totalPages;
-        }
-
-        function mudarPagina(direcao) {
-            var novaPagina = currentPage + direcao;
-            if (novaPagina >= 1 && novaPagina <= totalPages) {
-                carregarLaboratorios(novaPagina);
-            }
         }
 
         function verDetalhes(id) {
@@ -664,7 +613,7 @@ app.get('/admin-dashboard', (req, res) => {
             var acao = ativoAtual ? 'desativar' : 'ativar';
             if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
                 alert('Função em desenvolvimento: ' + acao);
-                carregarLaboratorios(currentPage);
+                carregarLaboratorios();
             }
         }
 
