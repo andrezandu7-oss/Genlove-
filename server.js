@@ -1438,17 +1438,19 @@ app.get('/novo-certificado', (req, res) => {
 // STATS GLOBAIS (MINISTÉRIO)
 // =============================================
 app.get('/api/stats', authMiddleware, async (req, res) => {
-    try {
-        const stats = {
-            labs: await Lab.countDocuments({ ativo: true }),
-            hospitais: await Hospital.countDocuments({ ativo: true }),
-            empresas: await Empresa.countDocuments({ ativo: true })
-        };
-        res.json(stats);
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao carregar estatísticas' });
-    }
+  try {
+    const stats = {
+      // On compte tous les documents pour s'assurer que le dashboard affiche les données existantes
+      labs: await Lab.countDocuments() || 0,
+      hospitais: await Hospital.countDocuments() || 0,
+      empresas: await Empresa.countDocuments() || 0
+    };
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao carregar estatísticas' });
+  }
 });
+
 
 // =============================================
 // GÉNÉRATION PDF POUR LABORATOIRE
