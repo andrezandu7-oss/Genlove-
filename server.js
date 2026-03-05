@@ -947,25 +947,13 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
 
 // Listar todos os laboratórios (apenas admin)
 app.get('/api/labs', authMiddleware, async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    const total = await Lab.countDocuments();
-    const labs = await Lab.find({}, { apiKey: 0 }).skip(skip).limit(limit);
-
-    res.json({
-      labs: labs,
-      pages: Math.ceil(total / limit),
-      total: total
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao listar laboratórios' });
-  }
+    try {
+        const labs = await Lab.find({}, { apiKey: 0 });
+        res.json(labs);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao listar laboratórios' });
+    }
 });
-
-
 
 // Stats detalhados para laboratório
 app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
@@ -1450,22 +1438,17 @@ app.get('/novo-certificado', (req, res) => {
 // STATS GLOBAIS (MINISTÉRIO)
 // =============================================
 app.get('/api/stats', authMiddleware, async (req, res) => {
-  try {
-    const labs = await Lab.countDocuments();
-    const hospitais = await Hospital.countDocuments();
-    const empresas = await Empresa.countDocuments();
-    
-    res.json({
-      labs: labs,
-      hospitais: hospitais,
-      empresas: empresas
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao carregar estatísticas' });
-  }
+    try {
+        const stats = {
+            labs: await Lab.countDocuments({ ativo: true }),
+            hospitais: await Hospital.countDocuments({ ativo: true }),
+            empresas: await Empresa.countDocuments({ ativo: true })
+        };
+        res.json(stats);
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao carregar estatísticas' });
+    }
 });
-
-
 
 // =============================================
 // GÉNÉRATION PDF POUR LABORATOIRE
