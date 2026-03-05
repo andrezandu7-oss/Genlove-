@@ -947,13 +947,25 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
 
 // Listar todos os laboratórios (apenas admin)
 app.get('/api/labs', authMiddleware, async (req, res) => {
-    try {
-        const labs = await Lab.find({}, { apiKey: 0 });
-        res.json(labs);
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao listar laboratórios' });
-    }
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const total = await Lab.countDocuments();
+    const labs = await Lab.find({}, { apiKey: 0 }).skip(skip).limit(limit);
+
+    // On renvoie l'objet structuré nécessaire pour le script du dashboard
+    res.json({
+      labs: labs,
+      pages: Math.ceil(total / limit),
+      total: total
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao listar laboratórios' });
+  }
 });
+
 
 // Stats detalhados para laboratório
 app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
