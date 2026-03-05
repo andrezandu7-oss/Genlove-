@@ -939,16 +939,32 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
     }
 });
 
-// Listar todos os laboratórios (apenas admin)
+// Listar todos os laboratórios (apenas admin) com paginação
 app.get('/api/labs', authMiddleware, async (req, res) => {
     try {
-        const labs = await Lab.find({}, { apiKey: 0 });
-        res.json(labs);
+        const { page = 1, limit = 10, provincia, ativo } = req.query;
+        const filter = {};
+        if (provincia) filter.provincia = provincia;
+        if (ativo !== undefined) filter.ativo = ativo === 'true';
+
+        const labs = await Lab.find(filter, { apiKey: 0 })
+            .skip((parseInt(page) - 1) * parseInt(limit))
+            .limit(parseInt(limit))
+            .sort({ createdAt: -1 });
+
+        const total = await Lab.countDocuments(filter);
+
+        res.json({
+            labs,
+            total,
+            page: parseInt(page),
+            pages: Math.ceil(total / parseInt(limit))
+        });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Erro ao listar laboratórios' });
     }
 });
-
 // Stats detalhados para laboratório
 app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
     try {
