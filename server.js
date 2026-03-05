@@ -1451,6 +1451,13 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
 });
 
 // =============================================
+// ROUTE POUR LE FORMULAIRE DE CRÉATION DE LABORATOIRE
+// =============================================
+app.get('/novo-laboratorio', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'novo-laboratorio.html'));
+});
+
+// =============================================
 // INICIALIZAÇÃO DO SERVIDOR
 // =============================================
 app.listen(PORT, () => {
