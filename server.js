@@ -1,8 +1,8 @@
-// =======================
+// ========================
 // SNS - SISTEMA NACIONAL DE SAÚDE
 // MINISTÉRIO DA SAÚDE - ANGOLA
-// VERSÃO FINAL COM RELATÓRIOS DETALHADOS
-// =======================
+// VERSÃO FINAL CORRIGIDA
+// ========================
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -14,28 +14,29 @@ const PDFDocument = require('pdfkit');
 const path = require('path');
 const QRCode = require('qrcode');
 require('dotenv').config();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// =======================
+// ========================
 // CONFIGURAÇÕES
-// =======================
+// ========================
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static('public'));
 
-// =======================
+// ========================
 // CONEXÃO MONGODB
-// =======================
+// ========================
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sns';
 mongoose.connect(MONGODB_URI)
-    .then(() => console.log('✅ MongoDB connectado'))
+    .then(() => console.log('✅ MongoDB conectado'))
     .catch(err => console.log('❌ MongoDB erro: ', err));
 
-// =======================
+// ========================
 // FUNÇÕES AUXILIARES
-// =======================
+// ========================
 function gerarApiKey() {
     return 'SNS-' + Date.now() + '-' + crypto.randomBytes(8).toString('hex').toUpperCase();
 }
@@ -55,17 +56,17 @@ function gerarNumeroCertificado(tipo) {
     const dia = new Date().getDate().toString().padStart(2, '0');
     const random = crypto.randomBytes(4).toString('hex').toUpperCase();
     const prefixos = {
-        1: 'GEN', 2: 'SAU', 3: 'INC', 
-        4: 'APT', 5: 'MAT', 6: 'CPN', 
+        1: 'GEN', 2: 'SAU', 3: 'INC',
+        4: 'APT', 5: 'MAT', 6: 'CPN',
         7: 'EPI', 8: 'CSD'
     };
     const sequencia = String(Math.floor(1000 + Math.random() * 9000));
     return `${prefixos[tipo]}-${ano}${mes}${dia}-${sequencia}-${random}`;
 }
 
-// =======================
+// ========================
 // MODELOS DE DADOS
-// =======================
+// ========================
 
 // USER (Administrador)
 const userSchema = new mongoose.Schema({
@@ -78,25 +79,31 @@ const userSchema = new mongoose.Schema({
 // LABORATÓRIO (COM CAMPOS COMPLETOS)
 const labSchema = new mongoose.Schema({
     labId: { type: String, unique: true },
+    
     // Informações Básicas
     nome: { type: String, required: true },
     nif: { type: String, required: true, unique: true },
     tipo: { type: String, enum: ['Público', 'Privado', 'Misto'], required: true },
+    
     // Localização
     provincia: { type: String, required: true },
     municipio: String,
     endereco: { type: String, required: true },
+    
     // Contactos
-    telephone: { type: String, required: true },
-    telephone2: String,
+    telefone: { type: String, required: true },
+    telefone2: String,
     email: { type: String, required: true },
     website: String,
+    
     // Responsáveis
     diretor: { type: String, required: true },
     responsavelTecnico: String,
+    
     // Licenciamento
-    licença: String,
-    validadeLicença: Date,
+    licenca: String,
+    validadeLicenca: Date,
+    
     // Chave e status
     apiKey: { type: String, unique: true },
     ativo: { type: Boolean, default: true },
@@ -209,7 +216,6 @@ const Empresa = mongoose.model('Empresa', empresaSchema);
 const Certificate = mongoose.model('Certificate', certificateSchema);
 
 // ===============================================
-// ===============================================
 // MIDDLEWARES
 // ===============================================
 const authMiddleware = (req, res, next) => {
@@ -255,7 +261,7 @@ app.get('/lab-login', (req, res) => {
 });
 
 // ==============================================
-// API DE AUTENTICACAO
+// API DE AUTENTICAÇÃO
 // ==============================================
 app.post('/api/login', async (req, res) => {
     try {
@@ -264,16 +270,16 @@ app.post('/api/login', async (req, res) => {
             let user = await User.findOne({ email });
             if (!user) {
                 const senhaHash = await bcrypt.hash(password, 10);
-                user = await User.create({ 
-                    nome: 'Administrador', 
-                    email, 
-                    password: senhaHash, 
-                    role: 'admin' 
+                user = await User.create({
+                    nome: 'Administrador',
+                    email,
+                    password: senhaHash,
+                    role: 'admin'
                 });
             }
             const token = jwt.sign(
-                { id: user._id, email, role: user.role }, 
-                process.env.JWT_SECRET || 'secret-key', 
+                { id: user._id, email, role: user.role },
+                process.env.JWT_SECRET || 'secret-key',
                 { expiresIn: '8h' }
             );
             res.json({ token });
@@ -297,7 +303,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION CORRIGÉE)
+// DASHBOARD DO MINISTÉRIO (VERSÃO COMPLETA)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -320,8 +326,8 @@ app.get('/admin-dashboard', (req, res) => {
             flex-direction:column;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
-        .sidebar h2 { 
-            margin-bottom:30px; 
+        .sidebar h2 {
+            margin-bottom:30px;
             text-align:center;
             padding-bottom:15px;
             border-bottom:1px solid rgba(255,255,255,0.2);
@@ -394,8 +400,8 @@ app.get('/admin-dashboard', (req, res) => {
         th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
         td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
         tr:hover { background:#fafafa; }
-        .btn-acao { 
-            background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
+        .btn-acao {
+            background:#f0f0f0; border:none; padding:8px; border-radius:5px;
             cursor:pointer; transition:0.2s; margin-right:5px;
         }
         .btn-acao:hover { background:#e0e0e0; transform: scale(1.1); }
@@ -526,12 +532,8 @@ app.get('/admin-dashboard', (req, res) => {
     <script>
         console.log("Dashboard ministério carregado");
         var token = localStorage.getItem("token");
-        console.log("Token:", token ? "presente" : "ausente");
-        if (!token) {
-            window.location.href = "/ministerio";
-        }
+        if (!token) window.location.href = "/ministerio";
 
-        // Variáveis de paginação
         var currentPage = 1;
         var totalPages = 1;
         var limit = 10;
@@ -540,12 +542,9 @@ app.get('/admin-dashboard', (req, res) => {
             document.getElementById('dashboardSection').className = 'secao';
             document.getElementById('laboratoriosSection').className = 'secao';
             document.getElementById(id).className = 'secao active';
-            if (id === 'laboratoriosSection') {
-                carregarLaboratorios();
-            }
+            if (id === 'laboratoriosSection') carregarLaboratorios();
         }
 
-        // Carregar estatísticas (corrigido: espaço após Bearer)
         function carregarStats() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/stats', true);
@@ -563,14 +562,13 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.send();
         }
 
-        // Carregar laboratórios com paginação e filtros (corrigido)
         function carregarLaboratorios(pagina = 1) {
             console.log("Carregando laboratórios, página", pagina);
             currentPage = pagina;
             var tbody = document.getElementById('tabelaLabs');
             var spinner = document.getElementById('spinnerLabs');
-            tbody.innerHTML = ''; // Limpa a tabela
-            spinner.style.display = 'block'; // Mostra spinner
+            tbody.innerHTML = '';
+            spinner.style.display = 'block';
 
             var provincia = document.getElementById('filtroProvincia').value;
             var status = document.getElementById('filtroStatus').value;
@@ -647,8 +645,7 @@ app.get('/admin-dashboard', (req, res) => {
         }
 
         function verDetalhes(id) {
-            // Redirecionar para uma página de detalhes ou abrir modal
-            alert('Detalhes do laboratório em breve...');
+            alert("Detalhes do laboratório em breve...");
         }
 
         function toggleStatus(id, ativoAtual) {
@@ -670,8 +667,9 @@ app.get('/admin-dashboard', (req, res) => {
 </body>
 </html>`);
 });
+
 // ================================================
-// DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
+// DASHBOARD DO LABORATORIO (VERSÃO COMPLETA)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -683,8 +681,6 @@ app.get('/lab-dashboard', (req, res) => {
     <style>
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
         body { display:flex; background:#f5f5f5; min-height: 100vh; }
-        
-        /* Sidebar Estilizada */
         .sidebar {
             width:260px;
             background:#006633;
@@ -696,8 +692,8 @@ app.get('/lab-dashboard', (req, res) => {
             flex-direction:column;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
-        .sidebar h2 { 
-            margin-bottom:30px; 
+        .sidebar h2 {
+            margin-bottom:30px;
             text-align:center;
             padding-bottom:15px;
             border-bottom:1px solid rgba(255,255,255,0.2);
@@ -719,7 +715,6 @@ app.get('/lab-dashboard', (req, res) => {
             transition: 0.3s;
         }
         .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
-        
         .sidebar .novo-btn {
             background:#ffa500;
             color:#00331a;
@@ -728,7 +723,6 @@ app.get('/lab-dashboard', (req, res) => {
             text-align:center;
         }
         .sidebar .novo-btn:hover { background:#ffb833; transform: translateY(-2px); }
-        
         .sidebar .sair-btn {
             background:#cc3300;
             margin-top:auto;
@@ -736,9 +730,11 @@ app.get('/lab-dashboard', (req, res) => {
             color: white;
         }
         .sidebar .sair-btn:hover { background:#e63900; }
-
-        /* Área Principal */
-        .main { margin-left:260px; padding:40px; width:100%; }
+        .main {
+            margin-left:260px;
+            padding:40px;
+            width:100%;
+        }
         .welcome {
             background:white;
             padding:25px;
@@ -747,25 +743,19 @@ app.get('/lab-dashboard', (req, res) => {
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        
-        /* Controle de Seções */
         .secao { display:none; animation: fadeIn 0.3s ease; }
         .secao.active { display:block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Tabelas e Botões */
         .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
-        table { width:100%; border-collapse:collapse; margin-top:10px; }
+        table { width:100%; border-collapse:collapse; margin-top:20px; }
         th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
         td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
         tr:hover { background:#fafafa; }
-        
-        .btn-acao { 
-            background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
+        .btn-acao {
+            background:#f0f0f0; border:none; padding:8px; border-radius:5px;
             cursor:pointer; transition:0.2s; margin-right:5px;
         }
         .btn-acao:hover { background:#e0e0e0; transform: scale(1.1); }
-        
         .status-badge {
             background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;
         }
@@ -774,8 +764,8 @@ app.get('/lab-dashboard', (req, res) => {
 <body>
     <div class="sidebar">
         <h2>SNS - LABORATÓRIO</h2>
-        <button onclick="mostrarSeccion('dashboardSection')">📊 Dashboard</button>
-        <button onclick="mostrarSeccion('certificadosSection')">📋 Histórico</button>
+        <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
+        <button onclick="mostrarSeccao('certificadosSection')">📋 Histórico</button>
         <button class="novo-btn" onclick="location.href='/novo-certificado'">➕ NOVO CERTIFICADO</button>
         <button class="sair-btn" onclick="logout()">🚪 Sair</button>
     </div>
@@ -818,13 +808,12 @@ app.get('/lab-dashboard', (req, res) => {
         const key = localStorage.getItem("labKey");
         if (!key) window.location.href = "/lab-login";
 
-        // Types mis à jour selon vos besoins
         const tipos = ["", "GENÓTIPO", "BOA SAÚDE", "INCAPACIDADE", "APTIDÃO", "SAÚDE MATERNA", "PRÉ-NATAL", "EPIDEMIOLÓGICO", "CSD"];
 
-        function mostrarSeccion(id) {
+        function mostrarSeccao(id) {
             document.querySelectorAll('.secao').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            if(id === 'certificadosSection') carregarCertificados();
+            if (id === 'certificadosSection') carregarCertificados();
         }
 
         async function carregarDados() {
@@ -846,20 +835,23 @@ app.get('/lab-dashboard', (req, res) => {
                     return;
                 }
 
-                tbody.innerHTML = lista.map(c => \`
-                    <tr>
-                        <td><strong>\${c.numero}</strong></td>
-                        <td><span class="status-badge">\${tipos[c.tipo] || 'OUTRO'}</span></td>
-                        <td>\${c.paciente?.nomeCompleto || 'N/I'}</td>
-                        <td>\${new Date(c.emitidoEm).toLocaleDateString('pt-PT')}</td>
-                        <td>
-                            <button class="btn-acao" onclick="gerarPDF('\${c.numero}', 'view')" title="Visualizar">👁️</button>
-                            <button class="btn-acao" onclick="gerarPDF('\${c.numero}', 'print')" title="Imprimir">🖨️</button>
-                            <button class="btn-acao" onclick="gerarPDF('\${c.numero}', 'download')" title="Baixar">📥</button>
-                        </td>
-                    </tr>
-                \`).join('');
+                let html = '';
+                lista.forEach(c => {
+                    html += '<tr>';
+                    html += '<td><strong>' + c.numero + '</strong></td>';
+                    html += '<td><span class="status-badge">' + (tipos[c.tipo] || 'OUTRO') + '</span></td>';
+                    html += '<td>' + (c.paciente?.nomeCompleto || 'N/I') + '</td>';
+                    html += '<td>' + new Date(c.emitidoEm).toLocaleDateString('pt-PT') + '</td>';
+                    html += '<td>';
+                    html += '<button class="btn-acao" onclick="gerarPDF(\'' + c.numero + '\', \'view\')" title="Visualizar">👁️</button>';
+                    html += '<button class="btn-acao" onclick="gerarPDF(\'' + c.numero + '\', \'print\')" title="Imprimir">🖨️</button>';
+                    html += '<button class="btn-acao" onclick="gerarPDF(\'' + c.numero + '\', \'download\')" title="Baixar">📥</button>';
+                    html += '</td>';
+                    html += '</tr>';
+                });
+                tbody.innerHTML = html;
             } catch (e) {
+                console.error(e);
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao carregar dados.</td></tr>';
             }
         }
@@ -871,7 +863,6 @@ app.get('/lab-dashboard', (req, res) => {
                     headers: { 'Content-Type': 'application/json', 'x-api-key': key },
                     body: JSON.stringify({ numero })
                 });
-
                 if (!res.ok) throw new Error();
                 const blob = await res.blob();
                 const url = URL.createObjectURL(blob);
@@ -880,12 +871,12 @@ app.get('/lab-dashboard', (req, res) => {
                 if (acao === 'download') {
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = \`Certificado-\${numero}.pdf\`;
+                    a.download = 'certificado-' + numero + '.pdf';
                     a.click();
                 }
                 if (acao === 'print') {
                     const win = window.open(url, '_blank');
-                    win.onload = () => win.print();
+                    if (win) win.onload = () => win.print();
                 }
             } catch (e) { alert("Erro ao processar PDF"); }
         }
@@ -895,7 +886,6 @@ app.get('/lab-dashboard', (req, res) => {
             window.location.href = "/";
         }
 
-        // Initialisation
         carregarDados();
     </script>
 </body>
@@ -925,7 +915,7 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
     }
 });
 
-// Listar todos os laboratórios (apenas admin) com paginação
+// Listar todos os laboratórios (apenas admin) com paginação e filtros
 app.get('/api/labs', authMiddleware, async (req, res) => {
     try {
         const { page = 1, limit = 10, provincia, ativo } = req.query;
@@ -951,22 +941,19 @@ app.get('/api/labs', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Erro ao listar laboratórios' });
     }
 });
-// =============================================
-// ROUTE POUR OBTENIR LE PDF D'UN LABORATOIRE (PAR ID)
-// =============================================
+
+// Rota para obter PDF de um laboratório específico
 app.get('/api/labs/:id/pdf', authMiddleware, async (req, res) => {
     try {
         const lab = await Lab.findById(req.params.id);
-        if (!lab) {
-            return res.status(404).json({ error: 'Laboratório não encontrado' });
-        }
+        if (!lab) return res.status(404).json({ error: 'Laboratório não encontrado' });
 
         const doc = new PDFDocument({ size: 'A4', margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=lab-${lab.labId || lab._id}.pdf`);
         doc.pipe(res);
 
-        // --- Construction du PDF (identique à la route /api/labs/pdf) ---
+        // Cabeçalho
         doc.fillColor('#006633');
         doc.fontSize(20).text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
         doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
@@ -977,6 +964,7 @@ app.get('/api/labs/:id/pdf', authMiddleware, async (req, res) => {
         doc.fillColor('#006633').fontSize(18).text('CREDENCIAÇÃO DE LABORATÓRIO', 0, y, { align: 'center' });
         y += 30;
 
+        // Informações
         doc.fillColor('#006633').fontSize(14).text('Laboratório:', 50, y);
         y += 20;
         doc.fillColor('#000').fontSize(12).text(lab.nome, 70, y);
@@ -1006,14 +994,15 @@ app.get('/api/labs/:id/pdf', authMiddleware, async (req, res) => {
         }
 
         y += 40;
+        // Chave API
         doc.fillColor('#006633').fontSize(16).text('CHAVE DE ACESSO API', 0, y, { align: 'center' });
         y += 30;
-
         doc.roundedRect(100, y, 400, 50, 10).fillAndStroke('#e8f5e9', '#006633');
         doc.fillColor('#006633').fontSize(14).text('API Key:', 120, y + 10);
         doc.fillColor('#000').fontSize(18).font('Courier').text(lab.apiKey, 120, y + 25);
 
         y += 70;
+        // Aviso
         doc.fillColor('#dc3545').fontSize(12).text('⚠️ ATENÇÃO - CONFIDENCIAL ⚠️', 0, y, { align: 'center' });
         y += 20;
         doc.fillColor('#666').fontSize(10)
@@ -1033,19 +1022,20 @@ app.get('/api/labs/:id/pdf', authMiddleware, async (req, res) => {
 
         doc.end();
     } catch (error) {
-        console.error('Erreur PDF Lab:', error);
+        console.error('Erro PDF Lab:', error);
         res.status(500).json({ error: 'Erro ao gerar PDF' });
     }
 });
-// Stats detalhados para laboratório
+
+// Stats detalhados para laboratório (certificados)
 app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
     try {
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
-        
+
         const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
         const inicioAno = new Date(hoje.getFullYear(), 0, 1);
-        
+
         const stats = await Certificate.aggregate([
             { $match: { emitidoPor: req.lab._id } },
             {
@@ -1068,7 +1058,7 @@ app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
                 }
             }
         ]);
-        
+
         res.json({
             diario: stats[0]?.diario[0]?.count || 0,
             mensal: stats[0]?.mensal[0]?.count || 0,
@@ -1100,7 +1090,7 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
         const dados = req.body;
         const numero = gerarNumeroCertificado(tipo);
         const hash = crypto.createHash('sha256').update(numero + Date.now()).digest('hex');
-        
+
         const certificado = new Certificate({
             numero,
             tipo,
@@ -1110,15 +1100,13 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
             hash,
             emitidoPor: req.lab._id
         });
-        
-        // Os middlewares pre-save calcularão IMC e idade automaticamente
+
         await certificado.save();
-        
         req.lab.totalEmissoes++;
         await req.lab.save();
-        
-        res.json({ 
-            success: true, 
+
+        res.json({
+            success: true,
             numero,
             imc: certificado.imc,
             idade: certificado.idade,
@@ -1130,29 +1118,15 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
     }
 });
 
-// =============================================
-// ROUTE POUR GÉNÉRER LES PDF
-// =============================================
+// Rota para gerar PDF do certificado
 app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
     try {
         const { numero } = req.body;
-        
-        // Vérifier que le numéro est présent
-        if (!numero) {
-            return res.status(400).json({ error: 'Número do certificado não fornecido' });
-        }
-        
-        // Récupérer le certificat avec les données
-        const certificado = await Certificate.findOne({ 
-            numero,
-            emitidoPor: req.lab._id 
-        });
-        
-        if (!certificado) {
-            return res.status(404).json({ error: 'Certificado não encontrado' });
-        }
-        
-        // Utiliser la méthode de l'instance pour préparer les données
+        if (!numero) return res.status(400).json({ error: 'Número do certificado não fornecido' });
+
+        const certificado = await Certificate.findOne({ numero, emitidoPor: req.lab._id });
+        if (!certificado) return res.status(404).json({ error: 'Certificado não encontrado' });
+
         const dados = certificado.prepararParaPDF ? certificado.prepararParaPDF() : {
             numero: certificado.numero,
             tipo: certificado.tipo,
@@ -1164,146 +1138,77 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             classificacaoIMC: certificado.classificacaoIMC,
             emitidoEm: certificado.emitidoEm
         };
-        
+
         const lab = req.lab;
-        
-        // Créer un nouveau document PDF
-        const doc = new PDFDocument({
-            size: 'A4',
-            margin: 50,
-            info: {
-                Title: `Certificado ${numero}`,
-                Author: lab.nome,
-                Subject: 'Certificado Médico SNS Angola'
-            }
-        });
-        
-        // Configurer la réponse
+
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=certificado-${numero}.pdf`);
-        
-        // Pipe le PDF vers la réponse
         doc.pipe(res);
-        
-        // =========================================
-        // EN-TÊTE DU DOCUMENT (CENTRÉ)
-        // =========================================
+
+        // Cabeçalho
         doc.fillColor('#006633');
-
-        // Première ligne - centrée
-        doc.fontSize(20)
-           .text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
-
-        // Deuxième ligne - centrée
-        doc.fontSize(16)
-           .text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
-
-        // Troisième ligne - centrée et plus grande
-        doc.fontSize(24)
-           .text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
-
-        // Ligne de séparation centrée
-        doc.strokeColor('#006633')
-           .lineWidth(2)
-           .moveTo(doc.page.width / 2 - 250, 150)
-           .lineTo(doc.page.width / 2 + 250, 150)
-           .stroke();
+        doc.fontSize(20).text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+        doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+        doc.fontSize(24).text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
+        doc.strokeColor('#006633').lineWidth(2).moveTo(50, 150).lineTo(550, 150).stroke();
 
         let y = 180;
-        
-        // =========================================
-        // LABORATÓRIO EMISSOR
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(14)
-            .text(lab.nome, 50, y);
-
-        doc.fontSize(10)
-            .fillColor('#666')
+        // Laboratório
+        doc.fillColor('#006633').fontSize(14).text(lab.nome, 50, y);
+        doc.fontSize(10).fillColor('#666')
             .text(`NIF: ${lab.nif} | ${lab.provincia}`, 50, y + 20)
-            .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telephone || 'Não informado'}`, 50, y + 35);
-
+            .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telefone || 'Não informado'}`, 50, y + 35);
         y += 60;
-        
-        // =========================================
-        // NUMÉRO DO CERTIFICADO
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(12)
-            .text(`CERTIFICADO Nº: ${numero}`, 50, y);
 
-        doc.fontSize(10)
-            .fillColor('#666')
+        // Número do certificado
+        doc.fillColor('#006633').fontSize(12).text(`CERTIFICADO Nº: ${numero}`, 50, y);
+        doc.fontSize(10).fillColor('#666')
             .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, y + 15);
-
         y += 40;
-        
-        // =========================================
-        // RESPONSÁVEL PELA EMISSÃO (LABORANTIN)
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(12)
-            .text('RESPONSÁVEL PELA EMISSÃO:', 50, y);
-        
+
+        // Responsável
+        doc.fillColor('#006633').fontSize(12).text('RESPONSÁVEL PELA EMISSÃO:', 50, y);
         y += 20;
-        doc.fillColor('#000')
-            .fontSize(11)
+        doc.fillColor('#000').fontSize(11)
             .text(`Nome: ${dados.laborantin?.nome || 'Não informado'}`, 70, y);
         y += 15;
-        
         if (dados.laborantin?.registro) {
             doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
             y += 25;
         } else {
             y += 10;
         }
-        
-        // =========================================
-        // DADOS DO PACIENTE
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(12)
-            .text('DADOS DO PACIENTE:', 50, y);
-        
+
+        // Paciente
+        doc.fillColor('#006633').fontSize(12).text('DADOS DO PACIENTE:', 50, y);
         y += 20;
-        doc.fillColor('#000')
-            .fontSize(11)
+        doc.fillColor('#000').fontSize(11)
             .text(`Nome: ${dados.paciente?.nomeCompleto || 'Não informado'}`, 70, y);
         y += 15;
         doc.text(`BI: ${dados.paciente?.bi || 'Não informado'}`, 70, y);
         y += 15;
-        
         if (dados.paciente?.dataNascimento) {
             doc.text(`Data Nascimento: ${new Date(dados.paciente.dataNascimento).toLocaleDateString('pt-PT')}`, 70, y);
             y += 15;
         }
-        
         if (dados.idade) {
             doc.text(`Idade: ${dados.idade} anos`, 70, y);
             y += 15;
         }
-        
         if (dados.paciente?.genero) {
             const genero = dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino';
             doc.text(`Género: ${genero}`, 70, y);
             y += 15;
         }
-        
         if (dados.paciente?.telefone) {
             doc.text(`Telefone: ${dados.paciente.telefone}`, 70, y);
             y += 20;
         }
-        
-        // =========================================
-        // DADOS MÉDICOS (AVEC "NÃO SOLICITADO")
-        // =========================================
-        doc.fillColor('#006633')
-            .fontSize(12)
-            .text('DADOS MÉDICOS:', 50, y);
-        
+
+        // Dados médicos (simplificado)
+        doc.fillColor('#006633').fontSize(12).text('DADOS MÉDICOS:', 50, y);
         y += 20;
-        
-        // Titre du type de certificat
         const tipos = {
             1: 'CERTIFICADO DE GENÓTIPO',
             2: 'CERTIFICADO DE BOA SAÚDE',
@@ -1314,205 +1219,68 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             7: 'CERTIFICADO EPIDEMIOLÓGICO',
             8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
         };
-        
-        doc.fillColor('#333')
-            .fontSize(12)
-            .text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
-        
+        doc.fillColor('#333').fontSize(12).text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
         y += 25;
-        
+
         if (dados.dados) {
-            // Liste de tous les examens possibles pour ce type de certificat
-            const todosExames = {
-                1: ['grupoSanguineo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese'],
-                2: ['peso', 'altura', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos'],
-                3: ['tipoIncapacidade', 'causa', 'grau', 'dataInicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante'],
-                4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade'],
-                5: ['gestacoes', 'partos', 'abortos', 'nascidosVivos', 'dum', 'dpp', 'idadeGestacional', 'consultasCPN', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguineo', 'fatorRh', 'exsudadoVaginal', 'pesoAtual', 'alturaUterina', 'batimentosCardiacosFeto', 'movimentosFetais', 'edema', 'proteinuria'],
-                6: ['grupoSanguineo', 'fatorRh', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'ureia', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao'],
-                7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos'],
-                8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais', 'recomendacoes']
-            };
-            
-            const examesTipo = todosExames[dados.tipo] || [];
-            
-            // Préparer tous les examens avec leur statut
-            const todosExamesFormatados = [];
-            
-            for (let i = 0; i < examesTipo.length; i++) {
-                const exame = examesTipo[i];
-                
-                const nomeExame = exame.replace(/([A-Z])/g, ' $1')
-                    .replace(/^./, function(str) { return str.toUpperCase(); });
-                
-                const valor = dados.dados[exame];
-                
-                if (valor && valor.toString().trim() !== '') {
-                    // Examen rempli
-                    todosExamesFormatados.push({
-                        exame: nomeExame,
-                        valor: valor,
-                        solicitado: true
-                    });
-                } else {
-                    // Examen non sollicité
-                    todosExamesFormatados.push({
-                        exame: nomeExame,
-                        valor: '(não solicitado)',
-                        solicitado: false
-                    });
+            for (let [key, value] of Object.entries(dados.dados)) {
+                if (value && value.toString().trim()) {
+                    doc.fontSize(11).fillColor('#000').text(`${key}: ${value}`, 70, y);
+                    y += 20;
                 }
-            }
-            
-            // Afficher tous les examens en 2 colonnes
-            if (todosExamesFormatados.length > 0) {
-                const metade = Math.ceil(todosExamesFormatados.length / 2);
-                
-                doc.fontSize(9);
-                
-                // Colonne 1
-                let yCol1 = y;
-                for (let j = 0; j < metade; j++) {
-                    const item = todosExamesFormatados[j];
-                    if (item.solicitado) {
-                        doc.fillColor('#000')
-                           .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
-                    } else {
-                        doc.fillColor('#999')
-                           .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
-                    }
-                    yCol1 += 15;
-                    
-                    if (yCol1 > 700) {
-                        doc.addPage();
-                        yCol1 = 50;
-                    }
-                }
-                
-                // Colonne 2
-                let yCol2 = y;
-                for (let j = metade; j < todosExamesFormatados.length; j++) {
-                    const item = todosExamesFormatados[j];
-                    if (item.solicitado) {
-                        doc.fillColor('#000')
-                           .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
-                    } else {
-                        doc.fillColor('#999')
-                           .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
-                    }
-                    yCol2 += 15;
-                    
-                    if (yCol2 > 700) {
-                        doc.addPage();
-                        yCol2 = 50;
-                    }
-                }
-                
-                y = (yCol1 > yCol2 ? yCol1 : yCol2) + 10;
             }
         }
-        
         if (dados.imc) {
-            doc.fontSize(11)
-                .fillColor('#000')
-                .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
+            doc.fontSize(11).fillColor('#000').text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
             y += 25;
         }
-        
-        // =========================================
-                // =========================================
-               // =========================================
-        // ASSINATURAS
-        // =========================================
-        // Linha para assinatura do laborantin
-        doc.lineWidth(1)
-            .moveTo(70, y)
-            .lineTo(270, y)
-            .stroke();
-        
-        doc.fontSize(10)
-            .text('Assinatura do Laborantin', 70, y + 5)
+
+        // Assinaturas
+        y += 20;
+        doc.lineWidth(1).moveTo(70, y).lineTo(270, y).stroke();
+        doc.fontSize(10).text('Assinatura do Laborantin', 70, y + 5)
             .text(dados.laborantin?.nome || '___________________', 70, y + 20);
-        
-        // Linha para assinatura do diretor
-        doc.lineWidth(1)
-            .moveTo(350, y)
-            .lineTo(550, y)
-            .stroke();
-        
-        doc.fontSize(10)
-            .text('Assinatura do Diretor Clínico', 350, y + 5)
+        doc.lineWidth(1).moveTo(350, y).lineTo(550, y).stroke();
+        doc.fontSize(10).text('Assinatura do Diretor Clínico', 350, y + 5)
             .text(lab.diretor || '___________________', 350, y + 20);
-        
         y += 50;
-        
-        // =========================================
-        // QR CODE DE VERIFICAÇÃO (CENTRADO COM AWAIT)
-        // =========================================
+
+        // QR Code
         try {
-            // Données simplifiées pour le QR code
             const textoQR = `${numero}|${lab.nome}|${dados.paciente?.nomeCompleto || 'PACIENTE'}|${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`;
-            
-            // 👇 ATTENDRE que le QR soit généré (CRITIQUE)
             const qrBuffer = await QRCode.toBuffer(textoQR, {
                 errorCorrectionLevel: 'H',
                 margin: 1,
                 width: 100,
                 color: { dark: '#006633', light: '#FFFFFF' }
             });
-            
-            // Position CENTRÉE (entre les deux signatures)
-            const qrX = 310 - 50; // Centre (310) - moitié du QR (50)
-            const qrY = y - 20;   // Position verticale
-            
-            // Afficher le QR code
+            const qrX = 310 - 50;
+            const qrY = y - 30;
             doc.image(qrBuffer, qrX, qrY, { width: 100 });
-            
-            // Texte au-dessus
-            doc.fontSize(7)
-               .fillColor('#006633')
-               .text('SCAN PARA VERIFICAR', qrX, qrY - 12, { 
-                   width: 100, 
-                   align: 'center' 
-               });
-            
-            // Petit texte en dessous
-            doc.fontSize(6)
-               .fillColor('#999')
-               .text('válido por QR', qrX, qrY + 110, { 
-                   width: 100, 
-                   align: 'center' 
-               });
-            
-            console.log('✅ QR code gerado para:', numero);
-            
+            doc.fontSize(7).fillColor('#006633').text('SCAN PARA VERIFICAR', qrX, qrY - 12, { width: 100, align: 'center' });
+            doc.fontSize(6).fillColor('#999').text('válido por QR', qrX, qrY + 110, { width: 100, align: 'center' });
         } catch (qrError) {
-            console.error('❌ Erro ao gerar QR:', qrError);
-            
-            // Fallback mínimo (apenas uma mensagem discreta)
-            doc.fontSize(7)
-               .fillColor('#999')
-               .text('QR indisponível', 280, y - 10);
+            console.error('Erro QR:', qrError);
+            doc.fontSize(7).fillColor('#999').text('QR indisponível', 280, y - 10);
         }
-        
-        // =========================================
-        // RODAPÉ
-        // =========================================
-        doc.fontSize(8)
-            .fillColor('#666')
-            .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
-        
+
+        y += 70;
+        doc.fontSize(8).fillColor('#666').text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
+
         doc.end();
-        
     } catch (error) {
-        console.error('❌ Erreur PDF:', error);
+        console.error('Erreur PDF:', error);
         res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
     }
 });
+
 // =============================================
+// FORMULÁRIOS
 // =============================================
-// FORMULÁRIO NOVO LABORATÓRIO
-// =============================================
+app.get('/novo-certificado', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'novo-certificado.html'));
+});
+
 app.get('/novo-laboratorio', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'novo-laboratorio.html'));
 });
@@ -1539,5 +1307,3 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
 app.listen(PORT, () => {
     console.log('✅ SNS Online na porta ' + PORT);
 });
-
-
