@@ -283,13 +283,141 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTERIO
+// DASHBOARD DO MINISTÉRIO
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
-    res.send('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Admin - SNS</title><style>*{margin:0;padding:0;box-sizing:border-box;font-family:Arial;}body{display:flex;background:#f5f5f5;}.sidebar{width:250px;background:#006633;color:white;height:100vh;padding:20px;position:fixed;}.sidebar a{display:block;color:white;text-decoration:none;padding:10px;margin:5px 0;border-radius:5px;cursor:pointer;}.sidebar a:hover{background:#004d26;}.main{margin-left:270px;padding:30px;width:100%;}.btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;}.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;}.modal-content{background:white;padding:20px;border-radius:10px;width:400px;}table{width:100%;background:white;border-collapse:collapse;margin-top:20px;}th,td{padding:10px;border-bottom:1px solid #ddd;}</style></head><body><div class="sidebar"><h2>SNS-Admin</h2><a onclick="mostrar(\'dashboard\')">Dashboard</a><a onclick="mostrar(\'labs\')">Laboratórios</a><button onclick="logout()" class="btn" style="background:red;width:100%;margin-top:20px;">Sair</button></div><div class="main"><div id="dashboard"><h2>Painel de Controle</h2><p id="stats">Carregando estatisticas...</p></div><div id="labs" style="display:none;"><h2>Laboratórios <button class="btn" onclick="document.getElementById(\'modalLab\').style.display=\'flex\'">+ Novo</button></h2><table><thead><tr><th>Nome</th><th>NIF</th><th>Status</th><th>Ações</th></tr></thead><tbody id="labTable"></tbody></table></div></div><div id="modalLab" class="modal"><div class="modal-content"><h3>Novo Laboratório</h3><input id="lNome" style="width:100%;margin:5px 0;padding:8px;" placeholder="Nome"><input id="lNIF" style="width:100%;margin:5px 0;padding:8px;" placeholder="NIF"><input id="lProv" style="width:100%;margin:5px 0;padding:8px;" placeholder="Província"><input id="lEmail" style="width:100%;margin:5px 0;padding:8px;" placeholder="Email"><button class="btn" onclick="criarLab()">Criar</button><button class="btn" style="background:gray;" onclick="document.getElementById(\'modalLab\').style.display=\'none\'">Cancelar</button></div></div><script>const token=localStorage.getItem("token");if(!token)window.location.href="/ministerio";function mostrar(id){document.getElementById("dashboard").style.display=id==="dashboard"?"block":"none";document.getElementById("labs").style.display=id==="labs"?"block":"none";if(id==="labs")carregarLabs();}async function carregarLabs(){const r=await fetch("/api/labs",{headers:{"Authorization":"Bearer "+token}});const labs=await r.json();let html="";labs.forEach(l=>{html+=`<tr><td>${l.nome}</td><td>${l.nif}</td><td>${l.ativo?"Ativo":"Inativo"}</td><td><button onclick="ativar(\'${l._id}\',${l.ativo})">${l.ativo?"Desativar":"Ativar"}</button></td></tr>`;});document.getElementById("labTable").innerHTML=html;}async function criarLab(){const d={nome:document.getElementById("lNome").value,nif:document.getElementById("lNIF").value,provincia:document.getElementById("lProv").value,email:document.getElementById("lEmail").value,tipo:"laboratorio"};const r=await fetch("/api/labs",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(d)});const res=await r.json();if(res.success){alert("API Key: "+res.apiKey);location.reload();}}function logout(){localStorage.removeItem("token");location.href="/";}</script></body></html>');
-});
+  res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - SNS</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
+    body { display:flex; background:#f5f5f5; }
+    .sidebar { width:250px; background:#006633; color:white; height:100vh; padding:20px; position:fixed; }
+    .sidebar a { display:block; color:white; text-decoration:none; padding:10px; margin:5px 0; border-radius:5px; cursor:pointer; }
+    .sidebar a:hover { background:#004d26; }
+    .main { margin-left:270px; padding:30px; width:100%; }
+    .btn { background:#006633; color:white; border:none; padding:10px 20px; cursor:pointer; border-radius:5px; }
+    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; }
+    .modal-content { background:white; padding:20px; border-radius:10px; width:400px; max-height:80vh; overflow-y:auto; }
+    table { width:100%; background:white; border-collapse:collapse; margin-top:20px; }
+    th, td { padding:10px; border-bottom:1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>SNS-Admin</h2>
+    <a onclick="mostrar('dashboard')">Dashboard</a>
+    <a onclick="mostrar('labs')">Laboratórios</a>
+    <button onclick="logout()" class="btn" style="background:red; width:100%; margin-top:20px;">Sair</button>
+  </div>
+  <div class="main">
+    <div id="dashboard">
+      <h2>Painel de Controle</h2>
+      <p id="stats">Carregando estatisticas...</p>
+    </div>
+    <div id="labs" style="display:none;">
+      <h2>Laboratórios <button class="btn" onclick="document.getElementById('modalLab').style.display='flex'">+ Novo</button></h2>
+      <table>
+        <thead>
+          <tr><th>Nome</th><th>NIF</th><th>Status</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="labTable"></tbody>
+      </table>
+    </div>
+  </div>
 
-// ================================================
+  <!-- Modal Novo Laboratório (com campos adicionais) -->
+  <div id="modalLab" class="modal">
+    <div class="modal-content">
+      <h3>Novo Laboratório</h3>
+      <input id="lNome" style="width:100%; margin:5px 0; padding:8px;" placeholder="Nome">
+      <input id="lNIF" style="width:100%; margin:5px 0; padding:8px;" placeholder="NIF">
+      <input id="lProv" style="width:100%; margin:5px 0; padding:8px;" placeholder="Província">
+      <input id="lMunicipio" style="width:100%; margin:5px 0; padding:8px;" placeholder="Município">
+      <input id="lEmail" style="width:100%; margin:5px 0; padding:8px;" placeholder="Email">
+      <input id="lTelefone" style="width:100%; margin:5px 0; padding:8px;" placeholder="Telefone">
+      <input id="lTelefone2" style="width:100%; margin:5px 0; padding:8px;" placeholder="Telefone 2 (opcional)">
+      <input id="lDiretor" style="width:100%; margin:5px 0; padding:8px;" placeholder="Diretor">
+      <input id="lResponsavelTecnico" style="width:100%; margin:5px 0; padding:8px;" placeholder="Responsável Técnico">
+      <input id="lLicenca" style="width:100%; margin:5px 0; padding:8px;" placeholder="Nº Licença">
+      <input id="lValidadeLicenca" type="date" style="width:100%; margin:5px 0; padding:8px;" placeholder="Validade da Licença">
+      <button class="btn" onclick="criarLab()">Criar</button>
+      <button class="btn" style="background:gray;" onclick="document.getElementById('modalLab').style.display='none'">Cancelar</button>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "/ministerio";
+
+    function mostrar(id) {
+      document.getElementById("dashboard").style.display = id === "dashboard" ? "block" : "none";
+      document.getElementById("labs").style.display = id === "labs" ? "block" : "none";
+      if (id === "labs") carregarLabs();
+    }
+
+    async function carregarLabs() {
+      const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
+      const labs = await r.json();
+      let html = "";
+      labs.forEach(l => {
+        html += \`<tr>
+          <td>\${l.nome}</td>
+          <td>\${l.nif}</td>
+          <td>\${l.ativo ? "Ativo" : "Inativo"}</td>
+          <td><button onclick="ativar('\${l._id}', \${l.ativo})">\${l.ativo ? "Desativar" : "Ativar"}</button></td>
+        </tr>\`;
+      });
+      document.getElementById("labTable").innerHTML = html;
+    }
+
+    async function criarLab() {
+      const dados = {
+        nome: document.getElementById("lNome").value,
+        nif: document.getElementById("lNIF").value,
+        provincia: document.getElementById("lProv").value,
+        municipio: document.getElementById("lMunicipio").value,
+        email: document.getElementById("lEmail").value,
+        telephone: document.getElementById("lTelefone").value,
+        telefone2: document.getElementById("lTelefone2").value,
+        diretor: document.getElementById("lDiretor").value,
+        responsavelTecnico: document.getElementById("lResponsavelTecnico").value,
+        licenca: document.getElementById("lLicenca").value,
+        validadeLicenca: document.getElementById("lValidadeLicenca").value,
+        tipo: "laboratorio"
+      };
+      const r = await fetch("/api/labs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(dados)
+      });
+      const res = await r.json();
+      if (res.success) {
+        alert("API Key: " + res.apiKey);
+        location.reload();
+      } else {
+        alert("Erro ao criar laboratório");
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("token");
+      location.href = "/";
+    }
+
+    // Função ativar/desativar (pode ser implementada depois)
+    async function ativar(id, ativo) {
+      // Exemplo de chamada futura
+    }
+  </script>
+</body>
+</html>`);
+}); ================================================
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
