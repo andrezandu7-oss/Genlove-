@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSÃO LABORATÓRIO)
+// DASHBOARD DO MINISTÉRIO (VERSÃO CORRIGIDA)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -503,7 +503,9 @@ app.get('/admin-dashboard', (req, res) => {
         function mostrarSeccao(id) {
             document.querySelectorAll('.secao').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-            if (id === 'laboratoriosSection') carregarLaboratorios();
+            if (id === 'laboratoriosSection') {
+                carregarLaboratorios();
+            }
         }
 
         async function carregarStats() {
@@ -529,8 +531,12 @@ app.get('/admin-dashboard', (req, res) => {
                 const res = await fetch("/api/labs", {
                     headers: { "Authorization": "Bearer " + token }
                 });
+                if (!res.ok) {
+                    throw new Error("Erro HTTP " + res.status);
+                }
                 const lista = await res.json();
-                
+                console.log("Laboratórios recebidos:", lista); // Para depuração
+
                 if (!lista || lista.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                     return;
@@ -559,7 +565,7 @@ app.get('/admin-dashboard', (req, res) => {
                 tbody.innerHTML = html;
             } catch (e) {
                 console.error("Erro ao carregar laboratórios:", e);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar dados.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar dados: ' + e.message + '</td></tr>';
             }
         }
 
@@ -572,7 +578,7 @@ app.get('/admin-dashboard', (req, res) => {
                 const lab = lista.find(l => l._id === id);
                 if (!lab) return alert("Laboratório não encontrado");
 
-                const detalhes = 
+                alert(
                     "LABORATÓRIO: " + lab.nome + "\n" +
                     "NIF: " + (lab.nif || 'N/I') + "\n" +
                     "Tipo: " + (lab.tipo || 'N/I') + "\n" +
@@ -580,15 +586,10 @@ app.get('/admin-dashboard', (req, res) => {
                     "Município: " + (lab.municipio || 'N/I') + "\n" +
                     "Endereço: " + (lab.endereco || 'N/I') + "\n" +
                     "Telefone: " + (lab.telefone || 'N/I') + "\n" +
-                    "Telefone 2: " + (lab.telefone2 || 'N/I') + "\n" +
                     "Email: " + (lab.email || 'N/I') + "\n" +
-                    "Website: " + (lab.website || 'N/I') + "\n" +
                     "Diretor: " + (lab.diretor || 'N/I') + "\n" +
-                    "Resp. Técnico: " + (lab.responsavelTecnico || 'N/I') + "\n" +
-                    "Licença: " + (lab.licenca || 'N/I') + "\n" +
-                    "Validade: " + (lab.validadeLicenca ? new Date(lab.validadeLicenca).toLocaleDateString('pt-PT') : 'N/I') + "\n" +
-                    "Status: " + (lab.ativo ? 'Ativo' : 'Inativo');
-                alert(detalhes);
+                    "Status: " + (lab.ativo ? 'Ativo' : 'Inativo')
+                );
             } catch (e) {
                 console.error(e);
                 alert("Erro ao carregar detalhes");
