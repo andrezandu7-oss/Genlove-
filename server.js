@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSÃO CORRIGIDA)
+// DASHBOARD DO MINISTÉRIO (VERSION ROBUSTE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -314,8 +314,6 @@ app.get('/admin-dashboard', (req, res) => {
     <style>
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
         body { display:flex; background:#f5f5f5; min-height: 100vh; }
-        
-        /* Sidebar Estilizada */
         .sidebar {
             width:260px;
             background:#006633;
@@ -350,7 +348,6 @@ app.get('/admin-dashboard', (req, res) => {
             transition: 0.3s;
         }
         .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
-        
         .sidebar .novo-btn {
             background:#ffa500;
             color:#00331a;
@@ -359,7 +356,6 @@ app.get('/admin-dashboard', (req, res) => {
             text-align:center;
         }
         .sidebar .novo-btn:hover { background:#ffb833; transform: translateY(-2px); }
-        
         .sidebar .sair-btn {
             background:#cc3300;
             margin-top:auto;
@@ -367,9 +363,11 @@ app.get('/admin-dashboard', (req, res) => {
             color: white;
         }
         .sidebar .sair-btn:hover { background:#e63900; }
-
-        /* Área Principal */
-        .main { margin-left:260px; padding:40px; width:100%; }
+        .main {
+            margin-left:260px;
+            padding:40px;
+            width:100%;
+        }
         .welcome {
             background:white;
             padding:25px;
@@ -378,13 +376,9 @@ app.get('/admin-dashboard', (req, res) => {
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        
-        /* Controle de Seções */
         .secao { display:none; animation: fadeIn 0.3s ease; }
         .secao.active { display:block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Cards de estatísticas */
         .stats-grid {
             display:grid;
             grid-template-columns:repeat(4,1fr);
@@ -398,39 +392,23 @@ app.get('/admin-dashboard', (req, res) => {
             box-shadow:0 2px 5px rgba(0,0,0,0.1);
             text-align:center;
         }
-        .stat-card h3 {
-            color:#666;
-            font-size:14px;
-            margin-bottom:10px;
-        }
-        .stat-card p {
-            color:#006633;
-            font-size:28px;
-            font-weight:bold;
-        }
-
-        /* Tabelas e Botões */
+        .stat-card h3 { color:#666; font-size:14px; margin-bottom:10px; }
+        .stat-card p { color:#006633; font-size:28px; font-weight:bold; }
         .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
         table { width:100%; border-collapse:collapse; margin-top:10px; }
         th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
         td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
         tr:hover { background:#fafafa; }
-        
         .btn-acao { 
             background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
             cursor:pointer; transition:0.2s; margin-right:5px;
         }
         .btn-acao:hover { background:#e0e0e0; transform: scale(1.1); }
-        
         .status-badge {
             padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px;
         }
-        .status-ativo {
-            background:#e8f5e9; color:#2e7d32;
-        }
-        .status-inativo {
-            background:#ffebee; color:#c62828;
-        }
+        .status-ativo { background:#e8f5e9; color:#2e7d32; }
+        .status-inativo { background:#ffebee; color:#c62828; }
     </style>
 </head>
 <body>
@@ -451,22 +429,10 @@ app.get('/admin-dashboard', (req, res) => {
         <div id="dashboardSection" class="secao active">
             <h2>📊 Painel de Controle</h2>
             <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Laboratórios</h3>
-                    <p id="statsLabs">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Hospitais</h3>
-                    <p id="statsHospitais">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Empresas</h3>
-                    <p id="statsEmpresas">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Total</h3>
-                    <p id="statsTotal">0</p>
-                </div>
+                <div class="stat-card"><h3>Laboratórios</h3><p id="statsLabs">0</p></div>
+                <div class="stat-card"><h3>Hospitais</h3><p id="statsHospitais">0</p></div>
+                <div class="stat-card"><h3>Empresas</h3><p id="statsEmpresas">0</p></div>
+                <div class="stat-card"><h3>Total</h3><p id="statsTotal">0</p></div>
             </div>
         </div>
         
@@ -489,7 +455,7 @@ app.get('/admin-dashboard', (req, res) => {
                         </tr>
                     </thead>
                     <tbody id="tabelaLabs">
-                        <tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>
+                        <tr><td colspan="7" style="text-align:center;">Aguardando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -497,111 +463,121 @@ app.get('/admin-dashboard', (req, res) => {
     </div>
 
     <script>
-        const token = localStorage.getItem("token");
-        if (!token) window.location.href = "/ministerio";
+        console.log("Dashboard ministério carregado");
+        var token = localStorage.getItem("token");
+        console.log("Token:", token ? "presente" : "ausente");
+        if (!token) {
+            window.location.href = "/ministerio";
+        }
 
         function mostrarSeccao(id) {
-            document.querySelectorAll('.secao').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            document.getElementById('dashboardSection').className = 'secao';
+            document.getElementById('laboratoriosSection').className = 'secao';
+            document.getElementById(id).className = 'secao active';
             if (id === 'laboratoriosSection') {
                 carregarLaboratorios();
             }
         }
 
-        async function carregarStats() {
-            try {
-                const res = await fetch("/api/stats", {
-                    headers: { "Authorization": "Bearer " + token }
-                });
-                const data = await res.json();
-                document.getElementById("statsLabs").innerText = data.labs || 0;
-                document.getElementById("statsHospitais").innerText = data.hospitais || 0;
-                document.getElementById("statsEmpresas").innerText = data.empresas || 0;
-                const total = (data.labs || 0) + (data.hospitais || 0) + (data.empresas || 0);
-                document.getElementById("statsTotal").innerText = total;
-            } catch (e) {
-                console.error("Erro ao carregar stats:", e);
-            }
+        // Carregar estatísticas (funciona)
+        function carregarStats() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/stats', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    document.getElementById('statsLabs').innerHTML = data.labs || 0;
+                    document.getElementById('statsHospitais').innerHTML = data.hospitais || 0;
+                    document.getElementById('statsEmpresas').innerHTML = data.empresas || 0;
+                    var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
+                    document.getElementById('statsTotal').innerHTML = total;
+                }
+            };
+            xhr.send();
         }
 
-        async function carregarLaboratorios() {
-            const tbody = document.getElementById("tabelaLabs");
+        // Carregar laboratórios (versão com XMLHttpRequest)
+        function carregarLaboratorios() {
+            console.log("Carregando laboratórios...");
+            var tbody = document.getElementById('tabelaLabs');
             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>';
-            try {
-                const res = await fetch("/api/labs", {
-                    headers: { "Authorization": "Bearer " + token }
-                });
-                if (!res.ok) {
-                    throw new Error("Erro HTTP " + res.status);
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/labs', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    console.log("Resposta recebida, status:", xhr.status);
+                    if (xhr.status === 200) {
+                        try {
+                            var lista = JSON.parse(xhr.responseText);
+                            console.log("Laboratórios recebidos:", lista);
+                            
+                            if (!lista || lista.length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
+                                return;
+                            }
+                            
+                            var html = '';
+                            for (var i = 0; i < lista.length; i++) {
+                                var l = lista[i];
+                                var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
+                                var statusText = l.ativo ? 'Ativo' : 'Inativo';
+                                var btnStatus = l.ativo ? '🔴' : '🟢';
+                                var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
+                                
+                                html += '<tr>';
+                                html += '<td><strong>' + (l.nome || '') + '</strong></td>';
+                                html += '<td>' + (l.nif || '') + '</td>';
+                                html += '<td>' + (l.provincia || '') + '</td>';
+                                html += '<td>' + (l.telefone || '') + '</td>';
+                                html += '<td>' + (l.diretor || '') + '</td>';
+                                html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                                html += '<td>';
+                                html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button>';
+                                html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
+                                html += '</td>';
+                                html += '</tr>';
+                            }
+                            tbody.innerHTML = html;
+                        } catch (e) {
+                            console.error("Erro ao parsear JSON:", e);
+                            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro nos dados recebidos</td></tr>';
+                        }
+                    } else {
+                        console.error("Erro HTTP:", xhr.status);
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + xhr.status + '</td></tr>';
+                    }
                 }
-                const lista = await res.json();
-                console.log("Laboratórios recebidos:", lista); // Para depuração
-
-                if (!lista || lista.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
-                    return;
-                }
-
-                let html = '';
-                lista.forEach(l => {
-                    const statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
-                    const statusText = l.ativo ? 'Ativo' : 'Inativo';
-                    const btnStatus = l.ativo ? '🔴' : '🟢';
-                    const titleStatus = l.ativo ? 'Desativar' : 'Ativar';
-                    
-                    html += '<tr>';
-                    html += '<td><strong>' + (l.nome || '') + '</strong></td>';
-                    html += '<td>' + (l.nif || '') + '</td>';
-                    html += '<td>' + (l.provincia || '') + '</td>';
-                    html += '<td>' + (l.telefone || '') + '</td>';
-                    html += '<td>' + (l.diretor || '') + '</td>';
-                    html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
-                    html += '<td>';
-                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button>';
-                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
-                    html += '</td>';
-                    html += '</tr>';
-                });
-                tbody.innerHTML = html;
-            } catch (e) {
-                console.error("Erro ao carregar laboratórios:", e);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar dados: ' + e.message + '</td></tr>';
-            }
+            };
+            xhr.send();
         }
 
-        async function verDetalhes(id) {
-            try {
-                const res = await fetch("/api/labs", {
-                    headers: { "Authorization": "Bearer " + token }
-                });
-                const lista = await res.json();
-                const lab = lista.find(l => l._id === id);
-                if (!lab) return alert("Laboratório não encontrado");
-
-                alert(
-                    "LABORATÓRIO: " + lab.nome + "\n" +
-                    "NIF: " + (lab.nif || 'N/I') + "\n" +
-                    "Tipo: " + (lab.tipo || 'N/I') + "\n" +
-                    "Província: " + (lab.provincia || 'N/I') + "\n" +
-                    "Município: " + (lab.municipio || 'N/I') + "\n" +
-                    "Endereço: " + (lab.endereco || 'N/I') + "\n" +
-                    "Telefone: " + (lab.telefone || 'N/I') + "\n" +
-                    "Email: " + (lab.email || 'N/I') + "\n" +
-                    "Diretor: " + (lab.diretor || 'N/I') + "\n" +
-                    "Status: " + (lab.ativo ? 'Ativo' : 'Inativo')
-                );
-            } catch (e) {
-                console.error(e);
-                alert("Erro ao carregar detalhes");
-            }
+        function verDetalhes(id) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/labs', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var lista = JSON.parse(xhr.responseText);
+                    var lab = null;
+                    for (var i = 0; i < lista.length; i++) {
+                        if (lista[i]._id === id) { lab = lista[i]; break; }
+                    }
+                    if (lab) {
+                        alert("Laboratório: " + lab.nome + "\nNIF: " + lab.nif + "\nProvíncia: " + lab.provincia + "\nTelefone: " + lab.telefone + "\nDiretor: " + lab.diretor + "\nStatus: " + (lab.ativo ? "Ativo" : "Inativo"));
+                    }
+                }
+            };
+            xhr.send();
         }
 
         function toggleStatus(id, ativoAtual) {
-            const acao = ativoAtual ? 'desativar' : 'ativar';
+            var acao = ativoAtual ? 'desativar' : 'ativar';
             if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
-                // Aqui você pode implementar a chamada para alterar o status via API
                 alert('Função em desenvolvimento: ' + acao);
-                carregarLaboratorios(); // recarrega a lista
+                carregarLaboratorios();
             }
         }
 
@@ -611,7 +587,6 @@ app.get('/admin-dashboard', (req, res) => {
             window.location.href = "/";
         }
 
-        // Inicialização
         carregarStats();
     </script>
 </body>
