@@ -282,142 +282,205 @@ app.post('/api/labs/verificar', async (req, res) => {
     }
 });
 
-// ================================================
-// DASHBOARD DO MINISTÉRIO
-// ================================================
-app.get('/admin-dashboard', (req, res) => {
-  res.send(`<!DOCTYPE html>
+app.get('/admin-dashboard', (req, res) => res.send(`
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Admin - SNS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ministério - SNS</title>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; font-family:Arial; }
-    body { display:flex; background:#f5f5f5; }
-    .sidebar { width:250px; background:#006633; color:white; height:100vh; padding:20px; position:fixed; }
-    .sidebar a { display:block; color:white; text-decoration:none; padding:10px; margin:5px 0; border-radius:5px; cursor:pointer; }
-    .sidebar a:hover { background:#004d26; }
-    .main { margin-left:270px; padding:30px; width:100%; }
-    .btn { background:#006633; color:white; border:none; padding:10px 20px; cursor:pointer; border-radius:5px; }
-    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; }
-    .modal-content { background:white; padding:20px; border-radius:10px; width:400px; max-height:80vh; overflow-y:auto; }
-    table { width:100%; background:white; border-collapse:collapse; margin-top:20px; }
-    th, td { padding:10px; border-bottom:1px solid #ddd; }
+    * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { display:flex; background:#f5f5f5; min-height:100vh; }
+    
+    /* SIDEBAR MODERNE - identique au lab */
+    .sidebar { 
+      width:260px; background:#006633; color:white; height:100vh; padding:20px; 
+      position:fixed; display:flex; flex-direction:column; box-shadow:2px 0 10px rgba(0,0,0,0.1); 
+    }
+    .sidebar h2 { margin-bottom:30px; text-align:center; padding-bottom:15px; 
+      border-bottom:1px solid rgba(255,255,255,0.2); font-size:22px; }
+    .sidebar button, .sidebar .nav-link { 
+      display:block; width:100%; color:rgba(255,255,255,0.9); text-decoration:none; 
+      padding:14px; margin:5px 0; border-radius:8px; cursor:pointer; text-align:left; 
+      font-size:15px; border:none; background:none; transition:0.3s; 
+    }
+    .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
+    .sidebar .novo-btn { 
+      background:#ffa500; color:#00331a; font-weight:bold; margin:20px 0; text-align:center; 
+    }
+    .sidebar .novo-btn:hover { background:#ffb833; transform:translateY(-2px); }
+    .sidebar .sair-btn { background:#cc3300; margin-top:auto; text-align:center; color:white; }
+    .sidebar .sair-btn:hover { background:#e63900; }
+    
+    /* MAIN */
+    .main { margin-left:260px; padding:40px; width:100%; }
+    .welcome { background:white; padding:25px; border-left:6px solid #006633; 
+      margin-bottom:30px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
+    
+    /* SECTIONS */
+    .secao { display:none; animation:fadeIn 0.3s ease; }
+    .secao.active { display:block; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    
+    /* CARDS ET TABLEAUX */
+    .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
+    td { padding:15px; border-bottom:1px solid #eee; font-size:14px; }
+    tr:hover { background:#fafafa; }
+    .btn-acao { background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
+      cursor:pointer; transition:0.2s; margin-right:5px; }
+    .btn-acao:hover { background:#e0e0e0; transform:scale(1.1); }
+    
+    /* MODAL */
+    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; 
+      background:rgba(0,0,0,0.5); align-items:center; justify-content:center; }
+    .modal-content { background:white; padding:20px; border-radius:10px; width:400px; }
+    input { width:100%; margin:5px 0; padding:8px; }
   </style>
 </head>
 <body>
   <div class="sidebar">
-    <h2>SNS-Admin</h2>
-    <a onclick="mostrar('dashboard')">Dashboard</a>
-    <a onclick="mostrar('labs')">Laboratórios</a>
-    <button onclick="logout()" class="btn" style="background:red; width:100%; margin-top:20px;">Sair</button>
+    <h2>SNS - MINISTÉRIO</h2>
+    <button onclick="mostrarSeccao('dashboardSection')">Dashboard</button>
+    <button onclick="mostrarSeccao('historicoSection')">Histórico</button>
+    <button class="novo-btn" onclick="document.getElementById('modalLab').style.display='flex'">
+      Novo Laboratório
+    </button>
+    <button class="sair-btn" onclick="logout()">Sair</button>
   </div>
+  
   <div class="main">
-    <div id="dashboard">
-      <h2>Painel de Controle</h2>
-      <p id="stats">Carregando estatisticas...</p>
+    <div id="welcome" class="welcome">
+      <h2>Carregando...</h2>
     </div>
-    <div id="labs" style="display:none;">
-      <h2>Laboratórios <button class="btn" onclick="document.getElementById('modalLab').style.display='flex'">+ Novo</button></h2>
-      <table>
-        <thead>
-          <tr><th>Nome</th><th>NIF</th><th>Status</th><th>Ações</th></tr>
-        </thead>
-        <tbody id="labTable"></tbody>
-      </table>
+    
+    <div id="dashboardSection" class="secao active">
+      <div class="card">
+        <h3>Estatísticas e Visão Geral</h3>
+        <p id="stats" style="margin-top:15px; color:#666;">
+          Painel de controle do Ministério da Saúde - SNS Angola
+        </p>
+      </div>
+    </div>
+    
+    <div id="historicoSection" class="secao">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <h2>Laboratórios Registrados</h2>
+          <button class="btn-acao" onclick="carregarLabs()">Atualizar</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th><th>NIF</th><th>Status</th><th>Província</th><th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="labTable">
+            <tr><td colspan="5" style="text-align:center; padding:40px;">Carregando laboratórios...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-
-  <!-- Modal Novo Laboratório (com campos adicionais) -->
+  
+  <!-- MODAL NOVO LAB -->
   <div id="modalLab" class="modal">
     <div class="modal-content">
       <h3>Novo Laboratório</h3>
-      <input id="lNome" style="width:100%; margin:5px 0; padding:8px;" placeholder="Nome">
-      <input id="lNIF" style="width:100%; margin:5px 0; padding:8px;" placeholder="NIF">
-      <input id="lProv" style="width:100%; margin:5px 0; padding:8px;" placeholder="Província">
-      <input id="lMunicipio" style="width:100%; margin:5px 0; padding:8px;" placeholder="Município">
-      <input id="lEmail" style="width:100%; margin:5px 0; padding:8px;" placeholder="Email">
-      <input id="lTelefone" style="width:100%; margin:5px 0; padding:8px;" placeholder="Telefone">
-      <input id="lTelefone2" style="width:100%; margin:5px 0; padding:8px;" placeholder="Telefone 2 (opcional)">
-      <input id="lDiretor" style="width:100%; margin:5px 0; padding:8px;" placeholder="Diretor">
-      <input id="lResponsavelTecnico" style="width:100%; margin:5px 0; padding:8px;" placeholder="Responsável Técnico">
-      <input id="lLicenca" style="width:100%; margin:5px 0; padding:8px;" placeholder="Nº Licença">
-      <input id="lValidadeLicenca" type="date" style="width:100%; margin:5px 0; padding:8px;" placeholder="Validade da Licença">
-      <button class="btn" onclick="criarLab()">Criar</button>
-      <button class="btn" style="background:gray;" onclick="document.getElementById('modalLab').style.display='none'">Cancelar</button>
+      <input id="lNome" placeholder="Nome">
+      <input id="lNIF" placeholder="NIF">
+      <input id="lProv" placeholder="Província">
+      <input id="lEmail" placeholder="Email">
+      <button class="btn-acao" onclick="criarLab()" style="background:#006633;color:white;">Criar</button>
+      <button class="btn-acao" onclick="document.getElementById('modalLab').style.display='none'" 
+        style="background:gray;color:white;">Cancelar</button>
     </div>
   </div>
-
+  
   <script>
-    const token = localStorage.getItem("token");
-    if (!token) window.location.href = "/ministerio";
-
-    function mostrar(id) {
-      document.getElementById("dashboard").style.display = id === "dashboard" ? "block" : "none";
-      document.getElementById("labs").style.display = id === "labs" ? "block" : "none";
-      if (id === "labs") carregarLabs();
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/ministerio';
+    
+    function mostrarSeccao(id) {
+      document.querySelectorAll('.secao').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === 'historicoSection') carregarLabs();
     }
-
+    
     async function carregarLabs() {
-      const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
-      const labs = await r.json();
-      let html = "";
-      labs.forEach(l => {
-        html += \`<tr>
-          <td>\${l.nome}</td>
-          <td>\${l.nif}</td>
-          <td>\${l.ativo ? "Ativo" : "Inativo"}</td>
-          <td><button onclick="ativar('\${l._id}', \${l.ativo})">\${l.ativo ? "Desativar" : "Ativar"}</button></td>
-        </tr>\`;
-      });
-      document.getElementById("labTable").innerHTML = html;
+      const tbody = document.getElementById('labTable');
+      try {
+        const r = await fetch('/api/labs', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const labs = await r.json();
+        tbody.innerHTML = labs.map(l => 
+          `<tr>
+            <td>${l.nome}</td>
+            <td>${l.nif}</td>
+            <td>${l.ativo ? 'Ativo' : 'Inativo'}</td>
+            <td>${l.provincia}</td>
+            <td>
+              <button class="btn-acao" onclick="ativarLab('${l._id}', ${!l.ativo})">
+                ${l.ativo ? 'Desativar' : 'Ativar'}
+              </button>
+            </td>
+          </tr>`
+        ).join('');
+      } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="5" style="color:red;text-align:center;">Erro ao carregar</td></tr>';
+      }
     }
-
+    
     async function criarLab() {
-      const dados = {
-        nome: document.getElementById("lNome").value,
-        nif: document.getElementById("lNIF").value,
-        provincia: document.getElementById("lProv").value,
-        municipio: document.getElementById("lMunicipio").value,
-        email: document.getElementById("lEmail").value,
-        telephone: document.getElementById("lTelefone").value,
-        telefone2: document.getElementById("lTelefone2").value,
-        diretor: document.getElementById("lDiretor").value,
-        responsavelTecnico: document.getElementById("lResponsavelTecnico").value,
-        licenca: document.getElementById("lLicenca").value,
-        validadeLicenca: document.getElementById("lValidadeLicenca").value,
-        tipo: "laboratorio"
+      const d = {
+        nome: document.getElementById('lNome').value,
+        nif: document.getElementById('lNIF').value,
+        provincia: document.getElementById('lProv').value,
+        email: document.getElementById('lEmail').value,
+        tipo: 'laboratorio'
       };
-      const r = await fetch("/api/labs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
+      const r = await fetch('/api/labs', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token 
         },
-        body: JSON.stringify(dados)
+        body: JSON.stringify(d)
       });
       const res = await r.json();
       if (res.success) {
-        alert("API Key: " + res.apiKey);
+        alert('API Key: ' + res.apiKey);
         location.reload();
-      } else {
-        alert("Erro ao criar laboratório");
       }
     }
-
+    
+    async function ativarLab(id, ativo) {
+      await fetch('/api/labs/' + id + '/ativar', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token 
+        },
+        body: JSON.stringify({ ativo })
+      });
+      carregarLabs();
+    }
+    
     function logout() {
-      localStorage.removeItem("token");
-      location.href = "/";
+      localStorage.removeItem('token');
+      window.location.href = '/ministerio';
     }
-
-    // Função ativar/desativar (pode ser implementada depois)
-    async function ativar(id, ativo) {
-      // Exemplo de chamada futura
-    }
+    
+    // Init
+    document.getElementById('welcome').innerHTML = 
+      '<h2>Olá, Ministério da Saúde</h2><p>Sistema Nacional de Saúde - Angola</p>';
   </script>
 </body>
-</html>`);
-}); ================================================
+</html>
+`)); ================================================
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
