@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo Laboratório · SNS Ministério</title>
+    <title>Novo Laboratório · Ministério da Saúde</title>
     <style>
         * {
             margin: 0;
@@ -12,7 +12,7 @@
             font-family: 'Segoe UI', Arial, sans-serif;
         }
         body {
-            background: #f0f4f8;
+            background: #006633;
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -20,11 +20,11 @@
             padding: 20px;
         }
         .container {
-            max-width: 950px;
+            max-width: 800px;
             width: 100%;
             background: white;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0,40,20,0.15);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
             padding: 35px 40px;
             animation: fadeIn 0.3s ease;
         }
@@ -36,53 +36,21 @@
             color: #006633;
             font-size: 28px;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             border-left: 6px solid #006633;
             padding-left: 20px;
         }
         .subtitle {
-            color: #5a6a7a;
+            color: #666;
             margin-bottom: 30px;
             font-size: 15px;
+            margin-top: 5px;
             padding-left: 26px;
         }
-        .form-section {
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 20px 25px;
-            margin-bottom: 25px;
-            border: 1px solid #e9edf2;
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: #006633;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .section-title i {
-            font-style: normal;
-            background: #006633;
-            color: white;
-            width: 28px;
-            height: 28px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 30px;
-            font-size: 14px;
-        }
-        .grid-2 {
+        .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 18px 25px;
-        }
-        .grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 20px 25px;
         }
         .full-width {
             grid-column: span 2;
@@ -94,29 +62,33 @@
         }
         .campo label {
             font-weight: 600;
-            color: #2d3c4c;
+            color: #333;
             font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
-        .campo label .required {
-            color: #c62828;
+        .campo label i {
+            color: #006633;
+            font-style: normal;
+            font-weight: 400;
         }
         .campo input, .campo select, .campo textarea {
             padding: 12px 14px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 12px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 10px;
             font-size: 15px;
-            transition: 0.15s;
-            background: #ffffff;
+            transition: 0.2s;
+            background: #fafafa;
         }
         .campo input:focus, .campo select:focus, .campo textarea:focus {
             outline: none;
             border-color: #006633;
-            box-shadow: 0 0 0 3px rgba(0,102,51,0.15);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0,102,51,0.1);
         }
-        .campo input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            accent-color: #006633;
+        .campo input.required, .campo select.required {
+            border-left: 4px solid #006633;
         }
         .checkbox-group {
             display: flex;
@@ -124,231 +96,268 @@
             gap: 10px;
             margin-top: 5px;
         }
-        .btn-submit {
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            accent-color: #006633;
+        }
+        .acoes {
+            margin-top: 35px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            align-items: center;
+        }
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
             background: #006633;
             color: white;
-            border: none;
-            border-radius: 60px;
-            padding: 16px 36px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 8px 20px rgba(0,102,51,0.3);
-            transition: 0.2s;
-            width: 100%;
-            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0,102,51,0.3);
         }
-        .btn-submit:hover {
+        .btn-primary:hover {
             background: #004d26;
             transform: translateY(-2px);
-            box-shadow: 0 12px 28px rgba(0,102,51,0.4);
-        }
-        .btn-submit:disabled {
-            background: #94a3b8;
-            box-shadow: none;
-            transform: none;
-            cursor: not-allowed;
+            box-shadow: 0 8px 18px rgba(0,102,51,0.4);
         }
         .btn-secondary {
             background: #f1f1f1;
             color: #333;
-            border: none;
-            border-radius: 60px;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            text-decoration: none;
-            display: inline-block;
         }
         .btn-secondary:hover {
             background: #e4e4e4;
         }
-        .resposta {
-            margin-top: 25px;
-            padding: 20px;
-            border-radius: 16px;
+        #resposta {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
             display: none;
-            font-size: 15px;
+            font-size: 14px;
         }
         .sucesso {
-            background: #e6f7e6;
-            color: #1f7b4a;
-            border: 1px solid #a3d8a3;
+            background: #e8f5e9;
+            color: #1e7e34;
+            border: 1px solid #a5d6a7;
+            display: block !important;
         }
         .erro {
-            background: #ffe6e6;
-            color: #b33c3c;
-            border: 1px solid #ffb3b3;
+            background: #ffebee;
+            color: #b71c1c;
+            border: 1px solid #ffcdd2;
+            display: block !important;
         }
         .info-chave {
-            background: #eef2ff;
-            border-radius: 14px;
-            padding: 20px;
-            margin: 20px 0;
-            border-left: 6px solid #006633;
+            background: #f0f7ff;
+            border: 1px dashed #006633;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0 10px;
             word-break: break-all;
-        }
-        .info-chave strong {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        .info-chave code {
-            background: white;
-            padding: 12px;
-            border-radius: 10px;
-            display: block;
-            border: 1px solid #006633;
             font-family: monospace;
             font-size: 14px;
         }
-        .acoes {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-            margin-top: 25px;
-        }
-        .voltar {
-            display: inline-block;
-            margin-bottom: 20px;
+        .info-chave strong {
             color: #006633;
-            text-decoration: none;
-            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
         }
-        .voltar:hover {
-            text-decoration: underline;
+        hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 20px 0;
+        }
+        .badge {
+            background: #00663310;
+            color: #006633;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 13px;
+            display: inline-block;
+        }
+        /* Estilo para o recap */
+        .recap-container {
+            background: #f9f9f9;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 2px solid #006633;
+        }
+        .recap-container h2 {
+            color: #006633;
+            margin-bottom: 15px;
+        }
+        .recap-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .recap-item {
+            padding: 8px;
+            border-bottom: 1px dotted #ccc;
+        }
+        .recap-label {
+            font-weight: 700;
+            color: #333;
+        }
+        .recap-value {
+            color: #000;
+        }
+        .recap-api {
+            grid-column: span 2;
+            background: #fff3cd;
+            border-left: 5px solid #006633;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+        .aviso {
+            color: #b71c1c;
+            font-size: 13px;
+            margin: 10px 0;
+            font-style: italic;
+        }
+        @media (max-width: 650px) {
+            .container { padding: 25px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .recap-grid { grid-template-columns: 1fr; }
+            .recap-api { grid-column: span 1; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="/admin-dashboard" class="voltar">← Voltar ao painel</a>
         <h1>➕ NOVO LABORATÓRIO</h1>
-        <div class="subtitle">Registar uma nova unidade laboratorial no Sistema Nacional de Saúde</div>
+        <div class="subtitle">Registar nova unidade laboratorial no SNS · Angola</div>
 
+        <!-- Formulaire de création -->
         <form id="formLab">
-            <!-- Informações básicas -->
-            <div class="form-section">
-                <div class="section-title"><i>🏥</i> Informações básicas</div>
-                <div class="grid-2">
-                    <div class="campo full-width">
-                        <label>Nome do Laboratório <span class="required">*</span></label>
-                        <input type="text" id="nome" placeholder="Ex.: LabCentral Luanda" required>
-                    </div>
-                    <div class="campo">
-                        <label>NIF <span class="required">*</span></label>
-                        <input type="text" id="nif" placeholder="10 dígitos" maxlength="10" pattern="\d{10}" title="Deve conter 10 dígitos" required>
-                    </div>
-                    <div class="campo">
-                        <label>Tipo <span class="required">*</span></label>
-                        <select id="tipo" required>
-                            <option value="">Selecionar</option>
-                            <option value="Público">Público</option>
-                            <option value="Privado">Privado</option>
-                            <option value="Misto">Misto</option>
-                        </select>
-                    </div>
+            <div class="form-grid">
+                <!-- Nome -->
+                <div class="campo full-width">
+                    <label>🏥 Nome do Laboratório <span style="color:#c62828;">*</span></label>
+                    <input type="text" id="nome" class="required" placeholder="Ex.: LabCentral Luanda" required>
                 </div>
-            </div>
 
-            <!-- Localização -->
-            <div class="form-section">
-                <div class="section-title"><i>📍</i> Localização</div>
-                <div class="grid-2">
-                    <div class="campo">
-                        <label>Província <span class="required">*</span></label>
-                        <select id="provincia" required>
-                            <option value="">Selecionar</option>
-                            <option value="Luanda">Luanda</option>
-                            <option value="Benguela">Benguela</option>
-                            <option value="Huíla">Huíla</option>
-                            <option value="Cabinda">Cabinda</option>
-                            <option value="Outra">Outra</option>
-                        </select>
-                    </div>
-                    <div class="campo">
-                        <label>Município</label>
-                        <input type="text" id="municipio" placeholder="Ex.: Ingombota">
-                    </div>
-                    <div class="campo full-width">
-                        <label>Endereço completo <span class="required">*</span></label>
-                        <input type="text" id="endereco" placeholder="Rua, número, bairro" required>
-                    </div>
+                <!-- NIF + Tipo -->
+                <div class="campo">
+                    <label>📄 NIF <span style="color:#c62828;">*</span></label>
+                    <input type="text" id="nif" class="required" placeholder="10 dígitos" maxlength="10" pattern="\d{10}" title="Deve conter 10 dígitos" required>
                 </div>
-            </div>
+                <div class="campo">
+                    <label>⚖️ Tipo <span style="color:#c62828;">*</span></label>
+                    <select id="tipo" required>
+                        <option value="">Selecionar</option>
+                        <option value="Público">Público</option>
+                        <option value="Privado">Privado</option>
+                        <option value="Misto">Misto</option>
+                    </select>
+                </div>
 
-            <!-- Contactos -->
-            <div class="form-section">
-                <div class="section-title"><i>📞</i> Contactos</div>
-                <div class="grid-2">
-                    <div class="campo">
-                        <label>Telefone 1 <span class="required">*</span></label>
-                        <input type="tel" id="telefone" placeholder="+244 900 000 000" required>
-                    </div>
-                    <div class="campo">
-                        <label>Telefone 2</label>
-                        <input type="tel" id="telefone2" placeholder="Opcional">
-                    </div>
-                    <div class="campo">
-                        <label>Email <span class="required">*</span></label>
-                        <input type="email" id="email" placeholder="lab@exemplo.ao" required>
-                    </div>
-                    <div class="campo">
-                        <label>Website</label>
-                        <input type="url" id="website" placeholder="https://...">
-                    </div>
+                <!-- Província + Município -->
+                <div class="campo">
+                    <label>📍 Província <span style="color:#c62828;">*</span></label>
+                    <select id="provincia" required>
+                        <option value="">Selecionar</option>
+                        <option value="Luanda">Luanda</option>
+                        <option value="Benguela">Benguela</option>
+                        <option value="Huíla">Huíla</option>
+                        <option value="Cabinda">Cabinda</option>
+                        <option value="Outra">Outra</option>
+                    </select>
                 </div>
-            </div>
+                <div class="campo">
+                    <label>🗺️ Município</label>
+                    <input type="text" id="municipio" placeholder="Ex.: Ingombota">
+                </div>
 
-            <!-- Responsáveis -->
-            <div class="form-section">
-                <div class="section-title"><i>👨‍⚕️</i> Responsáveis</div>
-                <div class="grid-2">
-                    <div class="campo">
-                        <label>Diretor <span class="required">*</span></label>
-                        <input type="text" id="diretor" placeholder="Nome completo" required>
-                    </div>
-                    <div class="campo">
-                        <label>Responsável Técnico</label>
-                        <input type="text" id="responsavelTecnico" placeholder="Se diferente do diretor">
-                    </div>
+                <!-- Endereço (full) -->
+                <div class="campo full-width">
+                    <label>🏛️ Endereço completo <span style="color:#c62828;">*</span></label>
+                    <input type="text" id="endereco" class="required" placeholder="Rua, número, bairro" required>
                 </div>
-            </div>
 
-            <!-- Licenciamento e status -->
-            <div class="form-section">
-                <div class="section-title"><i>📜</i> Licenciamento</div>
-                <div class="grid-2">
-                    <div class="campo">
-                        <label>Nº Licença</label>
-                        <input type="text" id="licenca" placeholder="Ex.: 1234/MINSAL/25">
-                    </div>
-                    <div class="campo">
-                        <label>Validade da Licença</label>
-                        <input type="date" id="validadeLicenca">
-                    </div>
+                <!-- Telefones -->
+                <div class="campo">
+                    <label>📞 Telefone 1 <span style="color:#c62828;">*</span></label>
+                    <input type="tel" id="telefone" class="required" placeholder="+244 900 000 000" required>
                 </div>
-                <div class="checkbox-group" style="margin-top:15px;">
+                <div class="campo">
+                    <label>📞 Telefone 2</label>
+                    <input type="tel" id="telefone2" placeholder="Opcional">
+                </div>
+
+                <!-- Email + Website -->
+                <div class="campo">
+                    <label>✉️ Email <span style="color:#c62828;">*</span></label>
+                    <input type="email" id="email" class="required" placeholder="lab@exemplo.ao" required>
+                </div>
+                <div class="campo">
+                    <label>🌐 Website</label>
+                    <input type="url" id="website" placeholder="https://...">
+                </div>
+
+                <!-- Diretor + Resp.Técnico -->
+                <div class="campo">
+                    <label>👨‍⚕️ Diretor <span style="color:#c62828;">*</span></label>
+                    <input type="text" id="diretor" class="required" placeholder="Nome completo" required>
+                </div>
+                <div class="campo">
+                    <label>🧪 Responsável Técnico</label>
+                    <input type="text" id="responsavelTecnico" placeholder="Se diferente do diretor">
+                </div>
+
+                <!-- Licença + Validade -->
+                <div class="campo">
+                    <label>📜 Nº Licença</label>
+                    <input type="text" id="licenca" placeholder="Ex.: 1234/MINSAL/25">
+                </div>
+                <div class="campo">
+                    <label>📅 Validade da Licença</label>
+                    <input type="date" id="validadeLicenca">
+                </div>
+
+                <!-- Status ativo (checkbox) -->
+                <div class="campo full-width checkbox-group">
                     <input type="checkbox" id="ativo" checked>
                     <label for="ativo" style="font-weight:500;">✅ Laboratório ativo (pode emitir certificados)</label>
                 </div>
             </div>
 
+            <hr>
+
             <div class="acoes">
-                <a href="/admin-dashboard" class="btn-secondary">Cancelar</a>
-                <button type="submit" class="btn-submit" id="btnSalvar">💾 Registar Laboratório</button>
+                <a href="/admin-dashboard" class="btn btn-secondary">← Cancelar</a>
+                <button type="submit" class="btn btn-primary" id="btnSalvar">💾 Registar Laboratório</button>
             </div>
         </form>
 
-        <div id="resposta" class="resposta"></div>
-        <div id="apiKeyContainer" style="display: none;" class="info-chave">
-            <strong>🔑 LABORATÓRIO CRIADO COM SUCESSO</strong>
-            <p style="margin-bottom:10px;">Guarde esta chave API — não será mostrada novamente.</p>
-            <code id="apiKeyValue"></code>
-            <p style="margin-top:15px; font-size:13px;">Utilize esta chave para autenticação do laboratório no sistema.</p>
+        <!-- Récapitulatif après création -->
+        <div id="recapSection" style="display: none;" class="recap-container">
+            <h2>📋 Laboratório registado com sucesso</h2>
+            <div id="recapData" class="recap-grid"></div>
+            <div class="aviso">⚠️ A chave API é confidencial. Não a compartilhe.</div>
+            <div class="acoes">
+                <button class="btn btn-secondary" id="btnEditar">✏️ Editar dados</button>
+                <button class="btn btn-primary" id="btnPDF">📥 Baixar PDF de registo</button>
+            </div>
         </div>
+
+        <!-- Message d'erreur / ancienne zone de réponse (gardée pour compatibilité) -->
+        <div id="resposta"></div>
     </div>
 
     <script>
@@ -363,28 +372,125 @@
             const form = document.getElementById('formLab');
             const btnSalvar = document.getElementById('btnSalvar');
             const respostaDiv = document.getElementById('resposta');
-            const apiKeyContainer = document.getElementById('apiKeyContainer');
-            const apiKeySpan = document.getElementById('apiKeyValue');
+            const recapSection = document.getElementById('recapSection');
+            const recapDataDiv = document.getElementById('recapData');
+            const btnEditar = document.getElementById('btnEditar');
+            const btnPDF = document.getElementById('btnPDF');
 
-            // Validação NIF em tempo real
+            let ultimoLab = null; // stocke les données du laboratoire créé
+
+            // Fonction pour pré-remplir le formulaire avec les données existantes
+            function preencherFormulario(dados) {
+                document.getElementById('nome').value = dados.nome || '';
+                document.getElementById('nif').value = dados.nif || '';
+                document.getElementById('tipo').value = dados.tipo || '';
+                document.getElementById('provincia').value = dados.provincia || '';
+                document.getElementById('municipio').value = dados.municipio || '';
+                document.getElementById('endereco').value = dados.endereco || '';
+                document.getElementById('telefone').value = dados.telefone || '';
+                document.getElementById('telefone2').value = dados.telefone2 || '';
+                document.getElementById('email').value = dados.email || '';
+                document.getElementById('website').value = dados.website || '';
+                document.getElementById('diretor').value = dados.diretor || '';
+                document.getElementById('responsavelTecnico').value = dados.responsavelTecnico || '';
+                document.getElementById('licenca').value = dados.licenca || '';
+                document.getElementById('validadeLicenca').value = dados.validadeLicenca || '';
+                document.getElementById('ativo').checked = dados.ativo !== false;
+            }
+
+            // Afficher le récapitulatif
+            function mostrarRecap(dados) {
+                let html = '';
+
+                // Liste des champs à afficher (tous sauf ceux vides)
+                const campos = [
+                    { label: 'Nome', valor: dados.nome },
+                    { label: 'NIF', valor: dados.nif },
+                    { label: 'Tipo', valor: dados.tipo },
+                    { label: 'Província', valor: dados.provincia },
+                    { label: 'Município', valor: dados.municipio },
+                    { label: 'Endereço', valor: dados.endereco },
+                    { label: 'Telefone 1', valor: dados.telefone },
+                    { label: 'Telefone 2', valor: dados.telefone2 },
+                    { label: 'Email', valor: dados.email },
+                    { label: 'Website', valor: dados.website },
+                    { label: 'Diretor', valor: dados.diretor },
+                    { label: 'Responsável Técnico', valor: dados.responsavelTecnico },
+                    { label: 'Licença', valor: dados.licenca },
+                    { label: 'Validade Licença', valor: dados.validadeLicenca ? new Date(dados.validadeLicenca).toLocaleDateString('pt-PT') : '' },
+                    { label: 'Status', valor: dados.ativo ? 'Ativo' : 'Inativo' }
+                ];
+
+                campos.forEach(c => {
+                    if (c.valor && c.valor.toString().trim() !== '') {
+                        html += `<div class="recap-item"><span class="recap-label">${c.label}:</span> <span class="recap-value">${c.valor}</span></div>`;
+                    }
+                });
+
+                // Ajouter la clé API en évidence
+                html += `<div class="recap-api"><span class="recap-label">🔑 Chave API:</span> <span class="recap-value">${dados.apiKey}</span></div>`;
+
+                recapDataDiv.innerHTML = html;
+                recapSection.style.display = 'block';
+                form.style.display = 'none';
+                respostaDiv.style.display = 'none';
+            }
+
+            // Bouton Éditer
+            btnEditar.addEventListener('click', () => {
+                if (ultimoLab) {
+                    preencherFormulario(ultimoLab);
+                }
+                recapSection.style.display = 'none';
+                form.style.display = 'block';
+            });
+
+            // Bouton PDF
+            btnPDF.addEventListener('click', async () => {
+                if (!ultimoLab) return;
+                try {
+                    const response = await fetch('/api/labs/pdf', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify(ultimoLab)
+                    });
+                    if (!response.ok) {
+                        throw new Error('Erro na geração do PDF');
+                    }
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Laboratorio_${ultimoLab.nome.replace(/\s/g, '_')}.pdf`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } catch (error) {
+                    alert('Erro ao gerar PDF: ' + error.message + '\n\nCertifique-se de que a rota /api/labs/pdf está implementada no servidor.');
+                }
+            });
+
+            // Validation NIF
             document.getElementById('nif').addEventListener('input', function(e) {
                 this.value = this.value.replace(/\D/g, '').slice(0,10);
             });
 
+            // Soumission du formulaire
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 respostaDiv.style.display = 'none';
-                respostaDiv.className = 'resposta';
-                apiKeyContainer.style.display = 'none';
+                respostaDiv.className = '';
 
-                // Validação NIF
+                // Valider NIF
                 const nif = document.getElementById('nif').value.trim();
                 if (!/^\d{10}$/.test(nif)) {
                     mostrarErro('NIF deve conter exatamente 10 dígitos numéricos.');
                     return;
                 }
 
-                // Recolher dados
+                // Récupérer les données
                 const dados = {
                     nome: document.getElementById('nome').value.trim(),
                     nif: nif,
@@ -403,7 +509,7 @@
                     ativo: document.getElementById('ativo').checked
                 };
 
-                // Vérification des champs obligatoires
+                // Vérifier les champs obligatoires
                 if (!dados.nome || !dados.tipo || !dados.provincia || !dados.endereco || !dados.telefone || !dados.email || !dados.diretor) {
                     mostrarErro('Preencha todos os campos obrigatórios (*).');
                     return;
@@ -425,23 +531,18 @@
                     const result = await response.json();
 
                     if (response.ok && result.success) {
-                        respostaDiv.className = 'resposta sucesso';
-                        respostaDiv.innerHTML = '✅ Laboratório criado com sucesso!';
-                        respostaDiv.style.display = 'block';
+                        // Ajouter l'apiKey et l'id aux données
+                        dados.apiKey = result.apiKey;
+                        dados.labId = result.labId;
+                        ultimoLab = dados;
 
-                        apiKeySpan.textContent = result.apiKey;
-                        apiKeyContainer.style.display = 'block';
-
-                        // Réinitialiser le formulaire
-                        form.reset();
-                        document.getElementById('ativo').checked = true;
-
-                        btnSalvar.textContent = '💾 Registar Outro';
+                        // Afficher le récapitulatif
+                        mostrarRecap(dados);
                     } else {
                         mostrarErro(result.error || 'Erro desconhecido ao registar laboratório.');
                     }
                 } catch (error) {
-                    console.error(error);
+                    console.error('Erro na requisição:', error);
                     mostrarErro('Erro de ligação ao servidor. Tente novamente.');
                 } finally {
                     btnSalvar.disabled = false;
@@ -450,11 +551,14 @@
             });
 
             function mostrarErro(mensagem) {
-                respostaDiv.className = 'resposta erro';
+                respostaDiv.className = 'erro';
                 respostaDiv.innerHTML = '❌ ' + mensagem;
                 respostaDiv.style.display = 'block';
-                apiKeyContainer.style.display = 'none';
+                recapSection.style.display = 'none';
             }
+
+            // Exposer la fonction pour les éventuels besoins
+            window.mostrarErro = mostrarErro;
         })();
     </script>
 </body>
