@@ -297,7 +297,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
+// DASHBOARD DO MINISTÉRIO (VERSION CORRIGÉE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -545,7 +545,7 @@ app.get('/admin-dashboard', (req, res) => {
             }
         }
 
-        // Carregar estatísticas (funciona)
+        // Carregar estatísticas (corrigido: espaço após Bearer)
         function carregarStats() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/stats', true);
@@ -563,7 +563,7 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.send();
         }
 
-        // Carregar laboratórios com paginação e filtros
+        // Carregar laboratórios com paginação e filtros (corrigido)
         function carregarLaboratorios(pagina = 1) {
             console.log("Carregando laboratórios, página", pagina);
             currentPage = pagina;
@@ -571,14 +571,14 @@ app.get('/admin-dashboard', (req, res) => {
             var spinner = document.getElementById('spinnerLabs');
             tbody.innerHTML = ''; // Limpa a tabela
             spinner.style.display = 'block'; // Mostra spinner
-            
+
             var provincia = document.getElementById('filtroProvincia').value;
             var status = document.getElementById('filtroStatus').value;
-            
+
             var url = '/api/labs?page=' + currentPage + '&limit=' + limit;
             if (provincia) url += '&provincia=' + encodeURIComponent(provincia);
             if (status !== '') url += '&ativo=' + status;
-            
+
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.setRequestHeader('Authorization', 'Bearer ' + token);
@@ -592,7 +592,7 @@ app.get('/admin-dashboard', (req, res) => {
                             var lista = resposta.labs;
                             totalPages = resposta.pages;
                             console.log("Laboratórios recebidos:", lista);
-                            
+
                             if (!lista || lista.length === 0) {
                                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                             } else {
@@ -603,7 +603,7 @@ app.get('/admin-dashboard', (req, res) => {
                                     var statusText = l.ativo ? 'Ativo' : 'Inativo';
                                     var btnStatus = l.ativo ? '🔴' : '🟢';
                                     var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
-                                    
+
                                     html += '<tr>';
                                     html += '<td><strong>' + (l.nome || '') + '</strong></td>';
                                     html += '<td>' + (l.nif || '') + '</td>';
@@ -619,8 +619,6 @@ app.get('/admin-dashboard', (req, res) => {
                                 }
                                 tbody.innerHTML = html;
                             }
-                            
-                            // Atualizar paginação
                             atualizarPaginacao();
                         } catch (e) {
                             console.error("Erro ao parsear JSON:", e);
@@ -649,20 +647,8 @@ app.get('/admin-dashboard', (req, res) => {
         }
 
         function verDetalhes(id) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/labs', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var resposta = JSON.parse(xhr.responseText);
-                    // Como agora a resposta é paginada, precisamos buscar o laboratório específico
-                    // Alternativa: fazer uma requisição para /api/labs/:id se existir
-                    // Por simplicidade, vamos buscar em todos os laboratórios (pode ser ineficiente)
-                    // Para este exemplo, vamos apenas exibir as informações que temos na tabela
-                    alert("Detalhes do laboratório em breve...");
-                }
-            };
-            xhr.send();
+            // Redirecionar para uma página de detalhes ou abrir modal
+            alert('Detalhes do laboratório em breve...');
         }
 
         function toggleStatus(id, ativoAtual) {
