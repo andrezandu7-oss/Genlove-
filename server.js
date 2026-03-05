@@ -948,10 +948,29 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
 // Listar todos os laboratórios (apenas admin)
 app.get('/api/labs', authMiddleware, async (req, res) => {
     try {
-        const labs = await Lab.find({}, { apiKey: 0 });
-        res.json(labs);
+        const { provincia, tipo, q } = req.query; // Récupère la province choisie dans le filtre
+        let filtro = {};
+
+        // Cette partie doit être flexible pour accepter n'importe laquelle des 18 provinces
+        if (provincia && provincia !== "") {
+            filtro.provincia = provincia; 
+        }
+
+        if (tipo && tipo !== "") {
+            filtro.tipo = tipo;
+        }
+
+        const labs = await Lab.find(filtro).sort({ createdAt: -1 });
+        const total = await Lab.countDocuments(filtro);
+
+        // Renvoie les données au Dashboard
+        res.json({
+            labs: labs,
+            total: total,
+            pages: Math.ceil(total / 10)
+        });
     } catch (error) {
-        res.status(500).json({ error: 'Erro ao listar laboratórios' });
+        res.status(500).json({ error: 'Erro no servidor' });
     }
 });
 
