@@ -301,19 +301,19 @@ app.post('/api/labs/verificar', async (req, res) => {
     }
 });
 
-// ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
-// ================================================
+// ============================================
+// DASHBOARD DO MINISTÉRIO (VERSION FINALE AVEC CERTIFICADOS)
+// ============================================
 app.get('/admin-dashboard', (req, res) => {
-    res.send(`<!DOCTYPE html>
+    res.send('<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ministério da Saúde - SNS Angola</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
-        body { display:flex; background:#f5f5f5; min-height: 100vh; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: "Segoe UI", Arial, sans-serif; }
+        body { display:flex; background:#f5f5f5; min-height:100vh; }
         .sidebar {
             width:260px;
             background:#006633;
@@ -323,20 +323,11 @@ app.get('/admin-dashboard', (req, res) => {
             position:fixed;
             display:flex;
             flex-direction:column;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
-        .sidebar h2 { 
-            margin-bottom:30px; 
-            text-align:center;
-            padding-bottom:15px;
-            border-bottom:1px solid rgba(255,255,255,0.2);
-            font-size: 22px;
-        }
-        .sidebar button, .sidebar .nav-link {
+        .sidebar h2 { margin-bottom:30px; text-align:center; padding-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.2); font-size:22px; }
+        .sidebar button, .sidebar .novo-btn, .sidebar .sair-btn {
             display:block;
             width:100%;
-            color:rgba(255,255,255,0.9);
-            text-decoration:none;
             padding:14px;
             margin:5px 0;
             border-radius:8px;
@@ -345,143 +336,84 @@ app.get('/admin-dashboard', (req, res) => {
             font-size:15px;
             border:none;
             background:none;
-            transition: 0.3s;
+            color:rgba(255,255,255,0.9);
+            transition:0.3s;
         }
         .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
-        .sidebar .novo-btn {
-            background:#ffa500;
-            color:#00331a;
-            font-weight:bold;
-            margin:20px 0;
-            text-align:center;
-        }
-        .sidebar .novo-btn:hover { background:#ffb833; transform: translateY(-2px); }
-        .sidebar .sair-btn {
-            background:#cc3300;
-            margin-top:auto;
-            text-align:center;
-            color: white;
-        }
+        .sidebar .novo-btn { background:#ffa500; color:#00331a; font-weight:bold; text-align:center; }
+        .sidebar .novo-btn:hover { background:#ffb833; transform:translateY(-2px); }
+        .sidebar .sair-btn { background:#cc3300; margin-top:auto; text-align:center; color:white; }
         .sidebar .sair-btn:hover { background:#e63900; }
-        .main {
-            margin-left:260px;
-            padding:40px;
-            width:100%;
-        }
-        .welcome {
-            background:white;
-            padding:25px;
-            border-left:6px solid #006633;
-            margin-bottom:30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        .secao { display:none; animation: fadeIn 0.3s ease; }
+        .main { margin-left:260px; padding:40px; width:100%; }
+        .welcome { background:white; padding:25px; border-left:6px solid #006633; margin-bottom:30px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.05); }
+        .secao { display:none; animation:fadeIn 0.3s ease; }
         .secao.active { display:block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .stats-grid {
-            display:grid;
-            grid-template-columns:repeat(4,1fr);
-            gap:20px;
-            margin-top:20px;
-        }
-        .stat-card {
-            background:white;
-            padding:20px;
-            border-radius:8px;
-            box-shadow:0 2px 5px rgba(0,0,0,0.1);
-            text-align:center;
-        }
-        .stat-card h3 { color:#666; font-size:14px; margin-bottom:10px; }
-        .stat-card p { color:#006633; font-size:28px; font-weight:bold; }
+        @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
         .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
-        table { width:100%; border-collapse:collapse; margin-top:20px; }
+        table { width:100%; border-collapse:collapse; margin-top:10px; }
         th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
-        td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
+        td { padding:15px; border-bottom:1px solid #eee; font-size:14px; }
         tr:hover { background:#fafafa; }
-        .btn-acao { 
-            background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
-            cursor:pointer; transition:0.2s; margin-right:5px;
-        }
-        .btn-acao:hover { background:#e0e0e0; transform: scale(1.1); }
-        .status-badge {
-            padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px;
-        }
+        .btn-acao { background:#f0f0f0; border:none; padding:8px; border-radius:5px; cursor:pointer; transition:0.2s; margin-right:5px; }
+        .btn-acao:hover { background:#e0e0e0; transform:scale(1.1); }
+        .status-badge { padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px; }
         .status-ativo { background:#e8f5e9; color:#2e7d32; }
         .status-inativo { background:#ffebee; color:#c62828; }
-        .pagination {
-            display:flex;
-            justify-content:center;
-            gap:10px;
-            margin-top:20px;
-        }
-        .pagination button {
-            padding:8px 12px;
-            border:none;
-            background:#006633;
-            color:white;
-            border-radius:5px;
-            cursor:pointer;
-        }
-        .pagination button:disabled {
-            background:#ccc;
-            cursor:not-allowed;
-        }
-        .filtros {
-            display:flex;
-            gap:10px;
-            margin-bottom:20px;
-        }
-        .filtros select, .filtros input {
-            padding:8px;
-            border:1px solid #ddd;
-            border-radius:5px;
-        }
-        .spinner {
-            border:4px solid #f3f3f3;
-            border-top:4px solid #006633;
-            border-radius:50%;
-            width:30px;
-            height:30px;
-            animation: spin 1s linear infinite;
-            margin:10px auto;
-        }
+        .pagination { display:flex; justify-content:center; gap:10px; margin-top:20px; }
+        .pagination button { padding:8px 12px; border:none; background:#006633; color:white; border-radius:5px; cursor:pointer; }
+        .pagination button:disabled { background:#ccc; cursor:not-allowed; }
+        .filtros { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+        .filtros input, .filtros select { padding:8px; border:1px solid #ddd; border-radius:5px; }
+        .spinner { border:4px solid #f3f3f3; border-top:4px solid #006633; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite; margin:10px auto; }
         @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>MINISTÉRIO DA SAÚDE</h2>
-        <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
-        <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
-        <button class="novo-btn" onclick="location.href='/novo-laboratorio'">➕ NOVO LABORATÓRIO</button>
-        <button class="sair-btn" onclick="logout()">🚪 Sair</button>
+        <button onclick="mostrarSeccao('dashboardSection')"> Dashboard</button>
+        <button onclick="mostrarSeccao('laboratoriosSection')"> Laboratórios</button>
+        <button onclick="mostrarSeccao('certificadosSection')"> Certificados</button>
+        <button class="novo-btn" onclick="location.href='/novo-laboratorio'"> NOVO LABORATÓRIO</button>
+        <button class="sair-btn" onclick="logout()"> Sair</button>
     </div>
-    
+
     <div class="main">
         <div id="welcome" class="welcome">
-            <h2>👋 Bem-vindo, Administrador</h2>
+            <h2> Bem-vindo, Administrador</h2>
             <p>Painel de Controle do Ministério da Saúde</p>
         </div>
-        
+
+        <!-- Dashboard Section -->
         <div id="dashboardSection" class="secao active">
-            <h2>📊 Painel de Controle</h2>
-            <div class="stats-grid">
-                <div class="stat-card"><h3>Laboratórios</h3><p id="statsLabs">0</p></div>
-                <div class="stat-card"><h3>Hospitais</h3><p id="statsHospitais">0</p></div>
-                <div class="stat-card"><h3>Empresas</h3><p id="statsEmpresas">0</p></div>
-                <div class="stat-card"><h3>Total</h3><p id="statsTotal">0</p></div>
+            <h2> Painel de Controle</h2>
+            <div class="stats-grid" style="display:grid; grid-template-columns:repeat(4,1fr); gap:20px; margin-top:20px;">
+                <div class="stat-card" style="background:white; padding:20px; border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                    <h3>Laboratórios</h3>
+                    <p id="statsLabs" style="font-size:2em; color:#006633;">0</p>
+                </div>
+                <div class="stat-card" style="background:white; padding:20px; border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                    <h3>Hospitais</h3>
+                    <p id="statsHospitais" style="font-size:2em; color:#006633;">0</p>
+                </div>
+                <div class="stat-card" style="background:white; padding:20px; border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                    <h3>Empresas</h3>
+                    <p id="statsEmpresas" style="font-size:2em; color:#006633;">0</p>
+                </div>
+                <div class="stat-card" style="background:white; padding:20px; border-radius:10px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+                    <h3>Total</h3>
+                    <p id="statsTotal" style="font-size:2em; color:#006633;">0</p>
+                </div>
             </div>
         </div>
-        
+
+        <!-- Laboratórios Section -->
         <div id="laboratoriosSection" class="secao">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>🏥 Laboratórios Registados</h2>
-                    <button class="btn-acao" onclick="carregarLaboratorios()">🔄 Atualizar</button>
+                    <h2> Laboratórios Registados</h2>
+                    <button class="btn-acao" onclick="carregarLaboratorios()"> Atualizar</button>
                 </div>
-                
-                <!-- Filtros -->
                 <div class="filtros">
                     <select id="filtroProvincia" onchange="carregarLaboratorios()">
                         <option value="">Todas Províncias</option>
@@ -497,10 +429,7 @@ app.get('/admin-dashboard', (req, res) => {
                         <option value="false">Inativo</option>
                     </select>
                 </div>
-                
-                <!-- Spinner de carregamento -->
                 <div id="spinnerLabs" class="spinner" style="display:none;"></div>
-                
                 <table>
                     <thead>
                         <tr>
@@ -517,13 +446,41 @@ app.get('/admin-dashboard', (req, res) => {
                         <tr><td colspan="7" style="text-align:center;">Aguardando...</td></tr>
                     </tbody>
                 </table>
-                
-                <!-- Paginação -->
                 <div class="pagination" id="paginacao">
                     <button id="prevPage" onclick="mudarPagina(-1)" disabled>Anterior</button>
                     <span id="pageInfo">Página 1</span>
                     <button id="nextPage" onclick="mudarPagina(1)" disabled>Próxima</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Certificados Section -->
+        <div id="certificadosSection" class="secao">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2> Certificados Emitidos</h2>
+                    <button class="btn-acao" onclick="carregarCertificados()"> Atualizar</button>
+                </div>
+                <div class="filtros">
+                    <input type="text" id="filtroCertLab" placeholder="Filtrar por laboratório" onkeyup="carregarCertificados()">
+                    <input type="text" id="filtroCertPaciente" placeholder="Filtrar por paciente" onkeyup="carregarCertificados()">
+                </div>
+                <div id="spinnerCert" class="spinner" style="display:none;"></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nº Certificado</th>
+                            <th>Tipo</th>
+                            <th>Paciente</th>
+                            <th>Laboratório</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaCertificados">
+                        <tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -536,7 +493,6 @@ app.get('/admin-dashboard', (req, res) => {
             window.location.href = "/ministerio";
         }
 
-        // Variáveis de paginação
         var currentPage = 1;
         var totalPages = 1;
         var limit = 10;
@@ -544,13 +500,16 @@ app.get('/admin-dashboard', (req, res) => {
         function mostrarSeccao(id) {
             document.getElementById('dashboardSection').className = 'secao';
             document.getElementById('laboratoriosSection').className = 'secao';
+            document.getElementById('certificadosSection').className = 'secao';
             document.getElementById(id).className = 'secao active';
             if (id === 'laboratoriosSection') {
                 carregarLaboratorios();
             }
+            if (id === 'certificadosSection') {
+                carregarCertificados();
+            }
         }
 
-        // Carregar estatísticas (funciona)
         function carregarStats() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/stats', true);
@@ -568,36 +527,32 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.send();
         }
 
-        // Carregar laboratórios com paginação e filtros
         function carregarLaboratorios(pagina = 1) {
             console.log("Carregando laboratórios, página", pagina);
             currentPage = pagina;
             var tbody = document.getElementById('tabelaLabs');
             var spinner = document.getElementById('spinnerLabs');
-            tbody.innerHTML = ''; // Limpa a tabela
-            spinner.style.display = 'block'; // Mostra spinner
-            
+            tbody.innerHTML = '';
+            spinner.style.display = 'block';
+
             var provincia = document.getElementById('filtroProvincia').value;
             var status = document.getElementById('filtroStatus').value;
-            
+
             var url = '/api/labs?page=' + currentPage + '&limit=' + limit;
             if (provincia) url += '&provincia=' + encodeURIComponent(provincia);
-            if (status !== '') url += '&ativo=' + status;
-            
+            if (status != "") url += '&ativo=' + status;
+
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
             xhr.setRequestHeader('Authorization', 'Bearer ' + token);
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
                     spinner.style.display = 'none';
-                    console.log("Resposta recebida, status:", xhr.status);
                     if (xhr.status === 200) {
                         try {
                             var resposta = JSON.parse(xhr.responseText);
                             var lista = resposta.labs;
                             totalPages = resposta.pages;
-                            console.log("Laboratórios recebidos:", lista);
-                            
                             if (!lista || lista.length === 0) {
                                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                             } else {
@@ -608,7 +563,6 @@ app.get('/admin-dashboard', (req, res) => {
                                     var statusText = l.ativo ? 'Ativo' : 'Inativo';
                                     var btnStatus = l.ativo ? '🔴' : '🟢';
                                     var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
-                                    
                                     html += '<tr>';
                                     html += '<td><strong>' + (l.nome || '') + '</strong></td>';
                                     html += '<td>' + (l.nif || '') + '</td>';
@@ -617,22 +571,19 @@ app.get('/admin-dashboard', (req, res) => {
                                     html += '<td>' + (l.diretor || '') + '</td>';
                                     html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
                                     html += '<td>';
-                                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button>';
-                                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
+                                    html += '<button class="btn-acao" onclick="verDetalhes(' + l._id + ')" title="Ver detalhes">👁️</button>';
+                                    html += '<button class="btn-acao" onclick="toggleStatus(' + l._id + ',' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
                                     html += '</td>';
                                     html += '</tr>';
                                 }
                                 tbody.innerHTML = html;
                             }
-                            
-                            // Atualizar paginação
                             atualizarPaginacao();
                         } catch (e) {
                             console.error("Erro ao parsear JSON:", e);
                             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro nos dados recebidos</td></tr>';
                         }
                     } else {
-                        console.error("Erro HTTP:", xhr.status);
                         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + xhr.status + '</td></tr>';
                     }
                 }
@@ -654,20 +605,7 @@ app.get('/admin-dashboard', (req, res) => {
         }
 
         function verDetalhes(id) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/labs', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var resposta = JSON.parse(xhr.responseText);
-                    // Como agora a resposta é paginada, precisamos buscar o laboratório específico
-                    // Alternativa: fazer uma requisição para /api/labs/:id se existir
-                    // Por simplicidade, vamos buscar em todos os laboratórios (pode ser ineficiente)
-                    // Para este exemplo, vamos apenas exibir as informações que temos na tabela
-                    alert("Detalhes do laboratório em breve...");
-                }
-            };
-            xhr.send();
+            alert("Detalhes do laboratório em breve...");
         }
 
         function toggleStatus(id, ativoAtual) {
@@ -676,6 +614,70 @@ app.get('/admin-dashboard', (req, res) => {
                 alert('Função em desenvolvimento: ' + acao);
                 carregarLaboratorios(currentPage);
             }
+        }
+
+        // NOVA FUNÇÃO PARA CARREGAR CERTIFICADOS
+        function carregarCertificados() {
+            var tbody = document.getElementById('tabelaCertificados');
+            var spinner = document.getElementById('spinnerCert');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            spinner.style.display = 'block';
+
+            var labFiltro = document.getElementById('filtroCertLab').value.toLowerCase();
+            var pacienteFiltro = document.getElementById('filtroCertPaciente').value.toLowerCase();
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/certificados/todos', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    spinner.style.display = 'none';
+                    if (xhr.status === 200) {
+                        try {
+                            var lista = JSON.parse(xhr.responseText);
+                            if (labFiltro || pacienteFiltro) {
+                                lista = lista.filter(function(c) {
+                                    var labNome = c.emitidoPor ? c.emitidoPor.nome.toLowerCase() : '';
+                                    var pacNome = c.paciente && c.paciente.nomeCompleto ? c.paciente.nomeCompleto.toLowerCase() : '';
+                                    return (!labFiltro || labNome.includes(labFiltro)) &&
+                                           (!pacienteFiltro || pacNome.includes(pacienteFiltro));
+                                });
+                            }
+                            if (lista.length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum certificado encontrado</td></tr>';
+                            } else {
+                                var html = '';
+                                var tipos = ["", "GENÓTIPO", "BOA SAÚDE", "INCAPACIDADE", "APTIDÃO", "SAÚDE MATERNA", "PRÉ-NATAL", "EPIDEMIOLÓGICO", "CSD"];
+                                for (var i = 0; i < lista.length; i++) {
+                                    var c = lista[i];
+                                    var tipoNome = tipos[c.tipo] || 'OUTRO';
+                                    var paciente = c.paciente && c.paciente.nomeCompleto ? c.paciente.nomeCompleto : 'N/I';
+                                    var laboratorio = c.emitidoPor ? c.emitidoPor.nome : 'Desconhecido';
+                                    var data = new Date(c.emitidoEm).toLocaleDateString('pt-PT');
+                                    html += '<tr>';
+                                    html += '<td><strong>' + c.numero + '</strong></td>';
+                                    html += '<td>' + tipoNome + '</td>';
+                                    html += '<td>' + paciente + '</td>';
+                                    html += '<td>' + laboratorio + '</td>';
+                                    html += '<td>' + data + '</td>';
+                                    html += '<td>';
+                                    html += '<button class="btn-acao" onclick="alert(\'PDF em breve\')" title="Visualizar PDF">👁️</button>';
+                                    html += '</td>';
+                                    html += '</tr>';
+                                }
+                                tbody.innerHTML = html;
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Erro ao processar dados</td></tr>';
+                        }
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Erro ao carregar certificados</td></tr>';
+                    }
+                }
+            };
+            xhr.send();
         }
 
         function logout() {
@@ -687,7 +689,7 @@ app.get('/admin-dashboard', (req, res) => {
         carregarStats();
     </script>
 </body>
-</html>`);
+</html>');
 });
 
 // ================================================
