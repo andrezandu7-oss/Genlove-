@@ -1047,6 +1047,20 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// =============================================
+// ROUTE PARA O MINISTÉRIO: TODOS OS CERTIFICADOS
+// =============================================
+app.get('/api/certificados/todos', authMiddleware, async (req, res) => {
+    try {
+        const certificados = await Certificate.find()
+            .populate('emitidoPor', 'nome nif provincia')
+            .sort({ emitidoEm: -1 });
+        res.json(certificados);
+    } catch (error) {
+        console.error('Erro certificados todos:', error);
+        res.status(500).json({ error: 'Erro ao carregar certificados' });
+    }
+});
 
 // =============================================
 // ROUTE POUR GÉNÉRER LES PDF
