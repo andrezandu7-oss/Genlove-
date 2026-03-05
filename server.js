@@ -955,7 +955,6 @@ app.get('/api/labs', authMiddleware, async (req, res) => {
     const total = await Lab.countDocuments();
     const labs = await Lab.find({}, { apiKey: 0 }).skip(skip).limit(limit);
 
-    // On renvoie l'objet structuré nécessaire pour le script du dashboard
     res.json({
       labs: labs,
       pages: Math.ceil(total / limit),
@@ -965,6 +964,7 @@ app.get('/api/labs', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Erro ao listar laboratórios' });
   }
 });
+
 
 
 // Stats detalhados para laboratório
@@ -1451,17 +1451,20 @@ app.get('/novo-certificado', (req, res) => {
 // =============================================
 app.get('/api/stats', authMiddleware, async (req, res) => {
   try {
-    const stats = {
-      // On compte tous les documents pour s'assurer que le dashboard affiche les données existantes
-      labs: await Lab.countDocuments() || 0,
-      hospitais: await Hospital.countDocuments() || 0,
-      empresas: await Empresa.countDocuments() || 0
-    };
-    res.json(stats);
+    const labs = await Lab.countDocuments();
+    const hospitais = await Hospital.countDocuments();
+    const empresas = await Empresa.countDocuments();
+    
+    res.json({
+      labs: labs,
+      hospitais: hospitais,
+      empresas: empresas
+    });
   } catch (error) {
     res.status(500).json({ error: 'Erro ao carregar estatísticas' });
   }
 });
+
 
 
 // =============================================
