@@ -215,6 +215,7 @@ const Empresa = mongoose.model('Empresa', empresaSchema);
 const Certificate = mongoose.model('Certificate', certificateSchema);
 
 // ===============================================
+// ===============================================
 // MIDDLEWARES
 // ===============================================
 const authMiddleware = (req, res, next) => {
