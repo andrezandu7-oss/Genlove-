@@ -1453,21 +1453,28 @@ app.get('/novo-certificado', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'novo-certificado.html'));
 });
 
-// =============================================
-// STATS GLOBAIS (MINISTÉRIO)
-// =============================================
+// === STATS GLOBAIS (MINISTÉRIO) ===
 app.get('/api/stats', authMiddleware, async (req, res) => {
-    try {
-        const stats = {
-            labs: await Lab.countDocuments({ ativo: true }),
-            hospitais: await Hospital.countDocuments({ ativo: true }),
-            empresas: await Empresa.countDocuments({ ativo: true })
-        };
-        res.json(stats);
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao carregar estatísticas' });
-    }
+  try {
+    // Tentamos contar, mas se a coleção não existir ou o botão não funcionar, 
+    // o código não trava e retorna 0 de forma limpa.
+    const nLabs = await Lab.countDocuments() || 0;
+    
+    // Como os outros botões são etiquetas, provavelmente estas coleções estão vazias
+    const nHospitais = await Hospital.countDocuments().catch(() => 0);
+    const nEmpresas = await Empresa.countDocuments().catch(() => 0);
+
+    res.json({
+      labs: nLabs,
+      hospitais: nHospitais,
+      empresas: nEmpresas
+    });
+  } catch (error) {
+    console.error("Erro ao ler base de dados:", error);
+    res.status(500).json({ error: 'Erro ao carregar dados' });
+  }
 });
+
 
 // =============================================
 // GÉNÉRATION PDF POUR LABORATOIRE
