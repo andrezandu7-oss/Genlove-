@@ -313,14 +313,18 @@
                     <input type="text" id="responsavelTecnico" placeholder="Se diferente do diretor">
                 </div>
 
-                <!-- Licença + Validade -->
+                <!-- Licença + Validade (dia/mês/ano) -->
                 <div class="campo">
                     <label>📜 Nº Licença</label>
                     <input type="text" id="licenca" placeholder="Ex.: 1234/MINSAL/25">
                 </div>
-                <div class="campo">
+                <div class="campo full-width">
                     <label>📅 Validade da Licença</label>
-                    <input type="date" id="validadeLicenca">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" id="validadeDia" placeholder="Dia" min="1" max="31" style="width: 80px;">
+                        <input type="number" id="validadeMes" placeholder="Mês" min="1" max="12" style="width: 80px;">
+                        <input type="number" id="validadeAno" placeholder="Ano" min="1900" style="flex: 1;">
+                    </div>
                 </div>
 
                 <!-- Status ativo (checkbox) -->
@@ -387,7 +391,19 @@
                 document.getElementById('diretor').value = dados.diretor || '';
                 document.getElementById('responsavelTecnico').value = dados.responsavelTecnico || '';
                 document.getElementById('licenca').value = dados.licenca || '';
-                document.getElementById('validadeLicenca').value = dados.validadeLicenca || '';
+                // Traitement de la date
+                if (dados.validadeLicenca) {
+                    const partes = dados.validadeLicenca.split('-');
+                    if (partes.length === 3) {
+                        document.getElementById('validadeAno').value = partes[0];
+                        document.getElementById('validadeMes').value = parseInt(partes[1]); // enlève le zéro
+                        document.getElementById('validadeDia').value = parseInt(partes[2]);
+                    }
+                } else {
+                    document.getElementById('validadeAno').value = '';
+                    document.getElementById('validadeMes').value = '';
+                    document.getElementById('validadeDia').value = '';
+                }
                 document.getElementById('ativo').checked = dados.ativo !== false;
             }
 
@@ -410,7 +426,7 @@
                     { label: 'Diretor', valor: dados.diretor },
                     { label: 'Responsável Técnico', valor: dados.responsavelTecnico },
                     { label: 'Licença', valor: dados.licenca },
-                    { label: 'Validade Licença', valor: dados.validadeLicenca ? new Date(dados.validadeLicenca).toLocaleDateString('pt-PT') : '' },
+                    { label: 'Validade Licença', valor: dados.validadeLicenca ? new Date(dados.validadeLicenca + 'T12:00:00').toLocaleDateString('pt-PT') : '' },
                     { label: 'Status', valor: dados.ativo ? 'Ativo' : 'Inativo' }
                 ];
 
@@ -483,6 +499,23 @@
                     return;
                 }
 
+                // Construction de la date de validité
+                let validadeLicenca = undefined;
+                const dia = document.getElementById('validadeDia').value.trim();
+                const mes = document.getElementById('validadeMes').value.trim();
+                const ano = document.getElementById('validadeAno').value.trim();
+                if (dia && mes && ano) {
+                    const d = parseInt(dia);
+                    const m = parseInt(mes);
+                    const a = parseInt(ano);
+                    if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && a >= 1900) {
+                        validadeLicenca = `${a}-${m.toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
+                    } else {
+                        mostrarErro('Data de validade inválida. Verifique dia, mês e ano.');
+                        return;
+                    }
+                }
+
                 // Récupérer les données
                 const dados = {
                     nome: document.getElementById('nome').value.trim(),
@@ -498,7 +531,7 @@
                     diretor: document.getElementById('diretor').value.trim(),
                     responsavelTecnico: document.getElementById('responsavelTecnico').value.trim() || undefined,
                     licenca: document.getElementById('licenca').value.trim() || undefined,
-                    validadeLicenca: document.getElementById('validadeLicenca').value || undefined,
+                    validadeLicenca: validadeLicenca,
                     ativo: document.getElementById('ativo').checked
                 };
 
