@@ -267,17 +267,10 @@
                     </select>
                 </div>
 
-                <!-- Província + Município -->
+                <!-- Província (campo livre) + Município -->
                 <div class="campo">
                     <label>📍 Província <span style="color:#c62828;">*</span></label>
-                    <select id="provincia" required>
-                        <option value="">Selecionar</option>
-                        <option value="Luanda">Luanda</option>
-                        <option value="Benguela">Benguela</option>
-                        <option value="Huíla">Huíla</option>
-                        <option value="Cabinda">Cabinda</option>
-                        <option value="Outra">Outra</option>
-                    </select>
+                    <input type="text" id="provincia" class="required" placeholder="Ex.: Luanda, Benguela, Huíla, ..." required>
                 </div>
                 <div class="campo">
                     <label>🗺️ Município</label>
@@ -495,7 +488,7 @@
                     nome: document.getElementById('nome').value.trim(),
                     nif: nif,
                     tipo: document.getElementById('tipo').value,
-                    provincia: document.getElementById('provincia').value,
+                    provincia: document.getElementById('provincia').value.trim(),
                     municipio: document.getElementById('municipio').value.trim() || undefined,
                     endereco: document.getElementById('endereco').value.trim(),
                     telefone: document.getElementById('telefone').value.trim(),
