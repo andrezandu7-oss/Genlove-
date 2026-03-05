@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE AVEC CERTIFICADOS)
+// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -431,7 +431,6 @@ app.get('/admin-dashboard', (req, res) => {
             display:flex;
             gap:10px;
             margin-bottom:20px;
-            flex-wrap:wrap;
         }
         .filtros select, .filtros input {
             padding:8px;
@@ -455,7 +454,6 @@ app.get('/admin-dashboard', (req, res) => {
         <h2>MINISTÉRIO DA SAÚDE</h2>
         <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
         <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
-        <button onclick="mostrarSeccao('certificadosSection')">📄 Certificados</button>
         <button class="novo-btn" onclick="location.href='/novo-laboratorio'">➕ NOVO LABORATÓRIO</button>
         <button class="sair-btn" onclick="logout()">🚪 Sair</button>
     </div>
@@ -528,38 +526,6 @@ app.get('/admin-dashboard', (req, res) => {
                 </div>
             </div>
         </div>
-
-        <!-- Certificados Section -->
-        <div id="certificadosSection" class="secao">
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>📄 Certificados Emitidos</h2>
-                    <button class="btn-acao" onclick="carregarCertificados()">🔄 Atualizar</button>
-                </div>
-                <!-- Filtres -->
-                <div class="filtros">
-                    <input type="text" id="filtroCertLab" placeholder="Filtrar por laboratório" onkeyup="carregarCertificados()">
-                    <input type="text" id="filtroCertPaciente" placeholder="Filtrar por paciente" onkeyup="carregarCertificados()">
-                </div>
-                <!-- Spinner -->
-                <div id="spinnerCert" class="spinner" style="display:none;"></div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nº Certificado</th>
-                            <th>Tipo</th>
-                            <th>Paciente</th>
-                            <th>Laboratório</th>
-                            <th>Data</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaCertificados">
-                        <tr><td colspan="6" style="text-align:center;">Carregando...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -578,17 +544,16 @@ app.get('/admin-dashboard', (req, res) => {
         function mostrarSeccao(id) {
             document.getElementById('dashboardSection').className = 'secao';
             document.getElementById('laboratoriosSection').className = 'secao';
-            document.getElementById('certificadosSection').className = 'secao';
             document.getElementById(id).className = 'secao active';
             if (id === 'laboratoriosSection') {
                 carregarLaboratorios();
             }
-            if (id === 'certificadosSection') {
-                carregarCertificados();
+            if (id === 'dashboardSection') {
+                carregarStats();  // 👈 Recharge les stats à chaque affichage
             }
         }
 
-        // Carregar estatísticas (funciona)
+        // Carregar estatísticas
         function carregarStats() {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/stats', true);
@@ -692,16 +657,7 @@ app.get('/admin-dashboard', (req, res) => {
         }
 
         function verDetalhes(id) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/labs', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var resposta = JSON.parse(xhr.responseText);
-                    alert("Detalhes do laboratório em breve...");
-                }
-            };
-            xhr.send();
+            alert("Detalhes do laboratório em breve...");
         }
 
         function toggleStatus(id, ativoAtual) {
@@ -712,77 +668,13 @@ app.get('/admin-dashboard', (req, res) => {
             }
         }
 
-        // Carregar certificados
-        function carregarCertificados() {
-            var tbody = document.getElementById('tabelaCertificados');
-            var spinner = document.getElementById('spinnerCert');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            spinner.style.display = 'block';
-
-            var labFiltro = document.getElementById('filtroCertLab').value.toLowerCase();
-            var pacienteFiltro = document.getElementById('filtroCertPaciente').value.toLowerCase();
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/certificados/todos', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    spinner.style.display = 'none';
-                    if (xhr.status === 200) {
-                        try {
-                            var lista = JSON.parse(xhr.responseText);
-                            if (labFiltro || pacienteFiltro) {
-                                lista = lista.filter(function(c) {
-                                    var labNome = c.emitidoPor ? c.emitidoPor.nome.toLowerCase() : '';
-                                    var pacNome = c.paciente && c.paciente.nomeCompleto ? c.paciente.nomeCompleto.toLowerCase() : '';
-                                    return (!labFiltro || labNome.includes(labFiltro)) &&
-                                           (!pacienteFiltro || pacNome.includes(pacienteFiltro));
-                                });
-                            }
-                            if (lista.length === 0) {
-                                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Nenhum certificado encontrado</td></tr>';
-                            } else {
-                                var html = '';
-                                var tipos = ["", "GENÓTIPO", "BOA SAÚDE", "INCAPACIDADE", "APTIDÃO", "SAÚDE MATERNA", "PRÉ-NATAL", "EPIDEMIOLÓGICO", "CSD"];
-                                for (var i = 0; i < lista.length; i++) {
-                                    var c = lista[i];
-                                    var tipoNome = tipos[c.tipo] || 'OUTRO';
-                                    var paciente = c.paciente && c.paciente.nomeCompleto ? c.paciente.nomeCompleto : 'N/I';
-                                    var laboratorio = c.emitidoPor ? c.emitidoPor.nome : 'Desconhecido';
-                                    var data = new Date(c.emitidoEm).toLocaleDateString('pt-PT');
-                                    html += '<tr>';
-                                    html += '<td><strong>' + c.numero + '</strong></td>';
-                                    html += '<td>' + tipoNome + '</td>';
-                                    html += '<td>' + paciente + '</td>';
-                                    html += '<td>' + laboratorio + '</td>';
-                                    html += '<td>' + data + '</td>';
-                                    html += '<td>';
-                                    html += '<button class="btn-acao" onclick="alert(\'PDF em breve\')" title="Visualizar PDF">👁️</button>';
-                                    html += '</td>';
-                                    html += '</tr>';
-                                }
-                                tbody.innerHTML = html;
-                            }
-                        } catch (e) {
-                            console.error(e);
-                            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Erro ao processar dados</td></tr>';
-                        }
-                    } else {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Erro ao carregar certificados</td></tr>';
-                    }
-                }
-            };
-            xhr.send();
-        }
-
         function logout() {
             localStorage.removeItem("token");
             localStorage.removeItem("labKey");
             window.location.href = "/";
         }
 
-        carregarStats();
+        carregarStats(); // Carrega as stats na inicialização
     </script>
 </body>
 </html>`);
