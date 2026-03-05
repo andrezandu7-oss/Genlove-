@@ -313,7 +313,7 @@
                     <input type="text" id="responsavelTecnico" placeholder="Se diferente do diretor">
                 </div>
 
-                <!-- Licença + Validade (dia/mês/ano) -->
+                <!-- Licença + Validade (dia/mês/ano com selects) -->
                 <div class="campo">
                     <label>📜 Nº Licença</label>
                     <input type="text" id="licenca" placeholder="Ex.: 1234/MINSAL/25">
@@ -321,9 +321,27 @@
                 <div class="campo full-width">
                     <label>📅 Validade da Licença</label>
                     <div style="display: flex; gap: 10px;">
-                        <input type="number" id="validadeDia" placeholder="Dia" min="1" max="31" style="width: 80px;">
-                        <input type="number" id="validadeMes" placeholder="Mês" min="1" max="12" style="width: 80px;">
-                        <input type="number" id="validadeAno" placeholder="Ano" min="1900" style="flex: 1;">
+                        <select id="validadeDia" style="width: 100px;">
+                            <option value="">Dia</option>
+                        </select>
+                        <select id="validadeMes" style="width: 100px;">
+                            <option value="">Mês</option>
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                        <select id="validadeAno" style="flex: 1;">
+                            <option value="">Ano</option>
+                        </select>
                     </div>
                 </div>
 
@@ -376,6 +394,67 @@
 
             let ultimoLab = null; // stocke les données du laboratoire créé
 
+            // Remplir les années (de 1900 à 2100)
+            const anoSelect = document.getElementById('validadeAno');
+            for (let a = 1900; a <= 2100; a++) {
+                const option = document.createElement('option');
+                option.value = a;
+                option.textContent = a;
+                anoSelect.appendChild(option);
+            }
+
+            // Fonction pour mettre à jour les jours en fonction du mois et de l'année
+            function atualizarDias() {
+                const diaSelect = document.getElementById('validadeDia');
+                const mes = document.getElementById('validadeMes').value;
+                const ano = document.getElementById('validadeAno').value;
+                
+                // Sauvegarder la valeur actuelle du jour si possible
+                const diaAtual = diaSelect.value;
+                
+                // Déterminer le nombre de jours dans le mois
+                let diasNoMes = 31;
+                if (mes) {
+                    const m = parseInt(mes);
+                    if (m === 4 || m === 6 || m === 9 || m === 11) {
+                        diasNoMes = 30;
+                    } else if (m === 2) {
+                        // Vérifier année bissextile
+                        if (ano) {
+                            const a = parseInt(ano);
+                            if ((a % 4 === 0 && a % 100 !== 0) || (a % 400 === 0)) {
+                                diasNoMes = 29;
+                            } else {
+                                diasNoMes = 28;
+                            }
+                        } else {
+                            diasNoMes = 29; // par défaut si année non choisie
+                        }
+                    }
+                }
+                
+                // Reconstruire les options du jour
+                diaSelect.innerHTML = '<option value="">Dia</option>';
+                for (let d = 1; d <= diasNoMes; d++) {
+                    const option = document.createElement('option');
+                    option.value = d;
+                    option.textContent = d;
+                    diaSelect.appendChild(option);
+                }
+                
+                // Restaurer la valeur si elle est toujours valide
+                if (diaAtual && parseInt(diaAtual) <= diasNoMes) {
+                    diaSelect.value = diaAtual;
+                }
+            }
+
+            // Écouteurs sur mois et année pour mettre à jour les jours
+            document.getElementById('validadeMes').addEventListener('change', atualizarDias);
+            document.getElementById('validadeAno').addEventListener('change', atualizarDias);
+
+            // Initialiser les jours (par défaut 31)
+            atualizarDias();
+
             // Fonction pour pré-remplir le formulaire avec les données existantes
             function preencherFormulario(dados) {
                 document.getElementById('nome').value = dados.nome || '';
@@ -391,18 +470,25 @@
                 document.getElementById('diretor').value = dados.diretor || '';
                 document.getElementById('responsavelTecnico').value = dados.responsavelTecnico || '';
                 document.getElementById('licenca').value = dados.licenca || '';
+                
                 // Traitement de la date
                 if (dados.validadeLicenca) {
                     const partes = dados.validadeLicenca.split('-');
                     if (partes.length === 3) {
+                        // Mettre à jour les jours d'abord pour que la valeur du jour soit disponible
                         document.getElementById('validadeAno').value = partes[0];
-                        document.getElementById('validadeMes').value = parseInt(partes[1]); // enlève le zéro
-                        document.getElementById('validadeDia').value = parseInt(partes[2]);
+                        document.getElementById('validadeMes').value = parseInt(partes[1]); // déclenchera atualizarDias
+                        // Forcer la mise à jour des jours avant de set le jour
+                        setTimeout(() => {
+                            document.getElementById('validadeDia').value = parseInt(partes[2]);
+                        }, 10);
                     }
                 } else {
                     document.getElementById('validadeAno').value = '';
                     document.getElementById('validadeMes').value = '';
-                    document.getElementById('validadeDia').value = '';
+                    document.getElementById('validadeDia').innerHTML = '<option value="">Dia</option>'; // sera mis à jour par atualizarDias via change
+                    // Déclencher la mise à jour avec les valeurs vides
+                    document.getElementById('validadeMes').dispatchEvent(new Event('change'));
                 }
                 document.getElementById('ativo').checked = dados.ativo !== false;
             }
@@ -501,19 +587,11 @@
 
                 // Construction de la date de validité
                 let validadeLicenca = undefined;
-                const dia = document.getElementById('validadeDia').value.trim();
-                const mes = document.getElementById('validadeMes').value.trim();
-                const ano = document.getElementById('validadeAno').value.trim();
+                const dia = document.getElementById('validadeDia').value;
+                const mes = document.getElementById('validadeMes').value;
+                const ano = document.getElementById('validadeAno').value;
                 if (dia && mes && ano) {
-                    const d = parseInt(dia);
-                    const m = parseInt(mes);
-                    const a = parseInt(ano);
-                    if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && a >= 1900) {
-                        validadeLicenca = `${a}-${m.toString().padStart(2,'0')}-${d.toString().padStart(2,'0')}`;
-                    } else {
-                        mostrarErro('Data de validade inválida. Verifique dia, mês e ano.');
-                        return;
-                    }
+                    validadeLicenca = `${ano}-${mes.padStart(2,'0')}-${dia.padStart(2,'0')}`;
                 }
 
                 // Récupérer les données
