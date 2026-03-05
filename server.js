@@ -302,7 +302,7 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION AVEC LOGS)
+// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -311,7 +311,143 @@ app.get('/admin-dashboard', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ministério da Saúde - SNS Angola</title>
-    <style>/* ... mêmes styles ... */</style>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { display:flex; background:#f5f5f5; min-height: 100vh; }
+        .sidebar {
+            width:260px;
+            background:#006633;
+            color:white;
+            height:100vh;
+            padding:20px;
+            position:fixed;
+            display:flex;
+            flex-direction:column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        .sidebar h2 { 
+            margin-bottom:30px; 
+            text-align:center;
+            padding-bottom:15px;
+            border-bottom:1px solid rgba(255,255,255,0.2);
+            font-size: 22px;
+        }
+        .sidebar button, .sidebar .nav-link {
+            display:block;
+            width:100%;
+            color:rgba(255,255,255,0.9);
+            text-decoration:none;
+            padding:14px;
+            margin:5px 0;
+            border-radius:8px;
+            cursor:pointer;
+            text-align:left;
+            font-size:15px;
+            border:none;
+            background:none;
+            transition: 0.3s;
+        }
+        .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
+        .sidebar .novo-btn {
+            background:#ffa500;
+            color:#00331a;
+            font-weight:bold;
+            margin:20px 0;
+            text-align:center;
+        }
+        .sidebar .novo-btn:hover { background:#ffb833; transform: translateY(-2px); }
+        .sidebar .sair-btn {
+            background:#cc3300;
+            margin-top:auto;
+            text-align:center;
+            color: white;
+        }
+        .sidebar .sair-btn:hover { background:#e63900; }
+        .main {
+            margin-left:260px;
+            padding:40px;
+            width:100%;
+        }
+        .welcome {
+            background:white;
+            padding:25px;
+            border-left:6px solid #006633;
+            margin-bottom:30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .secao { display:none; animation: fadeIn 0.3s ease; }
+        .secao.active { display:block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .stats-grid {
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:20px;
+            margin-top:20px;
+        }
+        .stat-card {
+            background:white;
+            padding:20px;
+            border-radius:8px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
+            text-align:center;
+        }
+        .stat-card h3 { color:#666; font-size:14px; margin-bottom:10px; }
+        .stat-card p { color:#006633; font-size:28px; font-weight:bold; }
+        .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
+        table { width:100%; border-collapse:collapse; margin-top:20px; }
+        th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
+        td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
+        tr:hover { background:#fafafa; }
+        .btn-acao { 
+            background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
+            cursor:pointer; transition:0.2s; margin-right:5px;
+        }
+        .btn-acao:hover { background:#e0e0e0; transform: scale(1.1); }
+        .status-badge {
+            padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px;
+        }
+        .status-ativo { background:#e8f5e9; color:#2e7d32; }
+        .status-inativo { background:#ffebee; color:#c62828; }
+        .pagination {
+            display:flex;
+            justify-content:center;
+            gap:10px;
+            margin-top:20px;
+        }
+        .pagination button {
+            padding:8px 12px;
+            border:none;
+            background:#006633;
+            color:white;
+            border-radius:5px;
+            cursor:pointer;
+        }
+        .pagination button:disabled {
+            background:#ccc;
+            cursor:not-allowed;
+        }
+        .filtros {
+            display:flex;
+            gap:10px;
+            margin-bottom:20px;
+        }
+        .filtros select, .filtros input {
+            padding:8px;
+            border:1px solid #ddd;
+            border-radius:5px;
+        }
+        .spinner {
+            border:4px solid #f3f3f3;
+            border-top:4px solid #006633;
+            border-radius:50%;
+            width:30px;
+            height:30px;
+            animation: spin 1s linear infinite;
+            margin:10px auto;
+        }
+        @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
+    </style>
 </head>
 <body>
     <div class="sidebar">
@@ -381,6 +517,13 @@ app.get('/admin-dashboard', (req, res) => {
                         <tr><td colspan="7" style="text-align:center;">Aguardando...</td></tr>
                     </tbody>
                 </table>
+                
+                <!-- Paginação -->
+                <div class="pagination" id="paginacao">
+                    <button id="prevPage" onclick="mudarPagina(-1)" disabled>Anterior</button>
+                    <span id="pageInfo">Página 1</span>
+                    <button id="nextPage" onclick="mudarPagina(1)" disabled>Próxima</button>
+                </div>
             </div>
         </div>
     </div>
@@ -390,84 +533,70 @@ app.get('/admin-dashboard', (req, res) => {
         var token = localStorage.getItem("token");
         console.log("Token:", token ? "presente" : "ausente");
         if (!token) {
-            console.log("Redirecionando para /ministerio");
             window.location.href = "/ministerio";
         }
 
+        // Variáveis de paginação
+        var currentPage = 1;
+        var totalPages = 1;
+        var limit = 10;
+
         function mostrarSeccao(id) {
-            console.log("Mudando para seção:", id);
             document.getElementById('dashboardSection').className = 'secao';
             document.getElementById('laboratoriosSection').className = 'secao';
             document.getElementById(id).className = 'secao active';
             if (id === 'laboratoriosSection') {
                 carregarLaboratorios();
             }
-            if (id === 'dashboardSection') {
-                carregarStats();
-            }
         }
 
+        // Carregar estatísticas (funciona)
         function carregarStats() {
-            console.log("Carregando estatísticas...");
             var xhr = new XMLHttpRequest();
             xhr.open('GET', '/api/stats', true);
             xhr.setRequestHeader('Authorization', 'Bearer ' + token);
             xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    console.log("Resposta /api/stats status:", xhr.status);
-                    if (xhr.status === 200) {
-                        try {
-                            var data = JSON.parse(xhr.responseText);
-                            console.log("Dados stats:", data);
-                            document.getElementById('statsLabs').innerHTML = data.labs || 0;
-                            document.getElementById('statsHospitais').innerHTML = data.hospitais || 0;
-                            document.getElementById('statsEmpresas').innerHTML = data.empresas || 0;
-                            var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
-                            document.getElementById('statsTotal').innerHTML = total;
-                        } catch (e) {
-                            console.error("Erro ao parsear stats:", e);
-                        }
-                    } else {
-                        console.error("Erro ao carregar stats:", xhr.status);
-                    }
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    document.getElementById('statsLabs').innerHTML = data.labs || 0;
+                    document.getElementById('statsHospitais').innerHTML = data.hospitais || 0;
+                    document.getElementById('statsEmpresas').innerHTML = data.empresas || 0;
+                    var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
+                    document.getElementById('statsTotal').innerHTML = total;
                 }
             };
             xhr.send();
         }
 
-        function carregarLaboratorios() {
-            console.log("Carregando laboratórios...");
+        // Carregar laboratórios com paginação e filtros
+        function carregarLaboratorios(pagina = 1) {
+            console.log("Carregando laboratórios, página", pagina);
+            currentPage = pagina;
             var tbody = document.getElementById('tabelaLabs');
             var spinner = document.getElementById('spinnerLabs');
-            tbody.innerHTML = '';
-            spinner.style.display = 'block';
-
+            tbody.innerHTML = ''; // Limpa a tabela
+            spinner.style.display = 'block'; // Mostra spinner
+            
             var provincia = document.getElementById('filtroProvincia').value;
             var status = document.getElementById('filtroStatus').value;
-            console.log("Filtros - provincia:", provincia, "status:", status);
-
+            
+            var url = '/api/labs?page=' + currentPage + '&limit=' + limit;
+            if (provincia) url += '&provincia=' + encodeURIComponent(provincia);
+            if (status !== '') url += '&ativo=' + status;
+            
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/labs', true);
+            xhr.open('GET', url, true);
             xhr.setRequestHeader('Authorization', 'Bearer ' + token);
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
                     spinner.style.display = 'none';
-                    console.log("Resposta /api/labs status:", xhr.status);
+                    console.log("Resposta recebida, status:", xhr.status);
                     if (xhr.status === 200) {
                         try {
-                            var lista = JSON.parse(xhr.responseText);
-                            console.log("Laboratórios recebidos (raw):", lista);
-                            
-                            // Filtrar lado cliente
-                            if (provincia) {
-                                lista = lista.filter(l => l.provincia === provincia);
-                                console.log("Após filtro provincia:", lista);
-                            }
-                            if (status !== '') {
-                                var ativo = (status === 'true');
-                                lista = lista.filter(l => l.ativo === ativo);
-                                console.log("Após filtro status:", lista);
-                            }
+                            var resposta = JSON.parse(xhr.responseText);
+                            var lista = resposta.labs;
+                            totalPages = resposta.pages;
+                            console.log("Laboratórios recebidos:", lista);
                             
                             if (!lista || lista.length === 0) {
                                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
@@ -479,6 +608,7 @@ app.get('/admin-dashboard', (req, res) => {
                                     var statusText = l.ativo ? 'Ativo' : 'Inativo';
                                     var btnStatus = l.ativo ? '🔴' : '🟢';
                                     var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
+                                    
                                     html += '<tr>';
                                     html += '<td><strong>' + (l.nome || '') + '</strong></td>';
                                     html += '<td>' + (l.nif || '') + '</td>';
@@ -494,8 +624,11 @@ app.get('/admin-dashboard', (req, res) => {
                                 }
                                 tbody.innerHTML = html;
                             }
+                            
+                            // Atualizar paginação
+                            atualizarPaginacao();
                         } catch (e) {
-                            console.error("Erro ao parsear laboratórios:", e);
+                            console.error("Erro ao parsear JSON:", e);
                             tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro nos dados recebidos</td></tr>';
                         }
                     } else {
@@ -507,15 +640,41 @@ app.get('/admin-dashboard', (req, res) => {
             xhr.send();
         }
 
+        function atualizarPaginacao() {
+            document.getElementById('pageInfo').innerText = 'Página ' + currentPage + ' de ' + totalPages;
+            document.getElementById('prevPage').disabled = currentPage <= 1;
+            document.getElementById('nextPage').disabled = currentPage >= totalPages;
+        }
+
+        function mudarPagina(direcao) {
+            var novaPagina = currentPage + direcao;
+            if (novaPagina >= 1 && novaPagina <= totalPages) {
+                carregarLaboratorios(novaPagina);
+            }
+        }
+
         function verDetalhes(id) {
-            alert("Detalhes do laboratório em breve...");
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/labs', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var resposta = JSON.parse(xhr.responseText);
+                    // Como agora a resposta é paginada, precisamos buscar o laboratório específico
+                    // Alternativa: fazer uma requisição para /api/labs/:id se existir
+                    // Por simplicidade, vamos buscar em todos os laboratórios (pode ser ineficiente)
+                    // Para este exemplo, vamos apenas exibir as informações que temos na tabela
+                    alert("Detalhes do laboratório em breve...");
+                }
+            };
+            xhr.send();
         }
 
         function toggleStatus(id, ativoAtual) {
             var acao = ativoAtual ? 'desativar' : 'ativar';
             if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
                 alert('Função em desenvolvimento: ' + acao);
-                carregarLaboratorios();
+                carregarLaboratorios(currentPage);
             }
         }
 
@@ -525,11 +684,12 @@ app.get('/admin-dashboard', (req, res) => {
             window.location.href = "/";
         }
 
-        carregarStats(); // Carrega as stats na inicialização
+        carregarStats();
     </script>
 </body>
 </html>`);
 });
+
 // ================================================
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
@@ -885,20 +1045,6 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
     } catch (error) {
         console.error('Erro emissão:', error);
         res.status(500).json({ error: error.message });
-    }
-});
-// =============================================
-// ROUTE PARA O MINISTÉRIO: TODOS OS CERTIFICADOS
-// =============================================
-app.get('/api/certificados/todos', authMiddleware, async (req, res) => {
-    try {
-        const certificados = await Certificate.find()
-            .populate('emitidoPor', 'nome nif provincia')
-            .sort({ emitidoEm: -1 });
-        res.json(certificados);
-    } catch (error) {
-        console.error('Erro certificados todos:', error);
-        res.status(500).json({ error: 'Erro ao carregar certificados' });
     }
 });
 
@@ -1376,5 +1522,6 @@ app.get('/novo-laboratorio', (req, res) => {
 app.listen(PORT, () => {
     console.log('✅ SNS Online na porta ' + PORT);
 });
+
 
 
