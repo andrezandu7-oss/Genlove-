@@ -263,7 +263,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE CORRIGÉE)
+// DASHBOARD DO MINISTÉRIO (VERSION CORRIGÉE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -374,6 +374,7 @@ app.get('/admin-dashboard', (req, res) => {
             display:flex;
             gap:10px;
             margin-bottom:20px;
+            flex-wrap:wrap;
         }
         .filtros select, .filtros input {
             padding:8px;
@@ -424,14 +425,28 @@ app.get('/admin-dashboard', (req, res) => {
                     <button class="btn-acao" onclick="carregarLaboratorios()">🔄 Atualizar</button>
                 </div>
                 
+                <!-- Filtros -->
                 <div class="filtros">
                     <select id="filtroProvincia" onchange="carregarLaboratorios()">
                         <option value="">Todas Províncias</option>
-                        <option value="Luanda">Luanda</option>
+                        <option value="Bengo">Bengo</option>
                         <option value="Benguela">Benguela</option>
-                        <option value="Huíla">Huíla</option>
+                        <option value="Bié">Bié</option>
                         <option value="Cabinda">Cabinda</option>
-                        <option value="Outra">Outra</option>
+                        <option value="Cuando Cubango">Cuando Cubango</option>
+                        <option value="Cuanza Norte">Cuanza Norte</option>
+                        <option value="Cuanza Sul">Cuanza Sul</option>
+                        <option value="Cunene">Cunene</option>
+                        <option value="Huambo">Huambo</option>
+                        <option value="Huíla">Huíla</option>
+                        <option value="Luanda">Luanda</option>
+                        <option value="Lunda Norte">Lunda Norte</option>
+                        <option value="Lunda Sul">Lunda Sul</option>
+                        <option value="Malanje">Malanje</option>
+                        <option value="Moxico">Moxico</option>
+                        <option value="Namibe">Namibe</option>
+                        <option value="Uíge">Uíge</option>
+                        <option value="Zaire">Zaire</option>
                     </select>
                     <select id="filtroStatus" onchange="carregarLaboratorios()">
                         <option value="">Todos Status</option>
@@ -440,6 +455,7 @@ app.get('/admin-dashboard', (req, res) => {
                     </select>
                 </div>
                 
+                <!-- Spinner de carregamento -->
                 <div id="spinnerLabs" class="spinner" style="display:none;"></div>
                 
                 <table>
@@ -508,9 +524,13 @@ app.get('/admin-dashboard', (req, res) => {
             .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
             .then(lista => {
                 spinner.style.display = 'none';
-                console.log('Laboratórios:', lista);
+                console.log('Laboratórios recebidos:', lista);
 
-                if (provincia) lista = lista.filter(l => l.provincia === provincia);
+                // Filtrar por província
+                if (provincia) {
+                    lista = lista.filter(l => l.provincia === provincia);
+                }
+                // Filtrar por status
                 if (status !== '') {
                     var ativo = (status === 'true');
                     lista = lista.filter(l => l.ativo === ativo);
@@ -520,7 +540,7 @@ app.get('/admin-dashboard', (req, res) => {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                 } else {
                     var html = '';
-                    for (var i=0; i<lista.length; i++) {
+                    for (var i = 0; i < lista.length; i++) {
                         var l = lista[i];
                         var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
                         var statusText = l.ativo ? 'Ativo' : 'Inativo';
@@ -530,6 +550,7 @@ app.get('/admin-dashboard', (req, res) => {
                         html += '<td><strong>' + (l.nome || '') + '</strong></td>';
                         html += '<td>' + (l.nif || '') + '</td>';
                         html += '<td>' + (l.provincia || '') + '</td>';
+                        // ATENÇÃO: o campo no schema é 'telephone' (com ph)
                         html += '<td>' + (l.telephone || '') + '</td>';
                         html += '<td>' + (l.diretor || '') + '</td>';
                         html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
@@ -542,15 +563,25 @@ app.get('/admin-dashboard', (req, res) => {
                     tbody.innerHTML = html;
                 }
             })
-            .catch(err => {
+            .catch(error => {
                 spinner.style.display = 'none';
-                console.error(err);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + err.message + '</td></tr>';
+                console.error('Erro ao carregar laboratórios:', error);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + error.message + '</td></tr>';
             });
         }
 
-        function verDetalhes(id) { alert("Em breve..."); }
-        function toggleStatus(id, ativo) { alert("Função em desenvolvimento"); carregarLaboratorios(); }
+        function verDetalhes(id) {
+            alert("Detalhes do laboratório em breve...");
+        }
+
+        function toggleStatus(id, ativoAtual) {
+            var acao = ativoAtual ? 'desativar' : 'ativar';
+            if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
+                // Aqui você pode implementar a chamada para ativar/desativar
+                alert('Função em desenvolvimento: ' + acao);
+                carregarLaboratorios(); // recarrega a lista
+            }
+        }
 
         function logout() {
             localStorage.removeItem("token");
