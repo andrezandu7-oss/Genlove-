@@ -1518,13 +1518,17 @@ app.get('/novo-laboratorio', (req, res) => {
 });
 
 // ==============================================
-// API STATS MINISTERIO
+// ==============================================
+// API - ESTATÍSTICAS DO MINISTÉRIO
 // ==============================================
 app.get('/api/stats', authMiddleware, async (req, res) => {
+
     try {
 
         const labs = await Lab.countDocuments();
+
         const hospitais = await Hospital.countDocuments();
+
         const empresas = await Empresa.countDocuments();
 
         res.json({
@@ -1534,9 +1538,15 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
         });
 
     } catch (error) {
-        console.log("Erro stats:", error);
-        res.status(500).json({ erro: "Erro ao carregar estatísticas" });
+
+        console.error("Erro nas estatísticas:", error);
+
+        res.status(500).json({
+            erro: "Erro ao carregar estatísticas"
+        });
+
     }
+
 });
 // =============================================
 // INICIALIZAÇÃO DO SERVIDOR
