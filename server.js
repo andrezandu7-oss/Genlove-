@@ -273,203 +273,76 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (DESIGN MODERNE, LOGIQUE FONCTIONNELLE)
+// DASHBOARD DO MINISTÉRIO (VERSION SIMPLIFIÉE ET FONCTIONNELLE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
-<html lang="pt">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ministério da Saúde - SNS Angola</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
-        body { display:flex; background:#f5f5f5; min-height:100vh; }
-        .sidebar {
-            width:260px;
-            background:#006633;
-            color:white;
-            height:100vh;
-            padding:20px;
-            position:fixed;
-            display:flex;
-            flex-direction:column;
-            box-shadow:2px 0 10px rgba(0,0,0,0.1);
-        }
-        .sidebar h2 { margin-bottom:30px; text-align:center; padding-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.2); font-size:22px; }
-        .sidebar button, .sidebar .nav-link {
-            display:block;
-            width:100%;
-            color:rgba(255,255,255,0.9);
-            text-decoration:none;
-            padding:14px;
-            margin:5px 0;
-            border-radius:8px;
-            cursor:pointer;
-            text-align:left;
-            font-size:15px;
-            border:none;
-            background:none;
-            transition:0.3s;
-        }
-        .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
-        .sidebar .novo-btn {
-            background:#ffa500;
-            color:#00331a;
-            font-weight:bold;
-            margin:20px 0;
-            text-align:center;
-        }
-        .sidebar .novo-btn:hover { background:#ffb833; transform:translateY(-2px); }
-        .sidebar .sair-btn {
-            background:#cc3300;
-            margin-top:auto;
-            text-align:center;
-            color:white;
-        }
-        .sidebar .sair-btn:hover { background:#e63900; }
-        .main {
-            margin-left:260px;
-            padding:40px;
-            width:100%;
-        }
-        .welcome {
-            background:white;
-            padding:25px;
-            border-left:6px solid #006633;
-            margin-bottom:30px;
-            border-radius:8px;
-            box-shadow:0 2px 10px rgba(0,0,0,0.05);
-        }
-        .secao { display:none; }
-        .secao.active { display:block; }
-        .stats-grid {
-            display:grid;
-            grid-template-columns:repeat(4,1fr);
-            gap:20px;
-            margin-top:20px;
-        }
-        .stat-card {
-            background:white;
-            padding:20px;
-            border-radius:8px;
-            box-shadow:0 2px 5px rgba(0,0,0,0.1);
-            text-align:center;
-        }
-        .stat-card h3 { color:#666; font-size:14px; margin-bottom:10px; }
-        .stat-card p { color:#006633; font-size:28px; font-weight:bold; }
-        .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
-        table { width:100%; border-collapse:collapse; margin-top:20px; }
-        th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
-        td { padding:15px; border-bottom:1px solid #eee; font-size:14px; }
-        tr:hover { background:#fafafa; }
-        .btn-acao { background:#f0f0f0; border:none; padding:8px; border-radius:5px; cursor:pointer; transition:0.2s; margin-right:5px; }
-        .btn-acao:hover { background:#e0e0e0; transform:scale(1.1); }
-        .status-badge { padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px; }
-        .status-ativo { background:#e8f5e9; color:#2e7d32; }
-        .status-inativo { background:#ffebee; color:#c62828; }
-        .filtros { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
-        .filtros select, .filtros input { padding:8px; border:1px solid #ddd; border-radius:5px; }
-        .spinner { border:4px solid #f3f3f3; border-top:4px solid #006633; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite; margin:10px auto; }
-        @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; }
-        .modal-content { background:white; padding:20px; border-radius:10px; width:400px; }
-        .modal-content input { width:100%; padding:8px; margin:5px 0; }
+        body { font-family: Arial; margin: 0; display: flex; }
+        .sidebar { width: 250px; background: #006633; color: white; height: 100vh; padding: 20px; position: fixed; }
+        .sidebar a { display: block; color: white; text-decoration: none; padding: 10px; margin: 5px 0; }
+        .sidebar a:hover { background: #004d26; }
+        .main { margin-left: 290px; padding: 30px; width: 100%; }
+        .btn { background: #006633; color: white; border: none; padding: 10px 20px; cursor: pointer; margin: 5px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #006633; color: white; padding: 10px; }
+        td { padding: 10px; border-bottom: 1px solid #ddd; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 400px; }
+        .modal-content input { width: 100%; padding: 8px; margin: 5px 0; }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <h2>MINISTÉRIO DA SAÚDE</h2>
-        <button onclick="mostrarSecao('dashboard')">📊 Dashboard</button>
-        <button onclick="mostrarSecao('labs')">🏥 Laboratórios</button>
-        <button onclick="mostrarSecao('hospitais')">🏥 Hospitais</button>
-        <button onclick="mostrarSecao('empresas')">🏢 Empresas</button>
-        <button class="novo-btn" onclick="location.href='/novo-laboratorio'">➕ NOVO LABORATÓRIO</button>
-        <button class="sair-btn" onclick="logout()">🚪 Sair</button>
+        <h2>SNS - Ministério</h2>
+        <a href="#" onclick="mostrarSecao('dashboard')">📊 Dashboard</a>
+        <a href="#" onclick="mostrarSecao('labs')">🏥 Laboratórios</a>
+        <a href="#" onclick="mostrarSecao('hospitais')">🏥 Hospitais</a>
+        <a href="#" onclick="mostrarSecao('empresas')">🏢 Empresas</a>
+        <button onclick="logout()" style="margin-top:20px; background:#dc3545; color:white; border:none; padding:10px; width:100%;">Sair</button>
     </div>
 
     <div class="main">
-        <div id="welcome" class="welcome">
-            <h2>👋 Bem-vindo, Administrador</h2>
-            <p>Painel de Controle do Ministério da Saúde</p>
+        <div id="secaoDashboard">
+            <h1>Dashboard</h1>
+            <div>Total Laboratórios: <span id="totalLabs">0</span></div>
+            <div>Total Hospitais: <span id="totalHospitais">0</span></div>
+            <div>Total Empresas: <span id="totalEmpresas">0</span></div>
         </div>
 
-        <div id="secaoDashboard" class="secao active">
-            <h2>📊 Painel de Controle</h2>
-            <div class="stats-grid">
-                <div class="stat-card"><h3>Laboratórios</h3><p id="totalLabs">0</p></div>
-                <div class="stat-card"><h3>Hospitais</h3><p id="totalHospitais">0</p></div>
-                <div class="stat-card"><h3>Empresas</h3><p id="totalEmpresas">0</p></div>
-                <div class="stat-card"><h3>Total</h3><p id="totalGeral">0</p></div>
-            </div>
+        <div id="secaoLabs" style="display:none;">
+            <h1>Laboratórios</h1>
+            <button class="btn" onclick="mostrarModalLab()">+ Novo Laboratório</button>
+            <table id="labsTable">
+                <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
 
-        <div id="secaoLabs" class="secao">
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>🏥 Laboratórios Registados</h2>
-                    <button class="btn-acao" onclick="carregarLabs()">🔄 Atualizar</button>
-                </div>
-                <table id="labsTable">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>NIF</th>
-                            <th>Província</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+        <div id="secaoHospitais" style="display:none;">
+            <h1>Hospitais</h1>
+            <button class="btn" onclick="mostrarModalHospital()">+ Novo Hospital</button>
+            <table id="hospitaisTable">
+                <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Diretor</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
 
-        <div id="secaoHospitais" class="secao">
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>🏥 Hospitais Registados</h2>
-                    <button class="btn-acao" onclick="carregarHospitais()">🔄 Atualizar</button>
-                </div>
-                <table id="hospitaisTable">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>NIF</th>
-                            <th>Província</th>
-                            <th>Diretor</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="secaoEmpresas" class="secao">
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>🏢 Empresas Registadas</h2>
-                    <button class="btn-acao" onclick="carregarEmpresas()">🔄 Atualizar</button>
-                </div>
-                <table id="empresasTable">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>NIF</th>
-                            <th>Responsável</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+        <div id="secaoEmpresas" style="display:none;">
+            <h1>Empresas</h1>
+            <button class="btn" onclick="mostrarModalEmpresa()">+ Nova Empresa</button>
+            <table id="empresasTable">
+                <thead><tr><th>Nome</th><th>NIF</th><th>Responsável</th><th>Status</th><th>Ações</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Modais (copiados do código funcional) -->
+    <!-- Modais -->
     <div id="modalLab" class="modal">
         <div class="modal-content">
             <h3>Novo Laboratório</h3>
@@ -516,24 +389,24 @@ app.get('/admin-dashboard', (req, res) => {
         if (!token) window.location.href = '/ministerio';
 
         function mostrarSecao(s) {
-            document.getElementById('secaoDashboard').classList.remove('active');
-            document.getElementById('secaoLabs').classList.remove('active');
-            document.getElementById('secaoHospitais').classList.remove('active');
-            document.getElementById('secaoEmpresas').classList.remove('active');
+            document.getElementById('secaoDashboard').style.display = 'none';
+            document.getElementById('secaoLabs').style.display = 'none';
+            document.getElementById('secaoHospitais').style.display = 'none';
+            document.getElementById('secaoEmpresas').style.display = 'none';
             if (s === 'dashboard') {
-                document.getElementById('secaoDashboard').classList.add('active');
+                document.getElementById('secaoDashboard').style.display = 'block';
                 carregarStats();
             }
             if (s === 'labs') {
-                document.getElementById('secaoLabs').classList.add('active');
+                document.getElementById('secaoLabs').style.display = 'block';
                 carregarLabs();
             }
             if (s === 'hospitais') {
-                document.getElementById('secaoHospitais').classList.add('active');
+                document.getElementById('secaoHospitais').style.display = 'block';
                 carregarHospitais();
             }
             if (s === 'empresas') {
-                document.getElementById('secaoEmpresas').classList.add('active');
+                document.getElementById('secaoEmpresas').style.display = 'block';
                 carregarEmpresas();
             }
         }
@@ -544,48 +417,54 @@ app.get('/admin-dashboard', (req, res) => {
         function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
 
         async function carregarStats() {
-            const r = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } });
-            const d = await r.json();
-            document.getElementById('totalLabs').innerText = d.labs || 0;
-            document.getElementById('totalHospitais').innerText = d.hospitais || 0;
-            document.getElementById('totalEmpresas').innerText = d.empresas || 0;
-            const total = (d.labs || 0) + (d.hospitais || 0) + (d.empresas || 0);
-            document.getElementById('totalGeral').innerText = total;
+            try {
+                const r = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+                const d = await r.json();
+                document.getElementById('totalLabs').innerText = d.labs || 0;
+                document.getElementById('totalHospitais').innerText = d.hospitais || 0;
+                document.getElementById('totalEmpresas').innerText = d.empresas || 0;
+            } catch (e) { console.error(e); }
         }
 
         async function carregarLabs() {
-            const r = await fetch('/api/labs', { headers: { 'Authorization': 'Bearer ' + token } });
-            const labs = await r.json();
-            let html = '';
-            labs.forEach(l => {
-                html += '<tr><td>' + l.nome + '</td><td>' + l.nif + '</td><td>' + (l.provincia || '') + '</td><td>' + (l.ativo ? '✅ Ativo' : '❌ Inativo') + '</td><td><button onclick="desativarLab(\'' + l._id + '\')">Desativar</button></td></tr>';
-            });
-            document.querySelector('#labsTable tbody').innerHTML = html;
+            try {
+                const r = await fetch('/api/labs', { headers: { 'Authorization': 'Bearer ' + token } });
+                const labs = await r.json();
+                let html = '';
+                labs.forEach(l => {
+                    html += '<tr><td>' + l.nome + '</td><td>' + l.nif + '</td><td>' + (l.provincia || '') + '</td><td>' + (l.ativo ? '✅ Ativo' : '❌ Inativo') + '</td><td><button onclick="desativarLab(\'' + l._id + '\')">Desativar</button></td></tr>';
+                });
+                document.querySelector('#labsTable tbody').innerHTML = html;
+            } catch (e) { console.error(e); }
         }
 
         async function carregarHospitais() {
-            const r = await fetch('/api/hospitais', { headers: { 'Authorization': 'Bearer ' + token } });
-            const hosp = await r.json();
-            let html = '';
-            hosp.forEach(h => {
-                html += '<tr><td>' + h.nome + '</td><td>' + h.nif + '</td><td>' + (h.provincia || '') + '</td><td>' + (h.diretor || '') + '</td><td>' + (h.ativo ? '✅ Ativo' : '❌ Inativo') + '</td><td><button onclick="desativarHospital(\'' + h._id + '\')">Desativar</button></td></tr>';
-            });
-            document.querySelector('#hospitaisTable tbody').innerHTML = html;
+            try {
+                const r = await fetch('/api/hospitais', { headers: { 'Authorization': 'Bearer ' + token } });
+                const hosp = await r.json();
+                let html = '';
+                hosp.forEach(h => {
+                    html += '<tr><td>' + h.nome + '</td><td>' + h.nif + '</td><td>' + (h.provincia || '') + '</td><td>' + (h.diretor || '') + '</td><td>' + (h.ativo ? '✅ Ativo' : '❌ Inativo') + '</td><td><button onclick="desativarHospital(\'' + h._id + '\')">Desativar</button></td></tr>';
+                });
+                document.querySelector('#hospitaisTable tbody').innerHTML = html;
+            } catch (e) { console.error(e); }
         }
 
         async function carregarEmpresas() {
-            const r = await fetch('/api/empresas', { headers: { 'Authorization': 'Bearer ' + token } });
-            const emp = await r.json();
-            let html = '';
-            emp.forEach(e => {
-                html += '<tr><td>' + e.nome + '</td><td>' + e.nif + '</td><td>' + (e.responsavel ? e.responsavel.nome : '') + '</td><td>' + (e.ativo ? '✅ Ativo' : '❌ Inativo') + '</td><td><button onclick="desativarEmpresa(\'' + e._id + '\')">Desativar</button></td></tr>';
-            });
-            document.querySelector('#empresasTable tbody').innerHTML = html;
+            try {
+                const r = await fetch('/api/empresas', { headers: { 'Authorization': 'Bearer ' + token } });
+                const emp = await r.json();
+                let html = '';
+                emp.forEach(e => {
+                    html += '<tr><td>' + e.nome + '</td><td>' + e.nif + '</td><td>' + (e.responsavel ? e.responsavel.nome : '') + '</td><td>' + (e.ativo ? '✅ Ativo' : '❌ Inativo') + '</td><td><button onclick="desativarEmpresa(\'' + e._id + '\')">Desativar</button></td></tr>';
+                });
+                document.querySelector('#empresasTable tbody').innerHTML = html;
+            } catch (e) { console.error(e); }
         }
 
         async function criarLaboratorio() {
             const nif = document.getElementById('labNIF').value;
-            if (!/^\\d{10}$/.test(nif)) { document.getElementById('labError').style.display = 'block'; return; }
+            if (!/^\d{10}$/.test(nif)) { document.getElementById('labError').style.display = 'block'; return; }
             const dados = {
                 nome: document.getElementById('labNome').value,
                 nif,
@@ -601,7 +480,7 @@ app.get('/admin-dashboard', (req, res) => {
             });
             const d = await r.json();
             if (d.success) {
-                alert('✅ Laboratório criado!\\n\\n🔑 API Key: ' + d.apiKey);
+                alert('✅ Laboratório criado!\n\n🔑 API Key: ' + d.apiKey);
                 fecharModal('modalLab');
                 carregarLabs();
             } else {
@@ -611,7 +490,7 @@ app.get('/admin-dashboard', (req, res) => {
 
         async function criarHospital() {
             const nif = document.getElementById('hospitalNIF').value;
-            if (!/^\\d{10}$/.test(nif)) { document.getElementById('hospitalError').style.display = 'block'; return; }
+            if (!/^\d{10}$/.test(nif)) { document.getElementById('hospitalError').style.display = 'block'; return; }
             const dados = {
                 nome: document.getElementById('hospitalNome').value,
                 nif,
@@ -626,7 +505,7 @@ app.get('/admin-dashboard', (req, res) => {
             });
             const d = await r.json();
             if (d.success) {
-                alert('✅ Hospital criado!\\n\\n🔑 Chave: ' + d.chave);
+                alert('✅ Hospital criado!\n\n🔑 Chave: ' + d.chave);
                 fecharModal('modalHospital');
                 carregarHospitais();
             } else {
@@ -636,7 +515,7 @@ app.get('/admin-dashboard', (req, res) => {
 
         async function criarEmpresa() {
             const nif = document.getElementById('empresaNIF').value;
-            if (!/^\\d{10}$/.test(nif)) { document.getElementById('empresaError').style.display = 'block'; return; }
+            if (!/^\d{10}$/.test(nif)) { document.getElementById('empresaError').style.display = 'block'; return; }
             const dados = {
                 nome: document.getElementById('empresaNome').value,
                 nif,
@@ -650,7 +529,7 @@ app.get('/admin-dashboard', (req, res) => {
             });
             const d = await r.json();
             if (d.success) {
-                alert('✅ Empresa criada!\\n\\n🔑 Chave: ' + d.chave);
+                alert('✅ Empresa criada!\n\n🔑 Chave: ' + d.chave);
                 fecharModal('modalEmpresa');
                 carregarEmpresas();
             } else {
@@ -682,7 +561,7 @@ app.get('/admin-dashboard', (req, res) => {
             window.location.href = '/';
         }
 
-        mostrarSecao('dashboard');
+        mostrarSecao('dashboard'); // Affiche le dashboard par défaut
     </script>
 </body>
 </html>`);
