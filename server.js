@@ -262,561 +262,395 @@ app.post('/api/login', async (req, res) => {
     } else res.status(401).json({ erro: 'Email ou senha incorretos' });
 });
 
-// ============================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE CORRIGÉE)
-// ============================================
+================================================
+// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
+// ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
-<html lang="pt">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNS - Ministério da Saúde</title>
+    <title>Ministério da Saúde - SNS Angola</title>
     <style>
-        :root { --primary: #006633; --bg: #f4f7f6; --text: #333; }
-        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
-        body { display: flex; background: var(--bg); min-height: 100vh; color: var(--text); }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { display:flex; background:#f5f5f5; min-height: 100vh; }
         .sidebar {
-            width: 260px;
-            background: var(--primary);
-            color: white;
-            position: fixed;
-            height: 100vh;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
+            width:260px;
+            background:#006633;
+            color:white;
+            height:100vh;
+            padding:20px;
+            position:fixed;
+            display:flex;
+            flex-direction:column;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
-        .sidebar h2 {
-            font-size: 18px;
-            text-align: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 20px;
-            letter-spacing: 1px;
+        .sidebar h2 { 
+            margin-bottom:30px; 
+            text-align:center;
+            padding-bottom:15px;
+            border-bottom:1px solid rgba(255,255,255,0.2);
+            font-size: 22px;
         }
-        .sidebar button {
-            background: none;
-            border: none;
-            color: rgba(255,255,255,0.8);
-            padding: 15px;
-            text-align: left;
-            width: 100%;
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 15px;
+        .sidebar button, .sidebar .nav-link {
+            display:block;
+            width:100%;
+            color:rgba(255,255,255,0.9);
+            text-decoration:none;
+            padding:14px;
+            margin:5px 0;
+            border-radius:8px;
+            cursor:pointer;
+            text-align:left;
+            font-size:15px;
+            border:none;
+            background:none;
             transition: 0.3s;
-            margin-bottom: 5px;
         }
-        .sidebar button:hover { background: rgba(255,255,255,0.1); color: white; }
-        .sidebar button.active { background: rgba(255,255,255,0.2); color: white; font-weight: bold; }
-        .logout-btn {
-            margin-top: auto;
-            background: #c0392b !important;
-            color: white !important;
-            text-align: center !important;
+        .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
+        .sidebar .novo-btn {
+            background:#ffa500;
+            color:#00331a;
+            font-weight:bold;
+            margin:20px 0;
+            text-align:center;
         }
+        .sidebar .novo-btn:hover { background:#ffb833; transform: translateY(-2px); }
+        .sidebar .sair-btn {
+            background:#cc3300;
+            margin-top:auto;
+            text-align:center;
+            color: white;
+        }
+        .sidebar .sair-btn:hover { background:#e63900; }
         .main {
-            margin-left: 260px;
-            padding: 40px;
-            width: calc(100% - 260px);
+            margin-left:260px;
+            padding:40px;
+            width:100%;
         }
-        .header-flex {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
+        .welcome {
+            background:white;
+            padding:25px;
+            border-left:6px solid #006633;
+            margin-bottom:30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
+        .secao { display:none; animation: fadeIn 0.3s ease; }
+        .secao.active { display:block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:20px;
+            margin-top:20px;
         }
         .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            text-align: center;
-            border-top: 4px solid var(--primary);
+            background:white;
+            padding:20px;
+            border-radius:8px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
+            text-align:center;
         }
-        .stat-card h3 {
-            font-size: 13px;
-            color: #777;
-            text-transform: uppercase;
-            margin-bottom: 10px;
+        .stat-card h3 { color:#666; font-size:14px; margin-bottom:10px; }
+        .stat-card p { color:#006633; font-size:28px; font-weight:bold; }
+        .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
+        table { width:100%; border-collapse:collapse; margin-top:20px; }
+        th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
+        td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
+        tr:hover { background:#fafafa; }
+        .btn-acao { 
+            background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
+            cursor:pointer; transition:0.2s; margin-right:5px;
         }
-        .stat-card p {
-            font-size: 32px;
-            font-weight: bold;
-            color: var(--primary);
+        .btn-acao:hover { background:#e0e0e0; transform: scale(1.1); }
+        .status-badge {
+            padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px;
         }
-        .card-table {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            padding: 20px;
+        .status-ativo { background:#e8f5e9; color:#2e7d32; }
+        .status-inativo { background:#ffebee; color:#c62828; }
+        .pagination {
+            display:flex;
+            justify-content:center;
+            gap:10px;
+            margin-top:20px;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .pagination button {
+            padding:8px 12px;
+            border:none;
+            background:#006633;
+            color:white;
+            border-radius:5px;
+            cursor:pointer;
         }
-        th {
-            text-align: left;
-            padding: 15px;
-            border-bottom: 2px solid #eee;
-            color: #555;
-            font-size: 14px;
+        .pagination button:disabled {
+            background:#ccc;
+            cursor:not-allowed;
         }
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
+        .filtros {
+            display:flex;
+            gap:10px;
+            margin-bottom:20px;
         }
-        tr:hover { background: #f9f9f9; }
-        .btn-add {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
+        .filtros select, .filtros input {
+            padding:8px;
+            border:1px solid #ddd;
+            border-radius:5px;
         }
-        .btn-add:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,102,51,0.3);
+        .spinner {
+            border:4px solid #f3f3f3;
+            border-top:4px solid #006633;
+            border-radius:50%;
+            width:30px;
+            height:30px;
+            animation: spin 1s linear infinite;
+            margin:10px auto;
         }
-        /* Modal Design */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            backdrop-filter: blur(4px);
-        }
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            width: 750px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-        }
-        .campo {
-            margin-bottom: 15px;
-        }
-        .campo label {
-            display: block;
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 13px;
-            color: #555;
-        }
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        /* Seções */
-        .section { display: none; }
-        .section.active { display: block; }
-        /* Consulta certificado */
-        .consulta-certificado {
-            margin-top: 30px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            padding: 25px;
-        }
-        .consulta-certificado h3 {
-            color: var(--primary);
-            margin-bottom: 15px;
-        }
-        .consulta-certificado .input-group {
-            display: flex;
-            gap: 10px;
-        }
-        .consulta-certificado input {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 15px;
-        }
-        .consulta-certificado button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-        .consulta-certificado button:hover {
-            background: #004d26;
-        }
+        @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>MINISTÉRIO DA SAÚDE</h2>
-        <button id="btn-dash" class="active" onclick="showTab('dash')">📊 Dashboard</button>
-        <button id="btn-labs" onclick="showTab('labs')">🏥 Laboratórios</button>
-        <button id="btn-hosp" onclick="showTab('hosp')">🏥 Hospitais</button>
-        <button id="btn-emp" onclick="showTab('emp')">🏢 Empresas</button>
-        <button class="logout-btn" onclick="logout()">🚪 Sair</button>
+        <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
+        <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
+        <button class="novo-btn" onclick="location.href='/novo-laboratorio'">➕ NOVO LABORATÓRIO</button>
+        <button class="sair-btn" onclick="logout()">🚪 Sair</button>
     </div>
-
+    
     <div class="main">
-        <!-- Seção Dashboard -->
-        <div id="sec-dash" class="section active">
-            <div class="header-flex">
-                <h2>📊 Painel de Controle</h2>
-            </div>
+        <div id="welcome" class="welcome">
+            <h2>👋 Bem-vindo, Administrador</h2>
+            <p>Painel de Controle do Ministério da Saúde</p>
+        </div>
+        
+        <div id="dashboardSection" class="secao active">
+            <h2>📊 Painel de Controle</h2>
             <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Laboratórios</h3>
-                    <p id="countLabs">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Hospitais</h3>
-                    <p id="countHosp">0</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Empresas</h3>
-                    <p id="countEmp">0</p>
-                </div>
-            </div>
-
-            <!-- Bloco de consulta de certificado (NOVO) -->
-            <div class="consulta-certificado">
-                <h3>🔍 Consultar Certificado</h3>
-                <div class="input-group">
-                    <input type="text" id="certNumero" placeholder="Digite o número do certificado (ex: CERT-1-202503-ABCD1234)">
-                    <button onclick="visualizarPDF()">Ver PDF</button>
-                </div>
+                <div class="stat-card"><h3>Laboratórios</h3><p id="statsLabs">0</p></div>
+                <div class="stat-card"><h3>Hospitais</h3><p id="statsHospitais">0</p></div>
+                <div class="stat-card"><h3>Empresas</h3><p id="statsEmpresas">0</p></div>
+                <div class="stat-card"><h3>Total</h3><p id="statsTotal">0</p></div>
             </div>
         </div>
-
-        <!-- Seção Laboratórios -->
-        <div id="sec-labs" class="section">
-            <div class="header-flex">
-                <h2>🏥 Laboratórios Registados</h2>
-                <button class="btn-add" onclick="openModal('modalLab')">➕ Novo Laboratório</button>
-            </div>
-            <div class="card-table">
-                <table id="tableLabs">
+        
+        <div id="laboratoriosSection" class="secao">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>🏥 Laboratórios Registados</h2>
+                    <button class="btn-acao" onclick="carregarLaboratorios()">🔄 Atualizar</button>
+                </div>
+                
+                <!-- Filtros -->
+                <div class="filtros">
+                    <select id="filtroProvincia" onchange="carregarLaboratorios()">
+                        <option value="">Todas Províncias</option>
+                        <option value="Luanda">Luanda</option>
+                        <option value="Benguela">Benguela</option>
+                        <option value="Huíla">Huíla</option>
+                        <option value="Cabinda">Cabinda</option>
+                        <option value="Outra">Outra</option>
+                    </select>
+                    <select id="filtroStatus" onchange="carregarLaboratorios()">
+                        <option value="">Todos Status</option>
+                        <option value="true">Ativo</option>
+                        <option value="false">Inativo</option>
+                    </select>
+                </div>
+                
+                <!-- Spinner de carregamento -->
+                <div id="spinnerLabs" class="spinner" style="display:none;"></div>
+                
+                <table>
                     <thead>
                         <tr>
                             <th>Nome</th>
                             <th>NIF</th>
                             <th>Província</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Seção Hospitais -->
-        <div id="sec-hosp" class="section">
-            <div class="header-flex">
-                <h2>🏥 Hospitais Registados</h2>
-                <button class="btn-add" onclick="openModal('modalHospital')">➕ Novo Hospital</button>
-            </div>
-            <div class="card-table">
-                <table id="tableHosp">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>NIF</th>
-                            <th>Província</th>
+                            <th>Telefone</th>
                             <th>Diretor</th>
                             <th>Status</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody id="tabelaLabs">
+                        <tr><td colspan="7" style="text-align:center;">Aguardando...</td></tr>
+                    </tbody>
                 </table>
-            </div>
-        </div>
-
-        <!-- Seção Empresas -->
-        <div id="sec-emp" class="section">
-            <div class="header-flex">
-                <h2>🏢 Empresas Registadas</h2>
-                <button class="btn-add" onclick="openModal('modalEmpresa')">➕ Nova Empresa</button>
-            </div>
-            <div class="card-table">
-                <table id="tableEmp">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>NIF</th>
-                            <th>Responsável</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Laboratório -->
-    <div id="modalLab" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--primary); margin-bottom:20px;">➕ Registro de Novo Laboratório</h3>
-            <div class="grid-2">
-                <div class="campo" style="grid-column: span 2;">
-                    <label>🏥 Nome do Laboratório *</label>
-                    <input type="text" id="labNome" placeholder="Ex: LabCentral Luanda">
-                </div>
-                <div class="campo">
-                    <label>📄 NIF *</label>
-                    <input type="text" id="labNIF" maxlength="10" placeholder="10 dígitos">
-                </div>
-                <div class="campo">
-                    <label>⚖️ Tipo *</label>
-                    <select id="labTipo">
-                        <option value="laboratorio">Laboratório</option>
-                        <option value="hospital">Hospital</option>
-                        <option value="clinica">Clínica</option>
-                    </select>
-                </div>
-                <div class="campo">
-                    <label>📍 Província *</label>
-                    <select id="labProvincia">
-                        <option value="">Selecione</option>
-                        <option value="Bengo">Bengo</option><option value="Benguela">Benguela</option>
-                        <option value="Bié">Bié</option><option value="Cabinda">Cabinda</option>
-                        <option value="Cuando Cubango">Cuando Cubango</option><option value="Cuanza Norte">Cuanza Norte</option>
-                        <option value="Cuanza Sul">Cuanza Sul</option><option value="Cunene">Cunene</option>
-                        <option value="Huambo">Huambo</option><option value="Huíla">Huíla</option>
-                        <option value="Luanda">Luanda</option><option value="Lunda Norte">Lunda Norte</option>
-                        <option value="Lunda Sul">Lunda Sul</option><option value="Malanje">Malanje</option>
-                        <option value="Moxico">Moxico</option><option value="Namibe">Namibe</option>
-                        <option value="Uíge">Uíge</option><option value="Zaire">Zaire</option>
-                    </select>
-                </div>
-                <div class="campo">
-                    <label>🗺️ Município</label>
-                    <input type="text" id="labMunicipio" placeholder="Ex: Ingombota">
-                </div>
-                <div class="campo" style="grid-column: span 2;">
-                    <label>🏛️ Endereço Completo</label>
-                    <input type="text" id="labEndereco" placeholder="Rua, número, bairro">
-                </div>
-                <div class="campo">
-                    <label>📞 Telefone 1</label>
-                    <input type="tel" id="labTelefone" placeholder="923000000">
-                </div>
-                <div class="campo">
-                    <label>✉️ Email</label>
-                    <input type="email" id="labEmail" placeholder="contato@lab.ao">
-                </div>
-                <div class="campo">
-                    <label>👨‍⚕️ Diretor</label>
-                    <input type="text" id="labDiretor" placeholder="Nome do Diretor">
-                </div>
-                <div class="campo">
-                    <label>🧪 Resp. Técnico</label>
-                    <input type="text" id="labResponsavel" placeholder="Se diferente">
+                
+                <!-- Paginação -->
+                <div class="pagination" id="paginacao">
+                    <button id="prevPage" onclick="mudarPagina(-1)" disabled>Anterior</button>
+                    <span id="pageInfo">Página 1</span>
+                    <button id="nextPage" onclick="mudarPagina(1)" disabled>Próxima</button>
                 </div>
             </div>
-            <div style="display: flex; gap:10px; margin-top:20px;">
-                <button class="btn-add" style="flex:2" onclick="salvarLaboratorio()">💾 Salvar Laboratório</button>
-                <button onclick="closeModal('modalLab')" style="flex:1; border:none; border-radius:8px; cursor:pointer;">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Hospital (simplificado) -->
-    <div id="modalHospital" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--primary);">➕ Novo Hospital</h3>
-            <p>Em desenvolvimento...</p>
-            <button onclick="closeModal('modalHospital')">Fechar</button>
-        </div>
-    </div>
-
-    <!-- Modal Empresa (simplificado) -->
-    <div id="modalEmpresa" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--primary);">➕ Nova Empresa</h3>
-            <p>Em desenvolvimento...</p>
-            <button onclick="closeModal('modalEmpresa')">Fechar</button>
         </div>
     </div>
 
     <script>
-        const token = localStorage.getItem('token');
-        if (!token) window.location.href = '/ministerio';
-
-        function showTab(t) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
-            document.getElementById('sec-' + t).classList.add('active');
-            document.getElementById('btn-' + t).classList.add('active');
-            if (t === 'dash') loadStats();
-            if (t === 'labs') loadLabs();
-            if (t === 'hosp') loadHospitais();
-            if (t === 'emp') loadEmpresas();
+        console.log("Dashboard ministério carregado");
+        var token = localStorage.getItem("token");
+        console.log("Token:", token ? "presente" : "ausente");
+        if (!token) {
+            window.location.href = "/ministerio";
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        // Variáveis de paginação
+        var currentPage = 1;
+        var totalPages = 1;
+        var limit = 10;
 
-        // ========== Estatísticas ==========
-        async function loadStats() {
-            try {
-                const r = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } });
-                const d = await r.json();
-                document.getElementById('countLabs').innerText = d.labs || 0;
-                document.getElementById('countHosp').innerText = d.hospitais || 0;
-                document.getElementById('countEmp').innerText = d.empresas || 0;
-            } catch (e) { console.error(e); }
-        }
-
-        // ========== Laboratórios ==========
-        async function loadLabs() {
-            try {
-                const r = await fetch('/api/labs', { headers: { 'Authorization': 'Bearer ' + token } });
-                const labs = await r.json();
-                let html = '';
-                labs.forEach(l => {
-                    html += `<tr>
-                        <td><strong>${l.nome}</strong></td>
-                        <td>${l.nif}</td>
-                        <td>${l.provincia || ''}</td>
-                        <td><span style="color:${l.ativo ? 'green' : 'red'}">${l.ativo ? 'Ativo' : 'Inativo'}</span></td>
-                        <td><button onclick="alert('ID: ${l._id}')" style="cursor:pointer; border:none; background:none; color:blue;">Ver</button></td>
-                    </tr>`;
-                });
-                document.querySelector('#tableLabs tbody').innerHTML = html;
-            } catch (e) { console.error(e); }
-        }
-
-        async function salvarLaboratorio() {
-            const dados = {
-                nome: document.getElementById('labNome').value,
-                nif: document.getElementById('labNIF').value,
-                tipo: document.getElementById('labTipo').value,
-                provincia: document.getElementById('labProvincia').value,
-                municipio: document.getElementById('labMunicipio').value,
-                endereco: document.getElementById('labEndereco').value,
-                telefone: document.getElementById('labTelefone').value,
-                email: document.getElementById('labEmail').value,
-                diretor: document.getElementById('labDiretor').value,
-                responsavelTecnico: document.getElementById('labResponsavel').value,
-                ativo: true
-            };
-            if (!dados.nome || !dados.nif || !dados.provincia) return alert("Preencha os campos obrigatórios!");
-            try {
-                const r = await fetch('/api/labs', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify(dados)
-                });
-                const res = await r.json();
-                if (res.success) {
-                    alert("✅ Laboratório registado!\n\n🔑 API Key: " + res.apiKey);
-                    closeModal('modalLab');
-                    loadLabs();
-                } else {
-                    alert("Erro: " + (res.erro || res.error || "Desconhecido"));
-                }
-            } catch (e) { alert("Erro de ligação"); }
-        }
-
-        // ========== Hospitais ==========
-        async function loadHospitais() {
-            try {
-                const r = await fetch('/api/hospitais', { headers: { 'Authorization': 'Bearer ' + token } });
-                const hosp = await r.json();
-                let html = '';
-                hosp.forEach(h => {
-                    html += `<tr>
-                        <td>${h.nome}</td>
-                        <td>${h.nif}</td>
-                        <td>${h.provincia || ''}</td>
-                        <td>${h.diretor || ''}</td>
-                        <td>${h.ativo ? 'Ativo' : 'Inativo'}</td>
-                        <td><button onclick="alert('ID: ${h._id}')">Ver</button></td>
-                    </tr>`;
-                });
-                document.querySelector('#tableHosp tbody').innerHTML = html;
-            } catch (e) { console.error(e); }
-        }
-
-        // ========== Empresas ==========
-        async function loadEmpresas() {
-            try {
-                const r = await fetch('/api/empresas', { headers: { 'Authorization': 'Bearer ' + token } });
-                const emp = await r.json();
-                let html = '';
-                emp.forEach(e => {
-                    html += `<tr>
-                        <td>${e.nome}</td>
-                        <td>${e.nif}</td>
-                        <td>${e.responsavel ? e.responsavel.nome : ''}</td>
-                        <td>${e.ativo ? 'Ativo' : 'Inativo'}</td>
-                        <td><button onclick="alert('ID: ${e._id}')">Ver</button></td>
-                    </tr>`;
-                });
-                document.querySelector('#tableEmp tbody').innerHTML = html;
-            } catch (e) { console.error(e); }
-        }
-
-        // ========== PDF Certificado ==========
-        async function visualizarPDF() {
-            const numero = document.getElementById('certNumero').value.trim();
-            if (!numero) return alert('Digite o número do certificado');
-            try {
-                const res = await fetch('/api/certificados/pdf-admin', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                    body: JSON.stringify({ numero })
-                });
-                if (res.ok) {
-                    const blob = await res.blob();
-                    const url = URL.createObjectURL(blob);
-                    window.open(url, '_blank');
-                } else {
-                    const error = await res.json();
-                    alert('Erro: ' + (error.error || 'Não foi possível gerar o PDF'));
-                }
-            } catch (e) {
-                alert('Erro de ligação');
+        function mostrarSeccao(id) {
+            document.getElementById('dashboardSection').className = 'secao';
+            document.getElementById('laboratoriosSection').className = 'secao';
+            document.getElementById(id).className = 'secao active';
+            if (id === 'laboratoriosSection') {
+                carregarLaboratorios();
             }
         }
 
-        // ========== Logout ==========
-        function logout() {
-            localStorage.clear();
-            window.location.href = '/';
+        // Carregar estatísticas (funciona)
+        function carregarStats() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/stats', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var data = JSON.parse(xhr.responseText);
+                    document.getElementById('statsLabs').innerHTML = data.labs || 0;
+                    document.getElementById('statsHospitais').innerHTML = data.hospitais || 0;
+                    document.getElementById('statsEmpresas').innerHTML = data.empresas || 0;
+                    var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
+                    document.getElementById('statsTotal').innerHTML = total;
+                }
+            };
+            xhr.send();
         }
 
-        // Inicializa
-        loadStats();
+        // Carregar laboratórios com paginação e filtros
+        function carregarLaboratorios(pagina = 1) {
+            console.log("Carregando laboratórios, página", pagina);
+            currentPage = pagina;
+            var tbody = document.getElementById('tabelaLabs');
+            var spinner = document.getElementById('spinnerLabs');
+            tbody.innerHTML = ''; // Limpa a tabela
+            spinner.style.display = 'block'; // Mostra spinner
+            
+            var provincia = document.getElementById('filtroProvincia').value;
+            var status = document.getElementById('filtroStatus').value;
+            
+            var url = '/api/labs?page=' + currentPage + '&limit=' + limit;
+            if (provincia) url += '&provincia=' + encodeURIComponent(provincia);
+            if (status !== '') url += '&ativo=' + status;
+            
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    spinner.style.display = 'none';
+                    console.log("Resposta recebida, status:", xhr.status);
+                    if (xhr.status === 200) {
+                        try {
+                            var resposta = JSON.parse(xhr.responseText);
+                            var lista = resposta.labs;
+                            totalPages = resposta.pages;
+                            console.log("Laboratórios recebidos:", lista);
+                            
+                            if (!lista || lista.length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
+                            } else {
+                                var html = '';
+                                for (var i = 0; i < lista.length; i++) {
+                                    var l = lista[i];
+                                    var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
+                                    var statusText = l.ativo ? 'Ativo' : 'Inativo';
+                                    var btnStatus = l.ativo ? '🔴' : '🟢';
+                                    var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
+                                    
+                                    html += '<tr>';
+                                    html += '<td><strong>' + (l.nome || '') + '</strong></td>';
+                                    html += '<td>' + (l.nif || '') + '</td>';
+                                    html += '<td>' + (l.provincia || '') + '</td>';
+                                    html += '<td>' + (l.telefone || '') + '</td>';
+                                    html += '<td>' + (l.diretor || '') + '</td>';
+                                    html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                                    html += '<td>';
+                                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button>';
+                                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
+                                    html += '</td>';
+                                    html += '</tr>';
+                                }
+                                tbody.innerHTML = html;
+                            }
+                            
+                            // Atualizar paginação
+                            atualizarPaginacao();
+                        } catch (e) {
+                            console.error("Erro ao parsear JSON:", e);
+                            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro nos dados recebidos</td></tr>';
+                        }
+                    } else {
+                        console.error("Erro HTTP:", xhr.status);
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + xhr.status + '</td></tr>';
+                    }
+                }
+            };
+            xhr.send();
+        }
+
+        function atualizarPaginacao() {
+            document.getElementById('pageInfo').innerText = 'Página ' + currentPage + ' de ' + totalPages;
+            document.getElementById('prevPage').disabled = currentPage <= 1;
+            document.getElementById('nextPage').disabled = currentPage >= totalPages;
+        }
+
+        function mudarPagina(direcao) {
+            var novaPagina = currentPage + direcao;
+            if (novaPagina >= 1 && novaPagina <= totalPages) {
+                carregarLaboratorios(novaPagina);
+            }
+        }
+
+        function verDetalhes(id) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/api/labs', true);
+            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    var resposta = JSON.parse(xhr.responseText);
+                    // Como agora a resposta é paginada, precisamos buscar o laboratório específico
+                    // Alternativa: fazer uma requisição para /api/labs/:id se existir
+                    // Por simplicidade, vamos buscar em todos os laboratórios (pode ser ineficiente)
+                    // Para este exemplo, vamos apenas exibir as informações que temos na tabela
+                    alert("Detalhes do laboratório em breve...");
+                }
+            };
+            xhr.send();
+        }
+
+        function toggleStatus(id, ativoAtual) {
+            var acao = ativoAtual ? 'desativar' : 'ativar';
+            if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
+                alert('Função em desenvolvimento: ' + acao);
+                carregarLaboratorios(currentPage);
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("labKey");
+            window.location.href = "/";
+        }
+
+        carregarStats();
     </script>
 </body>
 </html>`);
 });
+
 
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
