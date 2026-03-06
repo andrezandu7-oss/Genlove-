@@ -738,7 +738,7 @@ app.get('/api/labs', authMiddleware, async (req, res) => {
 
         let filtro = {};
         
-        // Filtro por província
+        // Filtro por província (Exato para as 18 províncias)
         if (provincia && provincia !== "") {
             filtro.provincia = provincia;
         }
@@ -765,6 +765,7 @@ app.get('/api/labs', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Erro ao listar laboratórios' });
     }
 });
+
 
 
 // ================================================
