@@ -644,6 +644,14 @@ app.get('/admin-dashboard', (req, res) => {
 </html>`);
 });
 
+app.get('/novo-laboratorio', authMiddleware, async (req, res) => {
+    try {
+        res.send(novoLaboratorioHTML);
+    } catch (error) {
+        res.status(500).send('Erro ao carregar formulário');
+    }
+});
+
 // Iniciar servidor
 app.listen(PORT, () => {
     console.log(`🚀 SNS rodando em http://localhost:${PORT}`);
