@@ -263,18 +263,18 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION MODERNE)
+// DASHBOARD DO MINISTÉRIO (VERSION MODERNE, BASÉE SUR LE FONCTIONNEL)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ministério da Saúde - SNS Angola</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
-        body { display:flex; background:#f5f5f5; min-height: 100vh; }
+        body { display:flex; background:#f5f5f5; min-height:100vh; }
         .sidebar {
             width:260px;
             background:#006633;
@@ -284,15 +284,9 @@ app.get('/admin-dashboard', (req, res) => {
             position:fixed;
             display:flex;
             flex-direction:column;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            box-shadow:2px 0 10px rgba(0,0,0,0.1);
         }
-        .sidebar h2 { 
-            margin-bottom:30px; 
-            text-align:center;
-            padding-bottom:15px;
-            border-bottom:1px solid rgba(255,255,255,0.2);
-            font-size: 22px;
-        }
+        .sidebar h2 { margin-bottom:30px; text-align:center; padding-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.2); font-size:22px; }
         .sidebar button, .sidebar .nav-link {
             display:block;
             width:100%;
@@ -306,7 +300,7 @@ app.get('/admin-dashboard', (req, res) => {
             font-size:15px;
             border:none;
             background:none;
-            transition: 0.3s;
+            transition:0.3s;
         }
         .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
         .sidebar .novo-btn {
@@ -316,12 +310,12 @@ app.get('/admin-dashboard', (req, res) => {
             margin:20px 0;
             text-align:center;
         }
-        .sidebar .novo-btn:hover { background:#ffb833; transform: translateY(-2px); }
+        .sidebar .novo-btn:hover { background:#ffb833; transform:translateY(-2px); }
         .sidebar .sair-btn {
             background:#cc3300;
             margin-top:auto;
             text-align:center;
-            color: white;
+            color:white;
         }
         .sidebar .sair-btn:hover { background:#e63900; }
         .main {
@@ -334,12 +328,11 @@ app.get('/admin-dashboard', (req, res) => {
             padding:25px;
             border-left:6px solid #006633;
             margin-bottom:30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius:8px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.05);
         }
-        .secao { display:none; animation: fadeIn 0.3s ease; }
+        .secao { display:none; }
         .secao.active { display:block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .stats-grid {
             display:grid;
             grid-template-columns:repeat(4,1fr);
@@ -358,237 +351,332 @@ app.get('/admin-dashboard', (req, res) => {
         .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
         table { width:100%; border-collapse:collapse; margin-top:20px; }
         th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
-        td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
+        td { padding:15px; border-bottom:1px solid #eee; font-size:14px; }
         tr:hover { background:#fafafa; }
-        .btn-acao { 
-            background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
-            cursor:pointer; transition:0.2s; margin-right:5px;
-        }
-        .btn-acao:hover { background:#e0e0e0; transform: scale(1.1); }
-        .status-badge {
-            padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px;
-        }
+        .btn-acao { background:#f0f0f0; border:none; padding:8px; border-radius:5px; cursor:pointer; transition:0.2s; margin-right:5px; }
+        .btn-acao:hover { background:#e0e0e0; transform:scale(1.1); }
+        .status-badge { padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px; }
         .status-ativo { background:#e8f5e9; color:#2e7d32; }
         .status-inativo { background:#ffebee; color:#c62828; }
-        .filtros {
-            display:flex;
-            gap:10px;
-            margin-bottom:20px;
-            flex-wrap:wrap;
-        }
-        .filtros select, .filtros input {
-            padding:8px;
-            border:1px solid #ddd;
-            border-radius:5px;
-        }
-        .spinner {
-            border:4px solid #f3f3f3;
-            border-top:4px solid #006633;
-            border-radius:50%;
-            width:30px;
-            height:30px;
-            animation: spin 1s linear infinite;
-            margin:10px auto;
-        }
+        .filtros { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+        .filtros select, .filtros input { padding:8px; border:1px solid #ddd; border-radius:5px; }
+        .spinner { border:4px solid #f3f3f3; border-top:4px solid #006633; border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite; margin:10px auto; }
         @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; }
+        .modal-content { background:white; padding:20px; border-radius:10px; width:400px; }
+        .modal-content input { width:100%; padding:8px; margin:5px 0; }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>MINISTÉRIO DA SAÚDE</h2>
-        <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
-        <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
+        <button onclick="mostrarSecao('dashboard')">📊 Dashboard</button>
+        <button onclick="mostrarSecao('labs')">🏥 Laboratórios</button>
+        <button onclick="mostrarSecao('hospitais')">🏥 Hospitais</button>
+        <button onclick="mostrarSecao('empresas')">🏢 Empresas</button>
         <button class="novo-btn" onclick="location.href='/novo-laboratorio'">➕ NOVO LABORATÓRIO</button>
         <button class="sair-btn" onclick="logout()">🚪 Sair</button>
     </div>
-    
+
     <div class="main">
         <div id="welcome" class="welcome">
             <h2>👋 Bem-vindo, Administrador</h2>
             <p>Painel de Controle do Ministério da Saúde</p>
         </div>
-        
-        <div id="dashboardSection" class="secao active">
+
+        <!-- Seção Dashboard -->
+        <div id="secaoDashboard" class="secao active">
             <h2>📊 Painel de Controle</h2>
             <div class="stats-grid">
-                <div class="stat-card"><h3>Laboratórios</h3><p id="statsLabs">0</p></div>
-                <div class="stat-card"><h3>Hospitais</h3><p id="statsHospitais">0</p></div>
-                <div class="stat-card"><h3>Empresas</h3><p id="statsEmpresas">0</p></div>
-                <div class="stat-card"><h3>Total</h3><p id="statsTotal">0</p></div>
+                <div class="stat-card"><h3>Laboratórios</h3><p id="totalLabs">0</p></div>
+                <div class="stat-card"><h3>Hospitais</h3><p id="totalHospitais">0</p></div>
+                <div class="stat-card"><h3>Empresas</h3><p id="totalEmpresas">0</p></div>
+                <div class="stat-card"><h3>Total</h3><p id="totalGeral">0</p></div>
             </div>
         </div>
-        
-        <div id="laboratoriosSection" class="secao">
+
+        <!-- Seção Laboratórios -->
+        <div id="secaoLabs" class="secao">
             <div class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2>🏥 Laboratórios Registados</h2>
-                    <button class="btn-acao" onclick="carregarLaboratorios()">🔄 Atualizar</button>
+                    <button class="btn-acao" onclick="carregarLabs()">🔄 Atualizar</button>
                 </div>
-                
-                <!-- Filtros -->
-                <div class="filtros">
-                    <select id="filtroProvincia" onchange="carregarLaboratorios()">
-                        <option value="">Todas Províncias</option>
-                        <option value="Bengo">Bengo</option>
-                        <option value="Benguela">Benguela</option>
-                        <option value="Bié">Bié</option>
-                        <option value="Cabinda">Cabinda</option>
-                        <option value="Cuando Cubango">Cuando Cubango</option>
-                        <option value="Cuanza Norte">Cuanza Norte</option>
-                        <option value="Cuanza Sul">Cuanza Sul</option>
-                        <option value="Cunene">Cunene</option>
-                        <option value="Huambo">Huambo</option>
-                        <option value="Huíla">Huíla</option>
-                        <option value="Luanda">Luanda</option>
-                        <option value="Lunda Norte">Lunda Norte</option>
-                        <option value="Lunda Sul">Lunda Sul</option>
-                        <option value="Malanje">Malanje</option>
-                        <option value="Moxico">Moxico</option>
-                        <option value="Namibe">Namibe</option>
-                        <option value="Uíge">Uíge</option>
-                        <option value="Zaire">Zaire</option>
-                    </select>
-                    <select id="filtroStatus" onchange="carregarLaboratorios()">
-                        <option value="">Todos Status</option>
-                        <option value="true">Ativo</option>
-                        <option value="false">Inativo</option>
-                    </select>
-                </div>
-                
-                <!-- Spinner de carregamento -->
-                <div id="spinnerLabs" class="spinner" style="display:none;"></div>
-                
-                <table>
+                <table id="labsTable">
                     <thead>
                         <tr>
                             <th>Nome</th>
                             <th>NIF</th>
                             <th>Província</th>
-                            <th>Telefone</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Seção Hospitais -->
+        <div id="secaoHospitais" class="secao">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>🏥 Hospitais Registados</h2>
+                    <button class="btn-acao" onclick="carregarHospitais()">🔄 Atualizar</button>
+                </div>
+                <table id="hospitaisTable">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>NIF</th>
+                            <th>Província</th>
                             <th>Diretor</th>
                             <th>Status</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="tabelaLabs">
-                        <tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>
-                    </tbody>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Seção Empresas -->
+        <div id="secaoEmpresas" class="secao">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>🏢 Empresas Registadas</h2>
+                    <button class="btn-acao" onclick="carregarEmpresas()">🔄 Atualizar</button>
+                </div>
+                <table id="empresasTable">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>NIF</th>
+                            <th>Responsável</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <script>
-        console.log("Dashboard ministério carregado");
-        var token = localStorage.getItem("token");
-        console.log("Token:", token ? "presente" : "ausente");
-        if (!token) {
-            window.location.href = "/ministerio";
-        }
+    <!-- Modais (copiados do código funcional) -->
+    <div id="modalLab" class="modal">
+        <div class="modal-content">
+            <h3>Novo Laboratório</h3>
+            <input type="text" id="labNome" placeholder="Nome">
+            <input type="text" id="labNIF" placeholder="NIF (10 dígitos)" maxlength="10">
+            <input type="text" id="labProvincia" placeholder="Província">
+            <input type="email" id="labEmail" placeholder="Email">
+            <input type="text" id="labDiretor" placeholder="Diretor">
+            <p id="labError" style="color:red; display:none;">NIF inválido</p>
+            <button onclick="criarLaboratorio()" style="background:#006633; color:white; padding:10px; width:100%;">Criar</button>
+            <button onclick="fecharModal('modalLab')" style="margin-top:5px;">Cancelar</button>
+        </div>
+    </div>
 
-        function mostrarSeccao(id) {
-            document.getElementById('dashboardSection').className = 'secao';
-            document.getElementById('laboratoriosSection').className = 'secao';
-            document.getElementById(id).className = 'secao active';
-            if (id === 'laboratoriosSection') {
-                carregarLaboratorios();
-            }
-            if (id === 'dashboardSection') {
+    <div id="modalHospital" class="modal">
+        <div class="modal-content">
+            <h3>Novo Hospital</h3>
+            <input type="text" id="hospitalNome" placeholder="Nome">
+            <input type="text" id="hospitalNIF" placeholder="NIF (10 dígitos)" maxlength="10">
+            <input type="text" id="hospitalProvincia" placeholder="Província">
+            <input type="text" id="hospitalDiretor" placeholder="Diretor">
+            <input type="email" id="hospitalEmail" placeholder="Email">
+            <p id="hospitalError" style="color:red; display:none;">NIF inválido</p>
+            <button onclick="criarHospital()" style="background:#006633; color:white; padding:10px; width:100%;">Criar</button>
+            <button onclick="fecharModal('modalHospital')" style="margin-top:5px;">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modalEmpresa" class="modal">
+        <div class="modal-content">
+            <h3>Nova Empresa</h3>
+            <input type="text" id="empresaNome" placeholder="Nome da empresa">
+            <input type="text" id="empresaNIF" placeholder="NIF (10 dígitos)" maxlength="10">
+            <input type="text" id="empresaResp" placeholder="Responsável">
+            <input type="email" id="empresaEmail" placeholder="Email">
+            <p id="empresaError" style="color:red; display:none;">NIF inválido</p>
+            <button onclick="criarEmpresa()" style="background:#006633; color:white; padding:10px; width:100%;">Criar</button>
+            <button onclick="fecharModal('modalEmpresa')" style="margin-top:5px;">Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/ministerio';
+
+        function mostrarSecao(s) {
+            document.getElementById('secaoDashboard').classList.remove('active');
+            document.getElementById('secaoLabs').classList.remove('active');
+            document.getElementById('secaoHospitais').classList.remove('active');
+            document.getElementById('secaoEmpresas').classList.remove('active');
+            if (s === 'dashboard') {
+                document.getElementById('secaoDashboard').classList.add('active');
                 carregarStats();
             }
-        }
-
-        function carregarStats() {
-            fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } })
-            .then(r => r.json())
-            .then(data => {
-                document.getElementById('statsLabs').innerText = data.labs || 0;
-                document.getElementById('statsHospitais').innerText = data.hospitais || 0;
-                document.getElementById('statsEmpresas').innerText = data.empresas || 0;
-                var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
-                document.getElementById('statsTotal').innerText = total;
-            })
-            .catch(console.error);
-        }
-
-        function carregarLaboratorios() {
-            var tbody = document.getElementById('tabelaLabs');
-            var spinner = document.getElementById('spinnerLabs');
-            tbody.innerHTML = '';
-            spinner.style.display = 'block';
-
-            var provincia = document.getElementById('filtroProvincia').value;
-            var status = document.getElementById('filtroStatus').value;
-
-            fetch('/api/labs', { headers: { 'Authorization': 'Bearer ' + token } })
-            .then(r => { if (!r.ok) throw new Error('Erro ' + r.status); return r.json(); })
-            .then(lista => {
-                spinner.style.display = 'none';
-                console.log('Laboratórios recebidos:', lista);
-
-                // Filtrar por província
-                if (provincia) {
-                    lista = lista.filter(l => l.provincia === provincia);
-                }
-                // Filtrar por status
-                if (status !== '') {
-                    var ativo = (status === 'true');
-                    lista = lista.filter(l => l.ativo === ativo);
-                }
-
-                if (lista.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
-                } else {
-                    var html = '';
-                    for (var i = 0; i < lista.length; i++) {
-                        var l = lista[i];
-                        var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
-                        var statusText = l.ativo ? 'Ativo' : 'Inativo';
-                        var btnStatus = l.ativo ? '🔴' : '🟢';
-                        var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
-                        html += '<tr>';
-                        html += '<td><strong>' + (l.nome || '') + '</strong></td>';
-                        html += '<td>' + (l.nif || '') + '</td>';
-                        html += '<td>' + (l.provincia || '') + '</td>';
-                        html += '<td>' + (l.telephone || '') + '</td>'; // campo 'telephone' conforme schema
-                        html += '<td>' + (l.diretor || '') + '</td>';
-                        html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
-                        html += '<td>';
-                        html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button>';
-                        html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
-                        html += '</td>';
-                        html += '</tr>';
-                    }
-                    tbody.innerHTML = html;
-                }
-            })
-            .catch(error => {
-                spinner.style.display = 'none';
-                console.error('Erro ao carregar laboratórios:', error);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + error.message + '</td></tr>';
-            });
-        }
-
-        function verDetalhes(id) {
-            alert("Detalhes do laboratório em breve...");
-        }
-
-        function toggleStatus(id, ativoAtual) {
-            var acao = ativoAtual ? 'desativar' : 'ativar';
-            if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
-                // Aqui você pode implementar a chamada para ativar/desativar (método DELETE ou PUT)
-                alert('Função em desenvolvimento: ' + acao);
-                carregarLaboratorios(); // recarrega a lista
+            if (s === 'labs') {
+                document.getElementById('secaoLabs').classList.add('active');
+                carregarLabs();
             }
+            if (s === 'hospitais') {
+                document.getElementById('secaoHospitais').classList.add('active');
+                carregarHospitais();
+            }
+            if (s === 'empresas') {
+                document.getElementById('secaoEmpresas').classList.add('active');
+                carregarEmpresas();
+            }
+        }
+
+        function mostrarModalLab() { document.getElementById('modalLab').style.display = 'flex'; }
+        function mostrarModalHospital() { document.getElementById('modalHospital').style.display = 'flex'; }
+        function mostrarModalEmpresa() { document.getElementById('modalEmpresa').style.display = 'flex'; }
+        function fecharModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        async function carregarStats() {
+            const r = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+            const d = await r.json();
+            document.getElementById('totalLabs').innerText = d.labs || 0;
+            document.getElementById('totalHospitais').innerText = d.hospitais || 0;
+            document.getElementById('totalEmpresas').innerText = d.empresas || 0;
+            const total = (d.labs || 0) + (d.hospitais || 0) + (d.empresas || 0);
+            document.getElementById('totalGeral').innerText = total;
+        }
+
+        async function carregarLabs() {
+            const r = await fetch('/api/labs', { headers: { 'Authorization': 'Bearer ' + token } });
+            const labs = await r.json();
+            let html = '';
+            labs.forEach(l => {
+                html += '<tr><td>' + l.nome + '</td><td>' + l.nif + '</td><td>' + (l.provincia || '') + '</td><td>' + (l.ativo ? '✅ Ativo' : '❌ Inativo') + '</td><td><button onclick="desativarLab(\'' + l._id + '\')">Desativar</button></td></tr>';
+            });
+            document.querySelector('#labsTable tbody').innerHTML = html;
+        }
+
+        async function carregarHospitais() {
+            const r = await fetch('/api/hospitais', { headers: { 'Authorization': 'Bearer ' + token } });
+            const hosp = await r.json();
+            let html = '';
+            hosp.forEach(h => {
+                html += '<tr><td>' + h.nome + '</td><td>' + h.nif + '</td><td>' + (h.provincia || '') + '</td><td>' + (h.diretor || '') + '</td><td>' + (h.ativo ? '✅ Ativo' : '❌ Inativo') + '</td><td><button onclick="desativarHospital(\'' + h._id + '\')">Desativar</button></td></tr>';
+            });
+            document.querySelector('#hospitaisTable tbody').innerHTML = html;
+        }
+
+        async function carregarEmpresas() {
+            const r = await fetch('/api/empresas', { headers: { 'Authorization': 'Bearer ' + token } });
+            const emp = await r.json();
+            let html = '';
+            emp.forEach(e => {
+                html += '<tr><td>' + e.nome + '</td><td>' + e.nif + '</td><td>' + (e.responsavel ? e.responsavel.nome : '') + '</td><td>' + (e.ativo ? '✅ Ativo' : '❌ Inativo') + '</td><td><button onclick="desativarEmpresa(\'' + e._id + '\')">Desativar</button></td></tr>';
+            });
+            document.querySelector('#empresasTable tbody').innerHTML = html;
+        }
+
+        async function criarLaboratorio() {
+            const nif = document.getElementById('labNIF').value;
+            if (!/^\\d{10}$/.test(nif)) { document.getElementById('labError').style.display = 'block'; return; }
+            const dados = {
+                nome: document.getElementById('labNome').value,
+                nif,
+                provincia: document.getElementById('labProvincia').value,
+                email: document.getElementById('labEmail').value,
+                diretor: document.getElementById('labDiretor').value,
+                tipo: 'laboratorio'
+            };
+            const r = await fetch('/api/labs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(dados)
+            });
+            const d = await r.json();
+            if (d.success) {
+                alert('✅ Laboratório criado!\\n\\n🔑 API Key: ' + d.apiKey);
+                fecharModal('modalLab');
+                carregarLabs();
+            } else {
+                alert('Erro: ' + d.erro);
+            }
+        }
+
+        async function criarHospital() {
+            const nif = document.getElementById('hospitalNIF').value;
+            if (!/^\\d{10}$/.test(nif)) { document.getElementById('hospitalError').style.display = 'block'; return; }
+            const dados = {
+                nome: document.getElementById('hospitalNome').value,
+                nif,
+                provincia: document.getElementById('hospitalProvincia').value,
+                diretor: document.getElementById('hospitalDiretor').value,
+                email: document.getElementById('hospitalEmail').value
+            };
+            const r = await fetch('/api/hospitais', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(dados)
+            });
+            const d = await r.json();
+            if (d.success) {
+                alert('✅ Hospital criado!\\n\\n🔑 Chave: ' + d.chave);
+                fecharModal('modalHospital');
+                carregarHospitais();
+            } else {
+                alert('Erro: ' + d.erro);
+            }
+        }
+
+        async function criarEmpresa() {
+            const nif = document.getElementById('empresaNIF').value;
+            if (!/^\\d{10}$/.test(nif)) { document.getElementById('empresaError').style.display = 'block'; return; }
+            const dados = {
+                nome: document.getElementById('empresaNome').value,
+                nif,
+                responsavel: { nome: document.getElementById('empresaResp').value },
+                email: document.getElementById('empresaEmail').value
+            };
+            const r = await fetch('/api/empresas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(dados)
+            });
+            const d = await r.json();
+            if (d.success) {
+                alert('✅ Empresa criada!\\n\\n🔑 Chave: ' + d.chave);
+                fecharModal('modalEmpresa');
+                carregarEmpresas();
+            } else {
+                alert('Erro: ' + d.erro);
+            }
+        }
+
+        async function desativarLab(id) {
+            if (!confirm('Tem certeza?')) return;
+            await fetch('/api/labs/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+            carregarLabs();
+        }
+
+        async function desativarHospital(id) {
+            if (!confirm('Tem certeza?')) return;
+            await fetch('/api/hospitais/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+            carregarHospitais();
+        }
+
+        async function desativarEmpresa(id) {
+            if (!confirm('Tem certeza?')) return;
+            await fetch('/api/empresas/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
+            carregarEmpresas();
         }
 
         function logout() {
-            localStorage.removeItem("token");
-            localStorage.removeItem("labKey");
-            window.location.href = "/";
+            localStorage.removeItem('token');
+            localStorage.removeItem('labKey');
+            window.location.href = '/';
         }
 
-        carregarStats();
+        mostrarSecao('dashboard');
     </script>
 </body>
 </html>`);
