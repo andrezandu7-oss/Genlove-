@@ -205,12 +205,30 @@ certificateSchema.methods.prepararParaPDF = function() {
     };
 };
 
-// CRIAÇÃO DOS MODELOS
+// CRIAÇÃO DOS MODELOS (AVEC FIX COLLECTION)
 const User = mongoose.model('User', userSchema);
 const Lab = mongoose.model('Lab', labSchema);
 const Hospital = mongoose.model('Hospital', hospitalSchema);
 const Empresa = mongoose.model('Empresa', empresaSchema);
 const Certificate = mongoose.model('Certificate', certificateSchema);
+
+// 🔧 FIX COLLECTION - UNE FOIS SEULE
+app.get('/api/fix-collection', authMiddleware, async (req, res) => {
+    try {
+        const collLab = mongoose.connection.db.collection('lab');
+        const countRealLab = await collLab.countDocuments();
+        console.log(`🔍 Collection 'lab': ${countRealLab} docs`);
+        
+        if (countRealLab > 0) {
+            await collLab.rename('labs');
+            res.json({ success: true, message: `✅ ${countRealLab} labs déplacés vers 'labs'` });
+        } else {
+            res.json({ success: true, message: 'ℹ️ Aucune correction nécessaire' });
+        }
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 
 // ===============================================
 // MIDDLEWARES
