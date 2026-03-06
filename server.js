@@ -1516,6 +1516,27 @@ app.get('/novo-laboratorio', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'novo-laboratorio.html'));
 });
 
+// ==============================================
+// API STATS MINISTERIO
+// ==============================================
+app.get('/api/stats', authMiddleware, async (req, res) => {
+    try {
+
+        const labs = await Lab.countDocuments();
+        const hospitais = await Hospital.countDocuments();
+        const empresas = await Empresa.countDocuments();
+
+        res.json({
+            labs,
+            hospitais,
+            empresas
+        });
+
+    } catch (error) {
+        console.log("Erro stats:", error);
+        res.status(500).json({ erro: "Erro ao carregar estatísticas" });
+    }
+});
 // =============================================
 // INICIALIZAÇÃO DO SERVIDOR
 // =============================================
