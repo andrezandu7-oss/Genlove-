@@ -263,7 +263,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ============================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE AVEC CONSULTA DE CERTIFICADO)
+// DASHBOARD DO MINISTÉRIO (VERSION FINALE CORRIGÉE)
 // ============================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -430,6 +430,7 @@ app.get('/admin-dashboard', (req, res) => {
         /* Seções */
         .section { display: none; }
         .section.active { display: block; }
+        /* Consulta certificado */
         .consulta-certificado {
             margin-top: 30px;
             background: white;
@@ -498,7 +499,7 @@ app.get('/admin-dashboard', (req, res) => {
                 </div>
             </div>
 
-            <!-- Bloco de consulta de certificado -->
+            <!-- Bloco de consulta de certificado (NOVO) -->
             <div class="consulta-certificado">
                 <h3>🔍 Consultar Certificado</h3>
                 <div class="input-group">
@@ -576,7 +577,7 @@ app.get('/admin-dashboard', (req, res) => {
         </div>
     </div>
 
-    <!-- Modais (copiados do seu código) -->
+    <!-- Modal Laboratório -->
     <div id="modalLab" class="modal">
         <div class="modal-content">
             <h3 style="color:var(--primary); margin-bottom:20px;">➕ Registro de Novo Laboratório</h3>
@@ -644,15 +645,16 @@ app.get('/admin-dashboard', (req, res) => {
         </div>
     </div>
 
+    <!-- Modal Hospital (simplificado) -->
     <div id="modalHospital" class="modal">
         <div class="modal-content">
             <h3 style="color:var(--primary);">➕ Novo Hospital</h3>
-            <!-- Simples, similar ao lab, pode adaptar depois -->
             <p>Em desenvolvimento...</p>
             <button onclick="closeModal('modalHospital')">Fechar</button>
         </div>
     </div>
 
+    <!-- Modal Empresa (simplificado) -->
     <div id="modalEmpresa" class="modal">
         <div class="modal-content">
             <h3 style="color:var(--primary);">➕ Nova Empresa</h3>
@@ -809,7 +811,7 @@ app.get('/admin-dashboard', (req, res) => {
             window.location.href = '/';
         }
 
-        // Inicializa com a aba Dashboard
+        // Inicializa
         loadStats();
     </script>
 </body>
