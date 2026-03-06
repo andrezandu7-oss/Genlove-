@@ -271,152 +271,137 @@ app.get('/admin-dashboard', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>SNS - Ministério da Saúde</title>
+        <title>SNS - Painel de Controle</title>
         <style>
             :root { --primary: #006633; --bg: #f4f7f6; --text: #333; }
             * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
             body { display: flex; background: var(--bg); min-height: 100vh; color: var(--text); }
             
-            /* Sidebar Estilo Lab */
-            .sidebar { width: 260px; background: var(--primary); color: white; position: fixed; height: 100vh; padding: 20px; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
-            .sidebar h2 { font-size: 18px; text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; letter-spacing: 1px; }
-            .sidebar button { background: none; border: none; color: rgba(255,255,255,0.8); padding: 15px; text-align: left; width: 100%; cursor: pointer; border-radius: 8px; font-size: 15px; transition: 0.3s; margin-bottom: 5px; }
-            .sidebar button:hover { background: rgba(255,255,255,0.1); color: white; }
-            .sidebar button.active { background: rgba(255,255,255,0.2); color: white; font-weight: bold; }
-            .logout-btn { margin-top: auto; background: #c0392b !important; color: white !important; text-align: center !important; }
+            /* Sidebar */
+            .sidebar { width: 260px; background: var(--primary); color: white; position: fixed; height: 100vh; padding: 20px; display: flex; flex-direction: column; }
+            .sidebar h2 { font-size: 18px; text-align: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; }
+            .sidebar button { background: none; border: none; color: white; padding: 15px; text-align: left; width: 100%; cursor: pointer; border-radius: 8px; margin-bottom: 5px; opacity: 0.8; transition: 0.3s; }
+            .sidebar button:hover, .sidebar button.active { background: rgba(255,255,255,0.2); opacity: 1; font-weight: bold; }
+            .logout { margin-top: auto; background: #c0392b !important; opacity: 1 !important; text-align: center !important; }
 
-            /* Conteúdo */
+            /* Conteúdo Principal */
             .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); }
-            .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-            
-            /* Stats Cards */
-            .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-            .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid var(--primary); }
-            .stat-card h3 { font-size: 13px; color: #777; text-transform: uppercase; margin-bottom: 10px; }
-            .stat-card p { font-size: 32px; font-weight: bold; color: var(--primary); }
-
-            /* Tabela */
-            .card-table { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; }
-            table { width: 100%; border-collapse: collapse; }
-            th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #555; font-size: 14px; }
-            td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
-            tr:hover { background: #f9f9f9; }
-
-            /* Botões */
-            .btn-add { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-            .btn-add:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,102,51,0.3); }
-            
-            /* Modal Design */
-            .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index: 2000; backdrop-filter: blur(4px); }
-            .modal-content { background:white; padding:30px; border-radius:15px; width:750px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
-            .campo { margin-bottom: 15px; }
-            .campo label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #555; }
-            .campo input, .campo select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
-            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
-            .section { display: none; }
-            .section.active { display: block; animation: fadeIn 0.4s ease; }
+            .section { display: none; animation: fadeIn 0.3s ease; }
+            .section.active { display: block; }
             @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+            /* Estilo do Formulário (Copiado do seu arquivo) */
+            .container-form { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); padding: 35px; max-width: 900px; margin: 0 auto; }
+            h1 { color: var(--primary); border-left: 6px solid var(--primary); padding-left: 20px; margin-bottom: 30px; font-size: 24px; }
+            .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .full-width { grid-column: span 2; }
+            .campo { display: flex; flex-direction: column; gap: 6px; }
+            .campo label { font-weight: 600; font-size: 14px; }
+            .campo input, .campo select { padding: 12px; border: 1.5px solid #e0e0e0; border-radius: 10px; background: #fafafa; }
+            .btn-primary { background: var(--primary); color: white; border: none; padding: 15px 30px; border-radius: 50px; font-weight: bold; cursor: pointer; }
+            
+            /* Tabela de Listagem */
+            .card-table { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th { text-align: left; padding: 12px; border-bottom: 2px solid #eee; }
+            td { padding: 12px; border-bottom: 1px solid #eee; }
+            
+            /* Stats */
+            .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+            .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; border-top: 4px solid var(--primary); }
         </style>
     </head>
     <body>
         <div class="sidebar">
-            <h2>SNS MINISTÉRIO</h2>
+            <h2>MINISTÉRIO DA SAÚDE</h2>
             <button onclick="showTab('dash')" id="btn-dash" class="active">📊 Dashboard</button>
-            <button onclick="showTab('labs')" id="btn-labs">🔬 Laboratórios</button>
-            <button onclick="showTab('hosp')" id="btn-hosp">🏥 Hospitais</button>
-            <button onclick="showTab('emp')" id="btn-emp">🏢 Empresas</button>
-            <button class="logout-btn" onclick="logout()">🚪 Sair</button>
+            <button onclick="showTab('list')" id="btn-list">🔬 Ver Laboratórios</button>
+            <button onclick="showTab('novo')" id="btn-novo">➕ Novo Laboratório</button>
+            <button class="logout" onclick="logout()">🚪 Sair</button>
         </div>
 
         <div class="main">
             <div id="sec-dash" class="section active">
-                <div class="header-flex"><h1>Painel Geral</h1></div>
+                <h1>Painel de Controle</h1>
                 <div class="stats-grid">
-                    <div class="stat-card"><h3>Laboratórios</h3><p id="countLabs">0</p></div>
-                    <div class="stat-card"><h3>Hospitais</h3><p id="countHosp">0</p></div>
-                    <div class="stat-card"><h3>Empresas</h3><p id="countEmp">0</p></div>
+                    <div class="stat-card"><h3>Laboratórios</h3><p id="countLabs" style="font-size:30px; font-weight:bold; color:var(--primary);">0</p></div>
+                    <div class="stat-card"><h3>Hospitais</h3><p style="font-size:30px; font-weight:bold;">0</p></div>
+                    <div class="stat-card"><h3>Empresas</h3><p style="font-size:30px; font-weight:bold;">0</p></div>
                 </div>
             </div>
 
-            <div id="sec-labs" class="section">
-                <div class="header-flex">
-                    <h1>Laboratórios Registrados</h1>
-                    <button class="btn-add" onclick="openModal('modalLab')">+ Novo Laboratório</button>
+            <div id="sec-list" class="section">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h1>Laboratórios Registados</h1>
+                    <button class="btn-primary" onclick="showTab('novo')" style="padding: 10px 20px;">+ Adicionar</button>
                 </div>
                 <div class="card-table">
-                    <table id="tableLabs">
-                        <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Status</th><th>Ação</th></tr></thead>
-                        <tbody></tbody>
+                    <table>
+                        <thead>
+                            <tr><th>Nome</th><th>NIF</th><th>Província</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="listaLabsCorpo"></tbody>
                     </table>
                 </div>
             </div>
-            
-            </div>
 
-        <div id="modalLab" class="modal">
-            <div class="modal-content">
-                <h3 style="color:var(--primary); margin-bottom:20px;">➕ Registro de Novo Laboratório</h3>
-                <div class="grid-2">
-                    <div class="campo" style="grid-column: span 2;">
-                        <label>🏥 Nome do Laboratório *</label>
-                        <input type="text" id="labNome" placeholder="Ex: LabCentral Luanda">
-                    </div>
-                    <div class="campo">
-                        <label>📄 NIF *</label>
-                        <input type="text" id="labNIF" maxlength="10" placeholder="10 dígitos">
-                    </div>
-                    <div class="campo">
-                        <label>⚖️ Tipo *</label>
-                        <select id="labTipo">
-                            <option value="laboratorio">Laboratório</option>
-                            <option value="hospital">Hospital</option>
-                            <option value="clinica">Clínica</option>
-                        </select>
-                    </div>
-                    <div class="campo">
-                        <label>📍 Província *</label>
-                        <select id="labProvincia">
-                            <option value="">Selecione</option>
-                            <option value="Bengo">Bengo</option><option value="Benguela">Benguela</option>
-                            <option value="Bié">Bié</option><option value="Cabinda">Cabinda</option>
-                            <option value="Cuando Cubango">Cuando Cubango</option><option value="Cuanza Norte">Cuanza Norte</option>
-                            <option value="Cuanza Sul">Cuanza Sul</option><option value="Cunene">Cunene</option>
-                            <option value="Huambo">Huambo</option><option value="Huíla">Huíla</option>
-                            <option value="Luanda">Luanda</option><option value="Lunda Norte">Lunda Norte</option>
-                            <option value="Lunda Sul">Lunda Sul</option><option value="Malanje">Malanje</option>
-                            <option value="Moxico">Moxico</option><option value="Namibe">Namibe</option>
-                            <option value="Uíge">Uíge</option><option value="Zaire">Zaire</option>
-                        </select>
-                    </div>
-                    <div class="campo">
-                        <label>🗺️ Município</label>
-                        <input type="text" id="labMunicipio" placeholder="Ex: Ingombota">
-                    </div>
-                    <div class="campo" style="grid-column: span 2;">
-                        <label>🏛️ Endereço Completo *</label>
-                        <input type="text" id="labEndereco" placeholder="Rua, número, bairro">
-                    </div>
-                    <div class="campo">
-                        <label>📞 Telefone 1 *</label>
-                        <input type="tel" id="labTelefone" placeholder="923000000">
-                    </div>
-                    <div class="campo">
-                        <label>✉️ Email *</label>
-                        <input type="email" id="labEmail" placeholder="contato@lab.ao">
-                    </div>
-                    <div class="campo">
-                        <label>👨‍⚕️ Diretor *</label>
-                        <input type="text" id="labDiretor" placeholder="Nome do Diretor">
-                    </div>
-                    <div class="campo">
-                        <label>🧪 Resp. Técnico</label>
-                        <input type="text" id="labResponsavel" placeholder="Se diferente">
-                    </div>
-                </div>
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button class="btn-add" style="flex:2" onclick="salvarLaboratorio()">💾 Salvar Laboratório</button>
-                    <button onclick="closeModal('modalLab')" style="flex:1; border:none; border-radius:8px; cursor:pointer;">Cancelar</button>
+            <div id="sec-novo" class="section">
+                <div class="container-form">
+                    <h1>➕ NOVO LABORATÓRIO</h1>
+                    <form id="formLab">
+                        <div class="form-grid">
+                            <div class="campo full-width">
+                                <label>🏥 Nome do Laboratório *</label>
+                                <input type="text" id="nome" required placeholder="Ex: LabCentral">
+                            </div>
+                            <div class="campo">
+                                <label>📄 NIF *</label>
+                                <input type="text" id="nif" maxlength="10" required>
+                            </div>
+                            <div class="campo">
+                                <label>⚖️ Tipo *</label>
+                                <select id="tipo" required>
+                                    <option value="Público">Público</option>
+                                    <option value="Privado">Privado</option>
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label>📍 Província *</label>
+                                <select id="provincia" required>
+                                    <option value="Luanda">Luanda</option>
+                                    <option value="Benguela">Benguela</option>
+                                    <option value="Huambo">Huambo</option>
+                                    </select>
+                            </div>
+                            <div class="campo">
+                                <label>🗺️ Município</label>
+                                <input type="text" id="municipio">
+                            </div>
+                            <div class="campo full-width">
+                                <label>🏛️ Endereço completo *</label>
+                                <input type="text" id="endereco" required>
+                            </div>
+                            <div class="campo">
+                                <label>📞 Telefone *</label>
+                                <input type="tel" id="telefone" required>
+                            </div>
+                            <div class="campo">
+                                <label>✉️ Email *</label>
+                                <input type="email" id="email" required>
+                            </div>
+                            <div class="campo">
+                                <label>👨‍⚕️ Diretor *</label>
+                                <input type="text" id="diretor" required>
+                            </div>
+                            <div class="campo">
+                                <label>🧪 Resp. Técnico</label>
+                                <input type="text" id="responsavelTecnico">
+                            </div>
+                        </div>
+                        <div style="margin-top:30px; text-align:right;">
+                            <button type="submit" class="btn-primary" id="btnSalvar">💾 Registar Laboratório</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -425,74 +410,67 @@ app.get('/admin-dashboard', (req, res) => {
             const token = localStorage.getItem('token');
             if(!token) window.location.href = '/ministerio';
 
-            function showTab(t) {
+            function showTab(tab) {
                 document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
                 document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
-                document.getElementById('sec-' + t).classList.add('active');
-                document.getElementById('btn-' + t).classList.add('active');
-                if(t === 'dash') loadStats();
-                if(t === 'labs') loadLabs();
+                document.getElementById('sec-' + tab).classList.add('active');
+                document.getElementById('btn-' + tab).classList.add('active');
+                if(tab === 'list') carregarLaboratorios();
             }
 
-            function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-            function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-            async function loadStats() {
-                const r = await fetch('/api/stats', { headers: {'Authorization': 'Bearer '+token} });
-                const d = await r.json();
-                document.getElementById('countLabs').innerText = d.labs || 0;
-                document.getElementById('countHosp').innerText = d.hospitais || 0;
-                document.getElementById('countEmp').innerText = d.empresas || 0;
-            }
-
-            async function loadLabs() {
-                const r = await fetch('/api/labs', { headers: {'Authorization': 'Bearer '+token} });
+            async function carregarLaboratorios() {
+                const r = await fetch('/api/labs', { headers: {'Authorization': 'Bearer ' + token} });
                 const labs = await r.json();
-                document.querySelector('#tableLabs tbody').innerHTML = labs.map(l => \`
+                document.getElementById('countLabs').innerText = labs.length;
+                const corpo = document.getElementById('listaLabsCorpo');
+                corpo.innerHTML = labs.map(l => \`
                     <tr>
                         <td><strong>\${l.nome}</strong></td>
                         <td>\${l.nif}</td>
                         <td>\${l.provincia}</td>
-                        <td><span style="color:\${l.ativo?'green':'red'}">\${l.ativo?'Ativo':'Inativo'}</span></td>
-                        <td><button onclick="alert('ID: \${l._id}')" style="cursor:pointer; border:none; background:none; color:blue;">Ver</button></td>
+                        <td><span style="color:green">● Ativo</span></td>
                     </tr>
                 \`).join('');
             }
 
-            async function salvarLaboratorio() {
+            document.getElementById('formLab').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('btnSalvar');
+                btn.disabled = true; btn.innerText = '⏳ Guardando...';
+
                 const dados = {
-                    nome: document.getElementById('labNome').value,
-                    nif: document.getElementById('labNIF').value,
-                    tipo: document.getElementById('labTipo').value,
-                    provincia: document.getElementById('labProvincia').value,
-                    municipio: document.getElementById('labMunicipio').value,
-                    endereco: document.getElementById('labEndereco').value,
-                    telefone: document.getElementById('labTelefone').value,
-                    email: document.getElementById('labEmail').value,
-                    diretor: document.getElementById('labDiretor').value,
-                    responsavelTecnico: document.getElementById('labResponsavel').value,
+                    nome: document.getElementById('nome').value,
+                    nif: document.getElementById('nif').value,
+                    tipo: document.getElementById('tipo').value,
+                    provincia: document.getElementById('provincia').value,
+                    municipio: document.getElementById('municipio').value,
+                    endereco: document.getElementById('endereco').value,
+                    telefone: document.getElementById('telefone').value,
+                    email: document.getElementById('email').value,
+                    diretor: document.getElementById('diretor').value,
+                    responsavelTecnico: document.getElementById('responsavelTecnico').value,
                     ativo: true
                 };
 
-                if(!dados.nome || !dados.nif || !dados.provincia) return alert("Preencha os campos obrigatórios!");
-
-                const r = await fetch('/api/labs', {
+                const res = await fetch('/api/labs', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer '+token},
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token},
                     body: JSON.stringify(dados)
                 });
-                const res = await r.json();
-                if(res.success) {
-                    alert("✅ Registrado! API KEY: " + res.apiKey);
-                    closeModal('modalLab');
-                    loadLabs();
+                
+                const data = await res.json();
+                if(data.success) {
+                    alert('✅ Sucesso! API KEY: ' + data.apiKey);
+                    document.getElementById('formLab').reset();
+                    showTab('list');
                 } else {
-                    alert("Erro ao salvar.");
+                    alert('❌ Erro ao salvar');
                 }
-            }
+                btn.disabled = false; btn.innerText = '💾 Registar Laboratório';
+            });
 
             function logout() { localStorage.clear(); window.location.href = '/'; }
-            loadStats();
+            carregarLaboratorios();
         </script>
     </body>
     </html>`);
