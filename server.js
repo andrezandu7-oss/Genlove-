@@ -262,9 +262,8 @@ app.post('/api/login', async (req, res) => {
     } else res.status(401).json({ erro: 'Email ou senha incorretos' });
 });
 
-// ============================================
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION CORRIGÉE)
+// DASHBOARD DO MINISTÉRIO (VERSION FINALE CORRIGÉE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -485,13 +484,13 @@ app.get('/admin-dashboard', (req, res) => {
             }
         }
 
-        // Carregar estatísticas
         function carregarStats() {
             fetch('/api/stats', {
                 headers: { 'Authorization': 'Bearer ' + token }
             })
             .then(response => response.json())
             .then(data => {
+                console.log("Stats recebidas:", data);
                 document.getElementById('statsLabs').innerText = data.labs || 0;
                 document.getElementById('statsHospitais').innerText = data.hospitais || 0;
                 document.getElementById('statsEmpresas').innerText = data.empresas || 0;
@@ -501,7 +500,6 @@ app.get('/admin-dashboard', (req, res) => {
             .catch(err => console.error('Erro stats:', err));
         }
 
-        // Carregar laboratórios (sem paginação)
         function carregarLaboratorios() {
             var tbody = document.getElementById('tabelaLabs');
             var spinner = document.getElementById('spinnerLabs');
@@ -545,7 +543,7 @@ app.get('/admin-dashboard', (req, res) => {
                         html += '<td><strong>' + (l.nome || '') + '</strong></td>';
                         html += '<td>' + (l.nif || '') + '</td>';
                         html += '<td>' + (l.provincia || '') + '</td>';
-                        html += '<td>' + (l.telefone || '') + '</td>';
+                        html += '<td>' + (l.telephone || '') + '</td>'; // campo correto: telephone
                         html += '<td>' + (l.diretor || '') + '</td>';
                         html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
                         html += '<td>';
@@ -560,7 +558,7 @@ app.get('/admin-dashboard', (req, res) => {
             .catch(error => {
                 spinner.style.display = 'none';
                 console.error('Erro ao carregar laboratórios:', error);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar dados</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar dados: ' + error.message + '</td></tr>';
             });
         }
 
@@ -582,7 +580,7 @@ app.get('/admin-dashboard', (req, res) => {
             window.location.href = "/";
         }
 
-        carregarStats(); // Carrega as stats na inicialização
+        carregarStats();
     </script>
 </body>
 </html>`);
