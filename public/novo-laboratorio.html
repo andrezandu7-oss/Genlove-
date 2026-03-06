@@ -250,7 +250,7 @@
                                 diasNoMes = 28;
                             }
                         } else {
-                            diasNoMes = 29; // se ano não escolhido, máximo 29
+                            diasNoMes = 29;
                         }
                     }
                 }
@@ -270,9 +270,9 @@
 
             document.getElementById('validadeMes').addEventListener('change', atualizarDias);
             document.getElementById('validadeAno').addEventListener('change', atualizarDias);
-            atualizarDias(); // inicializa
+            atualizarDias();
 
-            // Preencher formulário com dados existentes (para edição)
+            // Preencher formulário para edição
             function preencherFormulario(dados) {
                 document.getElementById('nome').value = dados.nome || '';
                 document.getElementById('nif').value = dados.nif || '';
@@ -293,7 +293,6 @@
                     if (partes.length === 3) {
                         document.getElementById('validadeAno').value = partes[0];
                         document.getElementById('validadeMes').value = parseInt(partes[1]);
-                        // Forçar atualização dos dias antes de setar o dia
                         setTimeout(() => {
                             document.getElementById('validadeDia').value = parseInt(partes[2]);
                         }, 10);
@@ -341,25 +340,18 @@
                 respostaDiv.style.display = 'none';
             }
 
-            // Botão Editar
             btnEditar.addEventListener('click', () => {
-                if (ultimoLab) {
-                    preencherFormulario(ultimoLab);
-                }
+                if (ultimoLab) preencherFormulario(ultimoLab);
                 recapSection.style.display = 'none';
                 form.style.display = 'block';
             });
 
-            // Botão PDF
             btnPDF.addEventListener('click', async () => {
                 if (!ultimoLab) return;
                 try {
                     const response = await fetch('/api/labs/pdf', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + token
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                         body: JSON.stringify(ultimoLab)
                     });
                     if (!response.ok) throw new Error('Erro na geração do PDF');
@@ -369,18 +361,15 @@
                     a.href = url;
                     a.download = `Laboratorio_${ultimoLab.nome.replace(/\s/g, '_')}.pdf`;
                     a.click();
-                    window.URL.revokeObjectURL(url);
                 } catch (error) {
                     alert('Erro ao gerar PDF: ' + error.message);
                 }
             });
 
-            // Validação NIF
             document.getElementById('nif').addEventListener('input', function(e) {
                 this.value = this.value.replace(/\D/g, '').slice(0, 10);
             });
 
-            // Submissão do formulário
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 respostaDiv.style.display = 'none';
@@ -392,7 +381,6 @@
                     return;
                 }
 
-                // Construir data de validade
                 let validadeLicenca = undefined;
                 const dia = document.getElementById('validadeDia').value;
                 const mes = document.getElementById('validadeMes').value;
@@ -403,7 +391,7 @@
 
                 const dados = {
                     nome: document.getElementById('nome').value.trim(),
-                    nif: nif,
+                    nif,
                     tipo: document.getElementById('tipo').value,
                     provincia: document.getElementById('provincia').value,
                     municipio: document.getElementById('municipio').value.trim() || undefined,
@@ -415,7 +403,7 @@
                     diretor: document.getElementById('diretor').value.trim(),
                     responsavelTecnico: document.getElementById('responsavelTecnico').value.trim() || undefined,
                     licenca: document.getElementById('licenca').value.trim() || undefined,
-                    validadeLicenca: validadeLicenca,
+                    validadeLicenca,
                     ativo: document.getElementById('ativo').checked
                 };
 
@@ -430,10 +418,7 @@
                 try {
                     const response = await fetch('/api/labs', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + token
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                         body: JSON.stringify(dados)
                     });
 
