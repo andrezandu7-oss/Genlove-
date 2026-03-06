@@ -3,45 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo Laboratório · Ministério da Saúde</title>
+    <title>Novo Laboratório - Ministério da Saúde</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
-        body { background:#006633; min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }
-        .container { max-width:800px; width:100%; background:white; border-radius:16px; box-shadow:0 20px 40px rgba(0,0,0,0.2); padding:35px 40px; animation:fadeIn 0.3s ease; }
-        @keyframes fadeIn { from{opacity:0; transform:translateY(-10px);} to{opacity:1; transform:translateY(0);} }
-        h1 { color:#006633; font-size:28px; font-weight:600; margin-bottom:8px; border-left:6px solid #006633; padding-left:20px; }
-        .subtitle { color:#666; margin-bottom:30px; font-size:15px; margin-top:5px; padding-left:26px; }
-        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px 25px; }
-        .full-width { grid-column:span 2; }
-        .campo { display:flex; flex-direction:column; gap:6px; }
-        .campo label { font-weight:600; color:#333; font-size:14px; display:flex; align-items:center; gap:4px; }
-        .campo input, .campo select, .campo textarea { padding:12px 14px; border:1.5px solid #e0e0e0; border-radius:10px; font-size:15px; transition:0.2s; background:#fafafa; }
-        .campo input:focus, .campo select:focus, .campo textarea:focus { outline:none; border-color:#006633; background:white; box-shadow:0 0 0 3px rgba(0,102,51,0.1); }
-        .campo input.required, .campo select.required { border-left:4px solid #006633; }
-        .checkbox-group { display:flex; align-items:center; gap:10px; margin-top:5px; }
-        .checkbox-group input { width:18px; height:18px; accent-color:#006633; }
-        .acoes { margin-top:35px; display:flex; justify-content:flex-end; gap:15px; align-items:center; }
-        .btn { padding:14px 28px; border:none; border-radius:50px; font-size:16px; font-weight:600; cursor:pointer; transition:0.2s; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
-        .btn-primary { background:#006633; color:white; box-shadow:0 4px 12px rgba(0,102,51,0.3); }
-        .btn-primary:hover { background:#004d26; transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,102,51,0.4); }
-        .btn-secondary { background:#f1f1f1; color:#333; }
-        .btn-secondary:hover { background:#e4e4e4; }
-        #resposta { margin-top:20px; padding:15px; border-radius:12px; display:none; font-size:14px; }
-        .sucesso { background:#e8f5e9; color:#1e7e34; border:1px solid #a5d6a7; display:block !important; }
-        .erro { background:#ffebee; color:#b71c1c; border:1px solid #ffcdd2; display:block !important; }
-        .info-chave { background:#f0f7ff; border:1px dashed #006633; padding:15px; border-radius:12px; margin:20px 0 10px; word-break:break-all; font-family:monospace; font-size:14px; }
-        .info-chave strong { color:#006633; display:block; margin-bottom:8px; font-size:16px; }
-        hr { border:none; border-top:2px solid #eee; margin:20px 0; }
-        .badge { background:#00663310; color:#006633; padding:6px 12px; border-radius:30px; font-size:13px; display:inline-block; }
-        .recap-container { background:#f9f9f9; border-radius:16px; padding:20px; margin-top:20px; border:2px solid #006633; }
-        .recap-container h2 { color:#006633; margin-bottom:15px; }
-        .recap-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-        .recap-item { padding:8px; border-bottom:1px dotted #ccc; }
-        .recap-label { font-weight:700; color:#333; }
-        .recap-value { color:#000; }
-        .recap-api { grid-column:span 2; background:#fff3cd; border-left:5px solid #006633; padding:10px; border-radius:8px; margin-top:10px; word-break:break-all; }
-        .aviso { color:#b71c1c; font-size:13px; margin:10px 0; font-style:italic; }
-        @media (max-width:650px) { .container{ padding:25px; } .form-grid{ grid-template-columns:1fr; } .full-width{ grid-column:span 1; } .recap-grid{ grid-template-columns:1fr; } .recap-api{ grid-column:span 1; } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        body {
+            background: #006633;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            padding: 35px 40px;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 {
+            color: #006633;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            border-left: 6px solid #006633;
+            padding-left: 20px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 15px;
+            margin-top: 5px;
+            padding-left: 26px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px 25px;
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+        .campo {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .campo label {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .campo label i {
+            color: #006633;
+            font-style: normal;
+            font-weight: 400;
+        }
+        .campo input, .campo select, .campo textarea {
+            padding: 12px 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: 0.2s;
+            background: #fafafa;
+        }
+        .campo input:focus, .campo select:focus, .campo textarea:focus {
+            outline: none;
+            border-color: #006633;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0,102,51,0.1);
+        }
+        .campo input.required, .campo select.required {
+            border-left: 4px solid #006633;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            accent-color: #006633;
+        }
+        .acoes {
+            margin-top: 35px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            align-items: center;
+        }
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primary {
+            background: #006633;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,102,51,0.3);
+        }
+        .btn-primary:hover {
+            background: #004d26;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(0,102,51,0.4);
+        }
+        .btn-secondary {
+            background: #f1f1f1;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e4e4e4;
+        }
+        #resposta {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            display: none;
+            font-size: 14px;
+        }
+        .sucesso {
+            background: #e8f5e9;
+            color: #1e7e34;
+            border: 1px solid #a5d6a7;
+            display: block !important;
+        }
+        .erro {
+            background: #ffebee;
+            color: #b71c1c;
+            border: 1px solid #ffcdd2;
+            display: block !important;
+        }
+        .info-chave {
+            background: #f0f7ff;
+            border: 1px dashed #006633;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0 10px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .info-chave strong {
+            color: #006633;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 20px 0;
+        }
+        .badge {
+            background: #00663310;
+            color: #006633;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 13px;
+            display: inline-block;
+        }
+        .recap-container {
+            background: #f9f9f9;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 2px solid #006633;
+        }
+        .recap-container h2 {
+            color: #006633;
+            margin-bottom: 15px;
+        }
+        .recap-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .recap-item {
+            padding: 8px;
+            border-bottom: 1px dotted #ccc;
+        }
+        .recap-label {
+            font-weight: 700;
+            color: #333;
+        }
+        .recap-value {
+            color: #000;
+        }
+        .recap-api {
+            grid-column: span 2;
+            background: #fff3cd;
+            border-left: 5px solid #006633;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+        .aviso {
+            color: #b71c1c;
+            font-size: 13px;
+            margin: 10px 0;
+            font-style: italic;
+        }
+        @media (max-width: 650px) {
+            .container { padding: 25px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .recap-grid { grid-template-columns: 1fr; }
+            .recap-api { grid-column: span 1; }
+        }
     </style>
 </head>
 <body>
@@ -72,7 +265,7 @@
                     </select>
                 </div>
 
-                <!-- Província (agora com as 18 províncias) + Município -->
+                <!-- Província (18 províncias) + Município -->
                 <div class="campo">
                     <label>📍 Província <span style="color:#c62828;">*</span></label>
                     <select id="provincia" class="required" required>
@@ -111,11 +304,11 @@
                 <!-- Telefones -->
                 <div class="campo">
                     <label>📞 Telefone 1 <span style="color:#c62828;">*</span></label>
-                    <input type="tel" id="telephone" class="required" placeholder="+244 900 000 000" required>
+                    <input type="tel" id="telefone" class="required" placeholder="+244 900 000 000" required>
                 </div>
                 <div class="campo">
                     <label>📞 Telefone 2</label>
-                    <input type="tel" id="telephone2" placeholder="Opcional">
+                    <input type="tel" id="telefone2" placeholder="Opcional">
                 </div>
 
                 <!-- Email + Website -->
@@ -128,7 +321,7 @@
                     <input type="url" id="website" placeholder="https://...">
                 </div>
 
-                <!-- Diretor + Resp.Técnico -->
+                <!-- Diretor + Resp. Técnico -->
                 <div class="campo">
                     <label>👨‍⚕️ Diretor <span style="color:#c62828;">*</span></label>
                     <input type="text" id="diretor" class="required" placeholder="Nome completo" required>
@@ -138,17 +331,39 @@
                     <input type="text" id="responsavelTecnico" placeholder="Se diferente do diretor">
                 </div>
 
-                <!-- Licença + Validade -->
+                <!-- Licença + Validade (com selects) -->
                 <div class="campo">
                     <label>📜 Nº Licença</label>
                     <input type="text" id="licenca" placeholder="Ex.: 1234/MINSAL/25">
                 </div>
-                <div class="campo">
+                <div class="campo full-width">
                     <label>📅 Validade da Licença</label>
-                    <input type="date" id="validadeLicenca">
+                    <div style="display: flex; gap: 10px;">
+                        <select id="validadeDia" style="width: 100px;">
+                            <option value="">Dia</option>
+                        </select>
+                        <select id="validadeMes" style="width: 100px;">
+                            <option value="">Mês</option>
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                        <select id="validadeAno" style="flex: 1;">
+                            <option value="">Ano</option>
+                        </select>
+                    </div>
                 </div>
 
-                <!-- Status ativo (checkbox) -->
+                <!-- Status ativo -->
                 <div class="campo full-width checkbox-group">
                     <input type="checkbox" id="ativo" checked>
                     <label for="ativo" style="font-weight:500;">✅ Laboratório ativo (pode emitir certificados)</label>
@@ -163,8 +378,8 @@
             </div>
         </form>
 
-        <div id="resposta"></div>
-        <div id="recapSection" style="display:none;" class="recap-container">
+        <!-- Recap após criação -->
+        <div id="recapSection" style="display: none;" class="recap-container">
             <h2>📋 Laboratório registado com sucesso</h2>
             <div id="recapData" class="recap-grid"></div>
             <div class="aviso">⚠️ A chave API é confidencial. Não a compartilhe.</div>
@@ -173,121 +388,273 @@
                 <button class="btn btn-primary" id="btnPDF">📥 Baixar PDF de registo</button>
             </div>
         </div>
+
+        <!-- Mensagens de erro/sucesso -->
+        <div id="resposta"></div>
     </div>
 
     <script>
-        const token = localStorage.getItem('token');
-        if (!token) { alert('Sessão expirada.'); window.location.href='/ministerio'; }
-
-        const form = document.getElementById('formLab');
-        const btnSalvar = document.getElementById('btnSalvar');
-        const recapSection = document.getElementById('recapSection');
-        const recapData = document.getElementById('recapData');
-        const btnEditar = document.getElementById('btnEditar');
-        const btnPDF = document.getElementById('btnPDF');
-        let ultimoLab = null;
-
-        document.getElementById('nif').addEventListener('input', function(e) { this.value = this.value.replace(/\D/g,'').slice(0,10); });
-
-        function preencherFormulario(dados) {
-            document.getElementById('nome').value = dados.nome || '';
-            document.getElementById('nif').value = dados.nif || '';
-            document.getElementById('tipo').value = dados.tipo || '';
-            document.getElementById('provincia').value = dados.provincia || '';
-            document.getElementById('municipio').value = dados.municipio || '';
-            document.getElementById('endereco').value = dados.endereco || '';
-            document.getElementById('telephone').value = dados.telephone || '';
-            document.getElementById('telephone2').value = dados.telephone2 || '';
-            document.getElementById('email').value = dados.email || '';
-            document.getElementById('website').value = dados.website || '';
-            document.getElementById('diretor').value = dados.diretor || '';
-            document.getElementById('responsavelTecnico').value = dados.responsavelTecnico || '';
-            document.getElementById('licenca').value = dados.licenca || '';
-            document.getElementById('validadeLicenca').value = dados.validadeLicenca || '';
-            document.getElementById('ativo').checked = dados.ativo !== false;
-        }
-
-        function mostrarRecap(dados) {
-            let html = '';
-            const campos = [
-                ['Nome', dados.nome],
-                ['NIF', dados.nif],
-                ['Tipo', dados.tipo],
-                ['Província', dados.provincia],
-                ['Município', dados.municipio],
-                ['Endereço', dados.endereco],
-                ['Telefone', dados.telephone],
-                ['Telefone 2', dados.telephone2],
-                ['Email', dados.email],
-                ['Website', dados.website],
-                ['Diretor', dados.diretor],
-                ['Resp. Técnico', dados.responsavelTecnico],
-                ['Licença', dados.licenca],
-                ['Validade', dados.validadeLicenca ? new Date(dados.validadeLicenca).toLocaleDateString('pt-PT') : ''],
-                ['Status', dados.ativo ? 'Ativo' : 'Inativo']
-            ];
-            campos.forEach(c => { if (c[1] && c[1].toString().trim()!=='') html += `<div class="recap-item"><span class="recap-label">${c[0]}:</span> <span class="recap-value">${c[1]}</span></div>`; });
-            html += `<div class="recap-api"><span class="recap-label">🔑 Chave API:</span> <span class="recap-value">${dados.apiKey}</span></div>`;
-            recapData.innerHTML = html;
-            recapSection.style.display = 'block';
-            form.style.display = 'none';
-        }
-
-        btnEditar.addEventListener('click', () => { if(ultimoLab) preencherFormulario(ultimoLab); recapSection.style.display='none'; form.style.display='block'; });
-
-        btnPDF.addEventListener('click', async () => {
-            if(!ultimoLab) return;
-            try {
-                const res = await fetch('/api/labs/pdf', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(ultimoLab) });
-                if(!res.ok) throw new Error();
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Laboratorio_${ultimoLab.nome.replace(/\s/g,'_')}.pdf`;
-                a.click();
-            } catch(e) { alert('Erro ao gerar PDF'); }
-        });
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const nif = document.getElementById('nif').value.trim();
-            if (!/^\d{10}$/.test(nif)) { alert('NIF inválido'); return; }
-            const dados = {
-                nome: document.getElementById('nome').value.trim(),
-                nif: nif,
-                tipo: document.getElementById('tipo').value,
-                provincia: document.getElementById('provincia').value,
-                municipio: document.getElementById('municipio').value.trim() || undefined,
-                endereco: document.getElementById('endereco').value.trim(),
-                telephone: document.getElementById('telephone').value.trim(),
-                telephone2: document.getElementById('telephone2').value.trim() || undefined,
-                email: document.getElementById('email').value.trim(),
-                website: document.getElementById('website').value.trim() || undefined,
-                diretor: document.getElementById('diretor').value.trim(),
-                responsavelTecnico: document.getElementById('responsavelTecnico').value.trim() || undefined,
-                licenca: document.getElementById('licenca').value.trim() || undefined,
-                validadeLicenca: document.getElementById('validadeLicenca').value || undefined,
-                ativo: document.getElementById('ativo').checked
-            };
-            if (!dados.nome || !dados.tipo || !dados.provincia || !dados.endereco || !dados.telephone || !dados.email || !dados.diretor) {
-                alert('Preencha todos os campos obrigatórios.'); return;
+        (function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Sessão expirada. Faça login novamente.');
+                window.location.href = '/ministerio';
+                return;
             }
-            btnSalvar.disabled = true; btnSalvar.textContent = '⏳ Registando...';
-            try {
-                const res = await fetch('/api/labs', { method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+token}, body:JSON.stringify(dados) });
-                const result = await res.json();
-                if (res.ok && result.success) {
-                    dados.apiKey = result.apiKey;
-                    dados.labId = result.labId;
-                    ultimoLab = dados;
-                    mostrarRecap(dados);
-                } else {
-                    alert('Erro: ' + (result.erro || result.error || 'Desconhecido'));
+
+            const form = document.getElementById('formLab');
+            const btnSalvar = document.getElementById('btnSalvar');
+            const respostaDiv = document.getElementById('resposta');
+            const recapSection = document.getElementById('recapSection');
+            const recapDataDiv = document.getElementById('recapData');
+            const btnEditar = document.getElementById('btnEditar');
+            const btnPDF = document.getElementById('btnPDF');
+
+            let ultimoLab = null;
+
+            // Preencher anos (1900-2100)
+            const anoSelect = document.getElementById('validadeAno');
+            for (let a = 1900; a <= 2100; a++) {
+                const option = document.createElement('option');
+                option.value = a;
+                option.textContent = a;
+                anoSelect.appendChild(option);
+            }
+
+            // Atualizar dias conforme mês e ano
+            function atualizarDias() {
+                const diaSelect = document.getElementById('validadeDia');
+                const mes = document.getElementById('validadeMes').value;
+                const ano = document.getElementById('validadeAno').value;
+                const diaAtual = diaSelect.value;
+
+                let diasNoMes = 31;
+                if (mes) {
+                    const m = parseInt(mes);
+                    if (m === 4 || m === 6 || m === 9 || m === 11) {
+                        diasNoMes = 30;
+                    } else if (m === 2) {
+                        if (ano) {
+                            const a = parseInt(ano);
+                            if ((a % 4 === 0 && a % 100 !== 0) || (a % 400 === 0)) {
+                                diasNoMes = 29;
+                            } else {
+                                diasNoMes = 28;
+                            }
+                        } else {
+                            diasNoMes = 29; // se ano não escolhido, máximo 29
+                        }
+                    }
                 }
-            } catch(e) { alert('Erro de ligação'); }
-            finally { btnSalvar.disabled = false; btnSalvar.textContent = '💾 Registar Laboratório'; }
-        });
+
+                diaSelect.innerHTML = '<option value="">Dia</option>';
+                for (let d = 1; d <= diasNoMes; d++) {
+                    const option = document.createElement('option');
+                    option.value = d;
+                    option.textContent = d;
+                    diaSelect.appendChild(option);
+                }
+
+                if (diaAtual && parseInt(diaAtual) <= diasNoMes) {
+                    diaSelect.value = diaAtual;
+                }
+            }
+
+            document.getElementById('validadeMes').addEventListener('change', atualizarDias);
+            document.getElementById('validadeAno').addEventListener('change', atualizarDias);
+            atualizarDias(); // inicializa
+
+            // Preencher formulário com dados existentes (para edição)
+            function preencherFormulario(dados) {
+                document.getElementById('nome').value = dados.nome || '';
+                document.getElementById('nif').value = dados.nif || '';
+                document.getElementById('tipo').value = dados.tipo || '';
+                document.getElementById('provincia').value = dados.provincia || '';
+                document.getElementById('municipio').value = dados.municipio || '';
+                document.getElementById('endereco').value = dados.endereco || '';
+                document.getElementById('telefone').value = dados.telefone || '';
+                document.getElementById('telefone2').value = dados.telefone2 || '';
+                document.getElementById('email').value = dados.email || '';
+                document.getElementById('website').value = dados.website || '';
+                document.getElementById('diretor').value = dados.diretor || '';
+                document.getElementById('responsavelTecnico').value = dados.responsavelTecnico || '';
+                document.getElementById('licenca').value = dados.licenca || '';
+
+                if (dados.validadeLicenca) {
+                    const partes = dados.validadeLicenca.split('-');
+                    if (partes.length === 3) {
+                        document.getElementById('validadeAno').value = partes[0];
+                        document.getElementById('validadeMes').value = parseInt(partes[1]);
+                        // Forçar atualização dos dias antes de setar o dia
+                        setTimeout(() => {
+                            document.getElementById('validadeDia').value = parseInt(partes[2]);
+                        }, 10);
+                    }
+                } else {
+                    document.getElementById('validadeAno').value = '';
+                    document.getElementById('validadeMes').value = '';
+                    document.getElementById('validadeMes').dispatchEvent(new Event('change'));
+                }
+                document.getElementById('ativo').checked = dados.ativo !== false;
+            }
+
+            // Mostrar recap
+            function mostrarRecap(dados) {
+                let html = '';
+                const campos = [
+                    { label: 'Nome', valor: dados.nome },
+                    { label: 'NIF', valor: dados.nif },
+                    { label: 'Tipo', valor: dados.tipo },
+                    { label: 'Província', valor: dados.provincia },
+                    { label: 'Município', valor: dados.municipio },
+                    { label: 'Endereço', valor: dados.endereco },
+                    { label: 'Telefone 1', valor: dados.telefone },
+                    { label: 'Telefone 2', valor: dados.telefone2 },
+                    { label: 'Email', valor: dados.email },
+                    { label: 'Website', valor: dados.website },
+                    { label: 'Diretor', valor: dados.diretor },
+                    { label: 'Responsável Técnico', valor: dados.responsavelTecnico },
+                    { label: 'Licença', valor: dados.licenca },
+                    { label: 'Validade Licença', valor: dados.validadeLicenca ? new Date(dados.validadeLicenca + 'T12:00:00').toLocaleDateString('pt-PT') : '' },
+                    { label: 'Status', valor: dados.ativo ? 'Ativo' : 'Inativo' }
+                ];
+
+                campos.forEach(c => {
+                    if (c.valor && c.valor.toString().trim() !== '') {
+                        html += `<div class="recap-item"><span class="recap-label">${c.label}:</span> <span class="recap-value">${c.valor}</span></div>`;
+                    }
+                });
+
+                html += `<div class="recap-api"><span class="recap-label">🔑 Chave API:</span> <span class="recap-value">${dados.apiKey}</span></div>`;
+
+                recapDataDiv.innerHTML = html;
+                recapSection.style.display = 'block';
+                form.style.display = 'none';
+                respostaDiv.style.display = 'none';
+            }
+
+            // Botão Editar
+            btnEditar.addEventListener('click', () => {
+                if (ultimoLab) {
+                    preencherFormulario(ultimoLab);
+                }
+                recapSection.style.display = 'none';
+                form.style.display = 'block';
+            });
+
+            // Botão PDF
+            btnPDF.addEventListener('click', async () => {
+                if (!ultimoLab) return;
+                try {
+                    const response = await fetch('/api/labs/pdf', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify(ultimoLab)
+                    });
+                    if (!response.ok) throw new Error('Erro na geração do PDF');
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Laboratorio_${ultimoLab.nome.replace(/\s/g, '_')}.pdf`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } catch (error) {
+                    alert('Erro ao gerar PDF: ' + error.message);
+                }
+            });
+
+            // Validação NIF
+            document.getElementById('nif').addEventListener('input', function(e) {
+                this.value = this.value.replace(/\D/g, '').slice(0, 10);
+            });
+
+            // Submissão do formulário
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                respostaDiv.style.display = 'none';
+                respostaDiv.className = '';
+
+                const nif = document.getElementById('nif').value.trim();
+                if (!/^\d{10}$/.test(nif)) {
+                    mostrarErro('NIF deve conter exatamente 10 dígitos numéricos.');
+                    return;
+                }
+
+                // Construir data de validade
+                let validadeLicenca = undefined;
+                const dia = document.getElementById('validadeDia').value;
+                const mes = document.getElementById('validadeMes').value;
+                const ano = document.getElementById('validadeAno').value;
+                if (dia && mes && ano) {
+                    validadeLicenca = `${ano}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+                }
+
+                const dados = {
+                    nome: document.getElementById('nome').value.trim(),
+                    nif: nif,
+                    tipo: document.getElementById('tipo').value,
+                    provincia: document.getElementById('provincia').value,
+                    municipio: document.getElementById('municipio').value.trim() || undefined,
+                    endereco: document.getElementById('endereco').value.trim(),
+                    telefone: document.getElementById('telefone').value.trim(),
+                    telefone2: document.getElementById('telefone2').value.trim() || undefined,
+                    email: document.getElementById('email').value.trim(),
+                    website: document.getElementById('website').value.trim() || undefined,
+                    diretor: document.getElementById('diretor').value.trim(),
+                    responsavelTecnico: document.getElementById('responsavelTecnico').value.trim() || undefined,
+                    licenca: document.getElementById('licenca').value.trim() || undefined,
+                    validadeLicenca: validadeLicenca,
+                    ativo: document.getElementById('ativo').checked
+                };
+
+                if (!dados.nome || !dados.tipo || !dados.provincia || !dados.endereco || !dados.telefone || !dados.email || !dados.diretor) {
+                    mostrarErro('Preencha todos os campos obrigatórios (*).');
+                    return;
+                }
+
+                btnSalvar.disabled = true;
+                btnSalvar.textContent = '⏳ Registando...';
+
+                try {
+                    const response = await fetch('/api/labs', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify(dados)
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        dados.apiKey = result.apiKey;
+                        dados.labId = result.labId;
+                        ultimoLab = dados;
+                        mostrarRecap(dados);
+                    } else {
+                        mostrarErro(result.error || result.erro || 'Erro ao registar laboratório.');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    mostrarErro('Erro de ligação ao servidor. Tente novamente.');
+                } finally {
+                    btnSalvar.disabled = false;
+                    btnSalvar.textContent = '💾 Registar Laboratório';
+                }
+            });
+
+            function mostrarErro(mensagem) {
+                respostaDiv.className = 'erro';
+                respostaDiv.innerHTML = '❌ ' + mensagem;
+                respostaDiv.style.display = 'block';
+                recapSection.style.display = 'none';
+            }
+        })();
     </script>
 </body>
 </html>
