@@ -274,38 +274,45 @@ app.get('/admin-dashboard', (req, res) => {
         <title>SNS - Ministério da Saúde</title>
         <style>
             :root { --primary: #006633; --bg: #f4f7f6; --text: #333; }
-            * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+            * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
             body { display: flex; background: var(--bg); min-height: 100vh; color: var(--text); }
             
-            /* Sidebar Estilo Premium */
-            .sidebar { width: 260px; background: var(--primary); color: white; position: fixed; height: 100vh; padding: 20px; display: flex; flex-direction: column; }
-            .sidebar h2 { font-size: 1.2rem; text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
-            .sidebar button { background: none; border: none; color: white; padding: 15px; text-align: left; width: 100%; cursor: pointer; border-radius: 8px; font-size: 15px; transition: 0.3s; margin-bottom: 5px; }
-            .sidebar button:hover { background: rgba(255,255,255,0.1); }
-            .sidebar button.active { background: rgba(255,255,255,0.2); font-weight: bold; }
-            .logout-btn { margin-top: auto; background: #c0392b !important; text-align: center !important; }
+            /* Sidebar Estilo Lab */
+            .sidebar { width: 260px; background: var(--primary); color: white; position: fixed; height: 100vh; padding: 20px; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+            .sidebar h2 { font-size: 18px; text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; letter-spacing: 1px; }
+            .sidebar button { background: none; border: none; color: rgba(255,255,255,0.8); padding: 15px; text-align: left; width: 100%; cursor: pointer; border-radius: 8px; font-size: 15px; transition: 0.3s; margin-bottom: 5px; }
+            .sidebar button:hover { background: rgba(255,255,255,0.1); color: white; }
+            .sidebar button.active { background: rgba(255,255,255,0.2); color: white; font-weight: bold; }
+            .logout-btn { margin-top: auto; background: #c0392b !important; color: white !important; text-align: center !important; }
 
             /* Conteúdo */
-            .main-content { margin-left: 260px; padding: 40px; width: 100%; }
-            .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+            .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); }
+            .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
             
-            /* Cards de Estatísticas */
-            .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-            .card-stat { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid var(--primary); }
-            .card-stat h3 { font-size: 14px; color: #777; text-transform: uppercase; }
-            .card-stat p { font-size: 32px; font-weight: bold; color: var(--primary); }
+            /* Stats Cards */
+            .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+            .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid var(--primary); }
+            .stat-card h3 { font-size: 13px; color: #777; text-transform: uppercase; margin-bottom: 10px; }
+            .stat-card p { font-size: 32px; font-weight: bold; color: var(--primary); }
 
-            /* Tabelas */
-            .data-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; }
+            /* Tabela */
+            .card-table { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; }
             table { width: 100%; border-collapse: collapse; }
-            th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #555; }
+            th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #555; font-size: 14px; }
             td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
             tr:hover { background: #f9f9f9; }
 
-            .btn-add { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-            .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-            .ativo { background: #e8f5e9; color: #2e7d32; }
-            .inativo { background: #ffebee; color: #c62828; }
+            /* Botões */
+            .btn-add { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+            .btn-add:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,102,51,0.3); }
+            
+            /* Modal Design */
+            .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index: 2000; backdrop-filter: blur(4px); }
+            .modal-content { background:white; padding:30px; border-radius:15px; width:750px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+            .campo { margin-bottom: 15px; }
+            .campo label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #555; }
+            .campo input, .campo select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
             .section { display: none; }
             .section.active { display: block; animation: fadeIn 0.4s ease; }
@@ -314,83 +321,177 @@ app.get('/admin-dashboard', (req, res) => {
     </head>
     <body>
         <div class="sidebar">
-            <h2>MINISTÉRIO DA SAÚDE</h2>
-            <button onclick="showTab('dash')" id="tab-dash" class="active">📊 Dashboard</button>
-            <button onclick="showTab('labs')" id="tab-labs">🔬 Laboratórios</button>
-            <button onclick="showTab('hosp')" id="tab-hosp">🏥 Hospitais</button>
-            <button onclick="showTab('emp')" id="tab-emp">🏢 Empresas</button>
-            <button class="logout-btn" onclick="logout()">Sair</button>
+            <h2>SNS MINISTÉRIO</h2>
+            <button onclick="showTab('dash')" id="btn-dash" class="active">📊 Dashboard</button>
+            <button onclick="showTab('labs')" id="btn-labs">🔬 Laboratórios</button>
+            <button onclick="showTab('hosp')" id="btn-hosp">🏥 Hospitais</button>
+            <button onclick="showTab('emp')" id="btn-emp">🏢 Empresas</button>
+            <button class="logout-btn" onclick="logout()">🚪 Sair</button>
         </div>
 
-        <div class="main-content">
+        <div class="main">
             <div id="sec-dash" class="section active">
-                <div class="header"><h1>Painel Geral</h1></div>
-                <div class="stats">
-                    <div class="card-stat"><h3>Laboratórios</h3><p id="countLabs">...</p></div>
-                    <div class="card-stat"><h3>Hospitais</h3><p id="countHosp">...</p></div>
-                    <div class="card-stat"><h3>Empresas</h3><p id="countEmp">...</p></div>
+                <div class="header-flex"><h1>Painel Geral</h1></div>
+                <div class="stats-grid">
+                    <div class="stat-card"><h3>Laboratórios</h3><p id="countLabs">0</p></div>
+                    <div class="stat-card"><h3>Hospitais</h3><p id="countHosp">0</p></div>
+                    <div class="stat-card"><h3>Empresas</h3><p id="countEmp">0</p></div>
                 </div>
             </div>
 
             <div id="sec-labs" class="section">
-                <div class="header">
-                    <h1>Laboratórios Cadastrados</h1>
-                    <button class="btn-add" onclick="alert('Funcionalidade de cadastro via modal...')">+ Novo Laboratório</button>
+                <div class="header-flex">
+                    <h1>Laboratórios Registrados</h1>
+                    <button class="btn-add" onclick="openModal('modalLab')">+ Novo Laboratório</button>
                 </div>
-                <div class="data-card">
+                <div class="card-table">
                     <table id="tableLabs">
-                        <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Status</th></tr></thead>
+                        <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Status</th><th>Ação</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
             </div>
-
+            
             </div>
+
+        <div id="modalLab" class="modal">
+            <div class="modal-content">
+                <h3 style="color:var(--primary); margin-bottom:20px;">➕ Registro de Novo Laboratório</h3>
+                <div class="grid-2">
+                    <div class="campo" style="grid-column: span 2;">
+                        <label>🏥 Nome do Laboratório *</label>
+                        <input type="text" id="labNome" placeholder="Ex: LabCentral Luanda">
+                    </div>
+                    <div class="campo">
+                        <label>📄 NIF *</label>
+                        <input type="text" id="labNIF" maxlength="10" placeholder="10 dígitos">
+                    </div>
+                    <div class="campo">
+                        <label>⚖️ Tipo *</label>
+                        <select id="labTipo">
+                            <option value="laboratorio">Laboratório</option>
+                            <option value="hospital">Hospital</option>
+                            <option value="clinica">Clínica</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>📍 Província *</label>
+                        <select id="labProvincia">
+                            <option value="">Selecione</option>
+                            <option value="Bengo">Bengo</option><option value="Benguela">Benguela</option>
+                            <option value="Bié">Bié</option><option value="Cabinda">Cabinda</option>
+                            <option value="Cuando Cubango">Cuando Cubango</option><option value="Cuanza Norte">Cuanza Norte</option>
+                            <option value="Cuanza Sul">Cuanza Sul</option><option value="Cunene">Cunene</option>
+                            <option value="Huambo">Huambo</option><option value="Huíla">Huíla</option>
+                            <option value="Luanda">Luanda</option><option value="Lunda Norte">Lunda Norte</option>
+                            <option value="Lunda Sul">Lunda Sul</option><option value="Malanje">Malanje</option>
+                            <option value="Moxico">Moxico</option><option value="Namibe">Namibe</option>
+                            <option value="Uíge">Uíge</option><option value="Zaire">Zaire</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label>🗺️ Município</label>
+                        <input type="text" id="labMunicipio" placeholder="Ex: Ingombota">
+                    </div>
+                    <div class="campo" style="grid-column: span 2;">
+                        <label>🏛️ Endereço Completo *</label>
+                        <input type="text" id="labEndereco" placeholder="Rua, número, bairro">
+                    </div>
+                    <div class="campo">
+                        <label>📞 Telefone 1 *</label>
+                        <input type="tel" id="labTelefone" placeholder="923000000">
+                    </div>
+                    <div class="campo">
+                        <label>✉️ Email *</label>
+                        <input type="email" id="labEmail" placeholder="contato@lab.ao">
+                    </div>
+                    <div class="campo">
+                        <label>👨‍⚕️ Diretor *</label>
+                        <input type="text" id="labDiretor" placeholder="Nome do Diretor">
+                    </div>
+                    <div class="campo">
+                        <label>🧪 Resp. Técnico</label>
+                        <input type="text" id="labResponsavel" placeholder="Se diferente">
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button class="btn-add" style="flex:2" onclick="salvarLaboratorio()">💾 Salvar Laboratório</button>
+                    <button onclick="closeModal('modalLab')" style="flex:1; border:none; border-radius:8px; cursor:pointer;">Cancelar</button>
+                </div>
+            </div>
+        </div>
 
         <script>
             const token = localStorage.getItem('token');
             if(!token) window.location.href = '/ministerio';
 
-            function showTab(tab) {
+            function showTab(t) {
                 document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
                 document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
-                
-                document.getElementById('sec-' + tab).classList.add('active');
-                document.getElementById('tab-' + tab).classList.add('active');
-                
-                if(tab === 'dash') loadStats();
-                if(tab === 'labs') loadLabs();
+                document.getElementById('sec-' + t).classList.add('active');
+                document.getElementById('btn-' + t).classList.add('active');
+                if(t === 'dash') loadStats();
+                if(t === 'labs') loadLabs();
             }
 
+            function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+            function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
             async function loadStats() {
-                try {
-                    const res = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } });
-                    const data = await res.json();
-                    document.getElementById('countLabs').innerText = data.labs || 0;
-                    document.getElementById('countHosp').innerText = data.hospitais || 0;
-                    document.getElementById('countEmp').innerText = data.empresas || 0;
-                } catch(e) { console.error(e); }
+                const r = await fetch('/api/stats', { headers: {'Authorization': 'Bearer '+token} });
+                const d = await r.json();
+                document.getElementById('countLabs').innerText = d.labs || 0;
+                document.getElementById('countHosp').innerText = d.hospitais || 0;
+                document.getElementById('countEmp').innerText = d.empresas || 0;
             }
 
             async function loadLabs() {
-                try {
-                    const res = await fetch('/api/labs', { headers: { 'Authorization': 'Bearer ' + token } });
-                    const labs = await res.json();
-                    const tbody = document.querySelector('#tableLabs tbody');
-                    tbody.innerHTML = labs.map(l => \`
-                        <tr>
-                            <td>\${l.nome}</td>
-                            <td>\${l.nif}</td>
-                            <td>\${l.provincia}</td>
-                            <td><span class="status-badge \${l.ativo ? 'ativo' : 'inativo'}">\${l.ativo ? 'Ativo' : 'Inativo'}</span></td>
-                        </tr>
-                    \`).join('');
-                } catch(e) { console.error(e); }
+                const r = await fetch('/api/labs', { headers: {'Authorization': 'Bearer '+token} });
+                const labs = await r.json();
+                document.querySelector('#tableLabs tbody').innerHTML = labs.map(l => \`
+                    <tr>
+                        <td><strong>\${l.nome}</strong></td>
+                        <td>\${l.nif}</td>
+                        <td>\${l.provincia}</td>
+                        <td><span style="color:\${l.ativo?'green':'red'}">\${l.ativo?'Ativo':'Inativo'}</span></td>
+                        <td><button onclick="alert('ID: \${l._id}')" style="cursor:pointer; border:none; background:none; color:blue;">Ver</button></td>
+                    </tr>
+                \`).join('');
+            }
+
+            async function salvarLaboratorio() {
+                const dados = {
+                    nome: document.getElementById('labNome').value,
+                    nif: document.getElementById('labNIF').value,
+                    tipo: document.getElementById('labTipo').value,
+                    provincia: document.getElementById('labProvincia').value,
+                    municipio: document.getElementById('labMunicipio').value,
+                    endereco: document.getElementById('labEndereco').value,
+                    telefone: document.getElementById('labTelefone').value,
+                    email: document.getElementById('labEmail').value,
+                    diretor: document.getElementById('labDiretor').value,
+                    responsavelTecnico: document.getElementById('labResponsavel').value,
+                    ativo: true
+                };
+
+                if(!dados.nome || !dados.nif || !dados.provincia) return alert("Preencha os campos obrigatórios!");
+
+                const r = await fetch('/api/labs', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer '+token},
+                    body: JSON.stringify(dados)
+                });
+                const res = await r.json();
+                if(res.success) {
+                    alert("✅ Registrado! API KEY: " + res.apiKey);
+                    closeModal('modalLab');
+                    loadLabs();
+                } else {
+                    alert("Erro ao salvar.");
+                }
             }
 
             function logout() { localStorage.clear(); window.location.href = '/'; }
-            
-            // Auto-load dash
             loadStats();
         </script>
     </body>
