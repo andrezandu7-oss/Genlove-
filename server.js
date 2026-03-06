@@ -483,14 +483,28 @@ app.get('/admin-dashboard', (req, res) => {
                 
                 <!-- Filtros -->
                 <div class="filtros">
-                    <select id="filtroProvincia" onchange="carregarLaboratorios()">
-                        <option value="">Todas Províncias</option>
-                        <option value="Luanda">Luanda</option>
-                        <option value="Benguela">Benguela</option>
-                        <option value="Huíla">Huíla</option>
-                        <option value="Cabinda">Cabinda</option>
-                        <option value="Outra">Outra</option>
-                    </select>
+                    <<select id="filtroProvincia" onchange="carregarLaboratorios()">
+    <option value="">Todas Províncias</option>
+    <option value="Bengo">Bengo</option>
+    <option value="Benguela">Benguela</option>
+    <option value="Bié">Bié</option>
+    <option value="Cabinda">Cabinda</option>
+    <option value="Cuando Cubango">Cuando Cubango</option>
+    <option value="Cuanza Norte">Cuanza Norte</option>
+    <option value="Cuanza Sul">Cuanza Sul</option>
+    <option value="Cunene">Cunene</option>
+    <option value="Huambo">Huambo</option>
+    <option value="Huíla">Huíla</option>
+    <option value="Luanda">Luanda</option>
+    <option value="Lunda Norte">Lunda Norte</option>
+    <option value="Lunda Sul">Lunda Sul</option>
+    <option value="Malanje">Malanje</option>
+    <option value="Moxico">Moxico</option>
+    <option value="Namibe">Namibe</option>
+    <option value="Uíge">Uíge</option>
+    <option value="Zaire">Zaire</option>
+</select>
+
                     <select id="filtroStatus" onchange="carregarLaboratorios()">
                         <option value="">Todos Status</option>
                         <option value="true">Ativo</option>
