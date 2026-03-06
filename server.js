@@ -689,6 +689,65 @@ app.get('/admin-dashboard', (req, res) => {
 </body>
 </html>`);
 });
+// =============================================
+// API DE ESTATÍSTICAS (Para os contadores do topo)
+// =============================================
+app.get('/api/stats', authMiddleware, async (req, res) => {
+    try {
+        // Conta documentos reais no MongoDB
+        const nLabs = await Lab.countDocuments();
+        const nHospitais = await Hospital.countDocuments();
+        const nEmpresas = await Empresa.countDocuments();
+        
+        // Tenta contar certificados (se a coleção existir)
+        const nCertificados = await mongoose.connection.db.collection('certificados').countDocuments().catch(() => 0);
+
+        // Envia os dados no formato que o seu JavaScript espera
+        res.json({
+            labs: nLabs || 0,
+            hospitais: nHospitais || 0,
+            empresas: nEmpresas || 0,
+            certificados: nCertificados || 0
+        });
+    } catch (error) {
+        console.error('Erro na API stats:', error);
+        res.status(500).json({ error: 'Erro ao carregar estatísticas' });
+    }
+});
+
+// =============================================
+// API DE LISTAGEM (Para a tabela de laboratórios)
+// =============================================
+app.get('/api/labs', authMiddleware, async (req, res) => {
+    try {
+        const { provincia, page = 1 } = req.query;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        let filtro = {};
+        // Filtro exato com as 18 províncias que adicionamos no HTML
+        if (provincia && provincia !== "") {
+            filtro.provincia = provincia;
+        }
+
+        const labs = await Lab.find(filtro)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        const total = await Lab.countDocuments(filtro);
+
+        res.json({
+            labs: labs,
+            total: total,
+            pages: Math.ceil(total / limit)
+        });
+    } catch (error) {
+        console.error('Erro ao listar labs:', error);
+        res.status(500).json({ error: 'Erro ao listar laboratórios' });
+    }
+});
+
 
 // ================================================
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
