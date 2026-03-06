@@ -729,32 +729,36 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
     }
 });
 
-// =============================================
-// API DE LISTAGEM (Para a tabela de laboratórios)
-// =============================================
+// LISTAR LABORATÓRIOS (VERSÃO CORRIGIDA E ÚNICA)
 app.get('/api/labs', authMiddleware, async (req, res) => {
     try {
-        const { provincia, page = 1 } = req.query;
+        const { provincia, page = 1, ativo } = req.query;
         const limit = 10;
         const skip = (page - 1) * limit;
 
         let filtro = {};
-        // Filtro exato com as 18 províncias que adicionamos no HTML
+        
+        // Filtro por província
         if (provincia && provincia !== "") {
             filtro.provincia = provincia;
         }
 
+        // Filtro por status (Ativo/Inativo)
+        if (ativo !== undefined && ativo !== "") {
+            filtro.ativo = (ativo === 'true');
+        }
+
+        const total = await Lab.countDocuments(filtro);
         const labs = await Lab.find(filtro)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
 
-        const total = await Lab.countDocuments(filtro);
-
         res.json({
             labs: labs,
+            pages: Math.ceil(total / limit),
             total: total,
-            pages: Math.ceil(total / limit)
+            currentPage: parseInt(page)
         });
     } catch (error) {
         console.error('Erro ao listar labs:', error);
