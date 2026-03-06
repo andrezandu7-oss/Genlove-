@@ -266,256 +266,132 @@ app.post('/api/login', async (req, res) => {
 // DASHBOARD DO MINISTÉRIO
 // ============================================
 app.get('/admin-dashboard', (req, res) => {
-    [span_0](start_span)[span_1](start_span)// Note : Correction des syntaxes de chaînes et des IDs pour éviter les erreurs JS au chargement[span_0](end_span)[span_1](end_span)
     res.send(`<!DOCTYPE html>
     <html lang="pt">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Ministério da Saúde - SNS</title>
+        <title>SNS - Ministério da Saúde</title>
         <style>
-            * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
-            body { display:flex; background:#f0f2f5; min-height: 100vh; }
+            :root { --primary: #006633; --bg: #f4f7f6; --text: #333; }
+            * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+            body { display: flex; background: var(--bg); min-height: 100vh; color: var(--text); }
             
-            [span_2](start_span)/* Sidebar - Design conforme à la partie labo[span_2](end_span) */
-            .sidebar {
-                width:260px;
-                background:#006633;
-                color:white;
-                height:100vh;
-                padding:20px;
-                position:fixed;
-                display:flex;
-                flex-direction:column;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            }
-            .sidebar h2 {
-                margin-bottom:30px;
-                text-align:center;
-                padding-bottom:15px;
-                border-bottom:1px solid rgba(255,255,255,0.2);
-                font-size: 18px;
-                letter-spacing: 1px;
-            }
-            .sidebar button {
-                display:block;
-                width:100%;
-                color:rgba(255,255,255,0.9);
-                padding:14px;
-                margin:5px 0;
-                border-radius:8px;
-                cursor:pointer;
-                text-align:left;
-                font-size:15px;
-                border:none;
-                background:none;
-                transition: 0.3s;
-            }
-            .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
-            .sidebar button.active { background:rgba(255,255,255,0.2); font-weight: bold; }
-            
-            .sidebar .sair-btn {
-                background:#cc3300;
-                margin-top:auto;
-                text-align:center;
-                color: white;
-            }
+            /* Sidebar Estilo Premium */
+            .sidebar { width: 260px; background: var(--primary); color: white; position: fixed; height: 100vh; padding: 20px; display: flex; flex-direction: column; }
+            .sidebar h2 { font-size: 1.2rem; text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+            .sidebar button { background: none; border: none; color: white; padding: 15px; text-align: left; width: 100%; cursor: pointer; border-radius: 8px; font-size: 15px; transition: 0.3s; margin-bottom: 5px; }
+            .sidebar button:hover { background: rgba(255,255,255,0.1); }
+            .sidebar button.active { background: rgba(255,255,255,0.2); font-weight: bold; }
+            .logout-btn { margin-top: auto; background: #c0392b !important; text-align: center !important; }
 
-            /* Área Principal */
-            .main { margin-left:260px; padding:40px; width:calc(100% - 260px); }
+            /* Conteúdo */
+            .main-content { margin-left: 260px; padding: 40px; width: 100%; }
+            .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
             
-            .stats-grid {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 20px;
-                margin-bottom: 30px;
-            }
-            .stat-card {
-                background: white;
-                padding: 20px;
-                border-radius: 12px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-                text-align: center;
-                border-top: 4px solid #006633;
-            }
-            .stat-card h3 { color: #666; font-size: 14px; margin-bottom: 10px; }
-            .stat-card .value { color: #006633; font-size: 32px; font-weight: bold; }
+            /* Cards de Estatísticas */
+            .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+            .card-stat { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid var(--primary); }
+            .card-stat h3 { font-size: 14px; color: #777; text-transform: uppercase; }
+            .card-stat p { font-size: 32px; font-weight: bold; color: var(--primary); }
 
-            .card { background:white; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
-            
-            table { width:100%; border-collapse:collapse; margin-top:15px; }
-            th { background:#f8f9fa; color:#555; padding:15px; text-align:left; border-bottom:2px solid #eee; }
-            td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
-            
-            .btn-novo { background:#006633; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight: 500; }
-            .btn-desativar { background:#fff0f0; color:#c00; border:1px solid #ffcaca; padding:6px 12px; border-radius:4px; cursor:pointer; }
-            
-            .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
-            .badge-ativo { background: #e8f5e9; color: #2e7d32; }
-            .badge-inativo { background: #ffebee; color: #c62828; }
+            /* Tabelas */
+            .data-card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #555; }
+            td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
+            tr:hover { background: #f9f9f9; }
 
-            /* Modal */
-            .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index: 1000; }
-            .modal-content { background:white; padding:30px; border-radius:12px; width:450px; }
-            .modal-content input { width:100%; padding:12px; margin:10px 0; border: 1px solid #ddd; border-radius: 6px; }
-            
-            .secao { display:none; animation: fadeIn 0.3s ease; }
+            .btn-add { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+            .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+            .ativo { background: #e8f5e9; color: #2e7d32; }
+            .inativo { background: #ffebee; color: #c62828; }
+
+            .section { display: none; }
+            .section.active { display: block; animation: fadeIn 0.4s ease; }
             @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         </style>
     </head>
     <body>
         <div class="sidebar">
-            <h2>SNS MINISTÉRIO</h2>
-            <button onclick="mostrarSecao('dashboard')" id="btn-dashboard" class="active">📊 Dashboard</button>
-            <button onclick="mostrarSecao('labs')" id="btn-labs">🔬 Laboratórios</button>
-            <button onclick="mostrarSecao('hospitais')" id="btn-hospitais">🏥 Hospitais</button>
-            <button onclick="mostrarSecao('empresas')" id="btn-empresas">🏢 Empresas</button>
-            <button class="sair-btn" onclick="logout()">🚪 Sair</button>
+            <h2>MINISTÉRIO DA SAÚDE</h2>
+            <button onclick="showTab('dash')" id="tab-dash" class="active">📊 Dashboard</button>
+            <button onclick="showTab('labs')" id="tab-labs">🔬 Laboratórios</button>
+            <button onclick="showTab('hosp')" id="tab-hosp">🏥 Hospitais</button>
+            <button onclick="showTab('emp')" id="tab-emp">🏢 Empresas</button>
+            <button class="logout-btn" onclick="logout()">Sair</button>
         </div>
 
-        <div class="main">
-            <div id="secaoDashboard" class="secao" style="display:block;">
-                <h1>Painel de Controle</h1>
-                <div class="stats-grid">
-                    <div class="stat-card"><h3>Laboratórios</h3><div class="value" id="totalLabs">0</div></div>
-                    <div class="stat-card"><h3>Hospitais</h3><div class="value" id="totalHospitais">0</div></div>
-                    <div class="stat-card"><h3>Empresas</h3><div class="value" id="totalEmpresas">0</div></div>
+        <div class="main-content">
+            <div id="sec-dash" class="section active">
+                <div class="header"><h1>Painel Geral</h1></div>
+                <div class="stats">
+                    <div class="card-stat"><h3>Laboratórios</h3><p id="countLabs">...</p></div>
+                    <div class="card-stat"><h3>Hospitais</h3><p id="countHosp">...</p></div>
+                    <div class="card-stat"><h3>Empresas</h3><p id="countEmp">...</p></div>
                 </div>
             </div>
 
-            <div id="secaoLabs" class="secao">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h1>Laboratórios</h1>
-                    <button class="btn-novo" onclick="abrirModal('modalLab')">+ Novo Laboratório</button>
+            <div id="sec-labs" class="section">
+                <div class="header">
+                    <h1>Laboratórios Cadastrados</h1>
+                    <button class="btn-add" onclick="alert('Funcionalidade de cadastro via modal...')">+ Novo Laboratório</button>
                 </div>
-                <div class="card" style="margin-top:20px;">
-                    <table id="labsTable">
-                        <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Status</th><th>Ações</th></tr></thead>
+                <div class="data-card">
+                    <table id="tableLabs">
+                        <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Status</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
             </div>
 
-            <div id="secaoHospitais" class="secao">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h1>Hospitais</h1>
-                    <button class="btn-novo" onclick="abrirModal('modalHospital')">+ Novo Hospital</button>
-                </div>
-                <div class="card" style="margin-top:20px;">
-                    <table id="hospitaisTable">
-                        <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Diretor</th><th>Status</th><th>Ações</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
             </div>
-
-            <div id="secaoEmpresas" class="secao">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h1>Empresas</h1>
-                    <button class="btn-novo" onclick="abrirModal('modalEmpresa')">+ Nova Empresa</button>
-                </div>
-                <div class="card" style="margin-top:20px;">
-                    <table id="empresasTable">
-                        <thead><tr><th>Nome</th><th>NIF</th><th>Responsável</th><th>Status</th><th>Ações</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div id="modalLab" class="modal">
-            <div class="modal-content">
-                <h3>Novo Laboratório</h3>
-                <input type="text" id="labNome" placeholder="Nome da Instituição">
-                <input type="text" id="labNIF" placeholder="NIF (10 dígitos)" maxlength="10">
-                <input type="text" id="labProvincia" placeholder="Província">
-                <input type="email" id="labEmail" placeholder="Email">
-                <input type="text" id="labDiretor" placeholder="Diretor">
-                <button class="btn-novo" style="width:100%; margin-top:10px;" onclick="criarLaboratorio()">Salvar</button>
-                <button onclick="fecharModal('modalLab')" style="width:100%; border:none; background:none; margin-top:10px; cursor:pointer;">Cancelar</button>
-            </div>
-        </div>
 
         <script>
-            const token = localStorage.getItem("token");
-            [span_3](start_span)if(!token) window.location.href="/ministerio";[span_3](end_span)
+            const token = localStorage.getItem('token');
+            if(!token) window.location.href = '/ministerio';
 
-            function mostrarSecao(s){
-                [span_4](start_span)// Correction de la syntaxe de masquage[span_4](end_span)
-                const secoes = ['secaoDashboard', 'secaoLabs', 'secaoHospitais', 'secaoEmpresas'];
-                secoes.forEach(id => {
-                    const el = document.getElementById(id);
-                    if(el) el.style.display = 'none';
-                });
-                
+            function showTab(tab) {
+                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
                 document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
                 
-                const targetId = "secao" + s.charAt(0).toUpperCase() + s.slice(1);
-                const targetEl = document.getElementById(targetId);
-                if(targetEl) targetEl.style.display = "block";
-                document.getElementById('btn-' + s).classList.add('active');
-
-                [span_5](start_span)if(s === 'dashboard') carregarStats();[span_5](end_span)
-                if(s === 'labs') carregarLabs();
-                if(s === 'hospitais') carregarHospitais();
-                if(s === 'empresas') carregarEmpresas();
+                document.getElementById('sec-' + tab).classList.add('active');
+                document.getElementById('tab-' + tab).classList.add('active');
+                
+                if(tab === 'dash') loadStats();
+                if(tab === 'labs') loadLabs();
             }
 
-            function abrirModal(id){ document.getElementById(id).style.display="flex"; }
-            function fecharModal(id){ document.getElementById(id).style.display="none"; }
-
-            async function carregarStats(){
-                [span_6](start_span)const r = await fetch("/api/stats", {headers:{"Authorization":"Bearer "+token}});[span_6](end_span)
-                const d = await r.json();
-                document.getElementById("totalLabs").innerText = d.labs || 0;
-                document.getElementById("totalHospitais").innerText = d.hospitais || 0;
-                document.getElementById("totalEmpresas").innerText = d.empresas || 0;
+            async function loadStats() {
+                try {
+                    const res = await fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } });
+                    const data = await res.json();
+                    document.getElementById('countLabs').innerText = data.labs || 0;
+                    document.getElementById('countHosp').innerText = data.hospitais || 0;
+                    document.getElementById('countEmp').innerText = data.empresas || 0;
+                } catch(e) { console.error(e); }
             }
 
-            async function carregarLabs(){
-                [span_7](start_span)const r = await fetch("/api/labs", {headers:{"Authorization":"Bearer "+token}});[span_7](end_span)
-                const labs = await r.json();
-                let html = labs.map(l => \`
-                    <tr>
-                        <td><strong>\${l.nome}</strong></td>
-                        <td>\${l.nif}</td>
-                        <td>\${l.provincia}</td>
-                        <td><span class="status-badge \${l.ativo?'badge-ativo':'badge-inativo'}">\${l.ativo?'Ativo':'Inativo'}</span></td>
-                        <td><button class="btn-desativar" onclick="desativarLab('\${l._id}')">Desativar</button></td>
-                    </tr>
-                \`).join('');
-                [span_8](start_span)document.querySelector("#labsTable tbody").innerHTML = html;[span_8](end_span)
+            async function loadLabs() {
+                try {
+                    const res = await fetch('/api/labs', { headers: { 'Authorization': 'Bearer ' + token } });
+                    const labs = await res.json();
+                    const tbody = document.querySelector('#tableLabs tbody');
+                    tbody.innerHTML = labs.map(l => \`
+                        <tr>
+                            <td>\${l.nome}</td>
+                            <td>\${l.nif}</td>
+                            <td>\${l.provincia}</td>
+                            <td><span class="status-badge \${l.ativo ? 'ativo' : 'inativo'}">\${l.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                        </tr>
+                    \`).join('');
+                } catch(e) { console.error(e); }
             }
 
-            // Fonctions de création (similaires au code original mais nettoyées)
-            async function criarLaboratorio(){
-                const nif = document.getElementById("labNIF").value;
-                [span_9](start_span)if(!/^\\d{10}$/.test(nif)) return alert("NIF Inválido");[span_9](end_span)
-                const dados = {
-                    nome: document.getElementById("labNome").value,
-                    nif,
-                    provincia: document.getElementById("labProvincia").value,
-                    email: document.getElementById("labEmail").value,
-                    diretor: document.getElementById("labDiretor").value,
-                    tipo: "laboratorio"
-                };
-                const r = await fetch("/api/labs", {
-                    method:"POST",
-                    headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
-                    body:JSON.stringify(dados)
-                });
-                const d = await r.json();
-                if(d.success){
-                    alert("✅ Sucesso! API KEY: " + d.apiKey);
-                    fecharModal('modalLab');
-                    carregarLabs();
-                }
-            }
-
-            function logout(){ localStorage.removeItem("token"); window.location.href="/"; [span_10](start_span)}
+            function logout() { localStorage.clear(); window.location.href = '/'; }
             
-            // Init
-            carregarStats();
+            // Auto-load dash
+            loadStats();
         </script>
     </body>
     </html>`);
