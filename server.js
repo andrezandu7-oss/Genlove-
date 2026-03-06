@@ -855,6 +855,149 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+// =============================================
+// GÉNÉRATION PDF POUR LE MINISTÈRE (via token)
+// =============================================
+app.post('/api/certificados/pdf-admin', authMiddleware, async (req, res) => {
+    try {
+        const { numero } = req.body;
+        if (!numero) return res.status(400).json({ error: 'Número do certificado não fornecido' });
+
+        // Chercher le certificat sans restriction de laboratoire
+        const certificado = await Certificate.findOne({ numero }).populate('emitidoPor');
+        if (!certificado) return res.status(404).json({ error: 'Certificado não encontrado' });
+
+        const lab = certificado.emitidoPor; // laboratório que emitiu
+        const dados = certificado.prepararParaPDF ? certificado.prepararParaPDF() : {
+            numero: certificado.numero,
+            tipo: certificado.tipo,
+            paciente: certificado.paciente,
+            laborantin: certificado.laborantin || { nome: 'Não informado', registro: '' },
+            dados: certificado.dados,
+            imc: certificado.imc,
+            idade: certificado.idade,
+            classificacaoIMC: certificado.classificacaoIMC,
+            emitidoEm: certificado.emitidoEm
+        };
+
+        // Création du PDF (identique à la route du labo)
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=certificado-${numero}.pdf`);
+        doc.pipe(res);
+
+        // ========== Copiez ici tout le code de génération PDF depuis la route /api/certificados/pdf ==========
+        // (depuis "EN-TÊTE DU DOCUMENT" jusqu'à doc.end())
+        // Adaptez les références à req.lab en utilisant la variable 'lab'
+        // Exemple de début :
+        doc.fillColor('#006633').fontSize(20).text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+        doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+        doc.fontSize(24).text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
+        doc.strokeColor('#006633').lineWidth(2).moveTo(doc.page.width / 2 - 250, 150).lineTo(doc.page.width / 2 + 250, 150).stroke();
+
+        let y = 180;
+        doc.fillColor('#006633').fontSize(14).text(lab.nome, 50, y);
+        doc.fontSize(10).fillColor('#666')
+            .text(`NIF: ${lab.nif} | ${lab.provincia}`, 50, y + 20)
+            .text(`Endereço: ${lab.endereco} | Tel: ${lab.telefone}`, 50, y + 35);
+        y += 60;
+
+        doc.fillColor('#006633').fontSize(12).text(`CERTIFICADO N°: ${numero}`, 50, y);
+        doc.fontSize(10).fillColor('#666').text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, y + 15);
+        y += 40;
+
+        doc.fillColor('#006633').fontSize(12).text('RESPONSÁVEL PELA EMISSÃO:', 50, y);
+        y += 20;
+        doc.fillColor('#000').fontSize(11)
+            .text(`Nome: ${dados.laborantin?.nome || 'Não informado'}`, 70, y);
+        y += 15;
+        if (dados.laborantin?.registro) {
+            doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
+            y += 25;
+        } else {
+            y += 10;
+        }
+
+        doc.fillColor('#006633').fontSize(12).text('DADOS DO PACIENTE:', 50, y);
+        y += 20;
+        doc.fillColor('#000').fontSize(11)
+            .text(`Nome: ${dados.paciente?.nomeCompleto || 'Não informado'}`, 70, y);
+        y += 15;
+        doc.text(`BI: ${dados.paciente?.bi || 'Não informado'}`, 70, y);
+        y += 15;
+        if (dados.paciente?.dataNascimento) {
+            doc.text(`Data Nascimento: ${new Date(dados.paciente.dataNascimento).toLocaleDateString('pt-PT')}`, 70, y);
+            y += 15;
+        }
+        if (dados.idade) {
+            doc.text(`Idade: ${dados.idade} anos`, 70, y);
+            y += 15;
+        }
+        if (dados.paciente?.genero) {
+            const genero = dados.paciente.genero == 'M' ? 'Masculino' : 'Feminino';
+            doc.text(`Género: ${genero}`, 70, y);
+            y += 15;
+        }
+        if (dados.paciente?.telefone) {
+            doc.text(`Telefone: ${dados.paciente.telefone}`, 70, y);
+            y += 20;
+        }
+
+        doc.fillColor('#006633').fontSize(12).text('DADOS MÉDICOS:', 50, y);
+        y += 20;
+
+        const tipos = {
+            1: 'CERTIFICADO DE GENÓTIPO',
+            2: 'CERTIFICADO DE BOA SAÚDE',
+            3: 'CERTIFICADO DE INCAPACIDADE',
+            4: 'CERTIFICADO DE APTIDÃO',
+            5: 'CERTIFICADO DE SAÚDE MATERNA',
+            6: 'CERTIFICADO DE PRÉ-NATAL',
+            7: 'CERTIFICADO EPIDEMIOLÓGICO',
+            8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
+        };
+        doc.fillColor('#333').fontSize(12).text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
+        y += 25;
+
+        // Insérez ici le code d'affichage des examens (comme dans la route existante)
+        // ... (tout le bloc avec todosExames, etc.)
+
+        if (dados.imc) {
+            doc.fontSize(11).fillColor('#000')
+                .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
+            y += 25;
+        }
+
+        // Signatures
+        doc.lineWidth(1).moveTo(70, y).lineTo(270, y).stroke();
+        doc.fontSize(10).text('Assinatura do Laborantin', 70, y + 5)
+            .text(dados.laborantin?.nome || '___________________', 70, y + 20);
+        doc.lineWidth(1).moveTo(350, y).lineTo(550, y).stroke();
+        doc.fontSize(10).text('Assinatura do Diretor Clínico', 350, y + 5)
+            .text(lab.diretor || '___________________', 350, y + 20);
+        y += 50;
+
+        // QR Code
+        try {
+            const textoQR = `${numero}|${lab.nome}|${dados.paciente?.nomeCompleto || 'PACIENTE'}|${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`;
+            const qrBuffer = await QRCode.toBuffer(textoQR, { errorCorrectionLevel: 'H', margin: 1, width: 100, color: { dark: '#006633', light: '#FFFFFF' } });
+            const qrX = 310 - 50;
+            const qrY = y - 20;
+            doc.image(qrBuffer, qrX, qrY, { width: 100 });
+            doc.fontSize(7).fillColor('#006633').text('SCAN PARA VERIFICAR', qrX, qrY - 12, { width: 100, align: 'center' });
+            doc.fontSize(6).fillColor('#999').text('válido por QR', qrX, qrY + 110, { width: 100, align: 'center' });
+        } catch (qrError) {
+            doc.fontSize(7).fillColor('#999').text('QR indisponível', 280, y - 10);
+        }
+
+        doc.fontSize(8).fillColor('#666').text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
+
+        doc.end();
+    } catch (error) {
+        console.error('Erreur PDF admin:', error);
+        res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
+    }
+});
 
 // =============================================
 // ROUTE POUR GÉNÉRER LES PDF
