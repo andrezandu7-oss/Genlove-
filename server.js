@@ -1628,19 +1628,17 @@ app.get('/novo-laboratorio', (req, res) => {
 });
 
 // =============================================
-// STATS GLOBAIS (MINISTÉRIO)
+// API DE ESTATÍSTICAS (CORRIGIDA)
 // =============================================
 app.get('/api/stats', authMiddleware, async (req, res) => {
     try {
-        // Contagem real dos documentos no MongoDB
         const nLabs = await Lab.countDocuments();
         const nHospitais = await Hospital.countDocuments();
         const nEmpresas = await Empresa.countDocuments();
         
-        // Contagem de certificados (se a coleção existir)
-        const nCertificados = await mongoose.model('Certificado').countDocuments().catch(() => 0);
+        // Usa o nome correto do modelo definido no seu server.js
+        const nCertificados = await Certificate.countDocuments().catch(() => 0);
 
-        // Envia os dados para o Dashboard
         res.json({
             labs: nLabs || 0,
             hospitais: nHospitais || 0,
@@ -1648,23 +1646,27 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
             certificados: nCertificados || 0
         });
     } catch (error) {
-        console.error('Erro ao carregar stats:', error);
         res.status(500).json({ error: 'Erro ao carregar estatísticas' });
     }
 });
 
 // =============================================
-// LISTAR LABORATÓRIOS (PARA O TABULEIRO)
+// API DE LISTAGEM DE LABS (CORRIGIDA PARA O BOTÃO)
 // =============================================
 app.get('/api/labs', authMiddleware, async (req, res) => {
     try {
-        const { provincia, page = 1 } = req.query;
+        const { provincia, page = 1, ativo } = req.query;
         const limit = 10;
         const skip = (page - 1) * limit;
 
         let filtro = {};
+        
         if (provincia && provincia !== "") {
             filtro.provincia = provincia;
+        }
+
+        if (ativo !== undefined && ativo !== "") {
+            filtro.ativo = (ativo === 'true');
         }
 
         const total = await Lab.countDocuments(filtro);
@@ -1673,16 +1675,17 @@ app.get('/api/labs', authMiddleware, async (req, res) => {
             .skip(skip)
             .limit(limit);
 
-        // O Dashboard espera o objeto "labs"
         res.json({
             labs: labs,
             pages: Math.ceil(total / limit),
-            total: total
+            total: total,
+            currentPage: parseInt(page)
         });
     } catch (error) {
         res.status(500).json({ error: 'Erro ao listar laboratórios' });
     }
 });
+
 
 // =============================================
 // INICIALIZAÇÃO DO SERVIDOR
