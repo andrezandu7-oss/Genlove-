@@ -456,278 +456,752 @@ app.get('/admin-dashboard', (req, res) => {
     '</body></html>');
 });
 
-// ============================================
-// DASHBOARD DO LABORATÓRIO
-// ============================================
+// DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
+// ================================================
 app.get('/lab-dashboard', (req, res) => {
-    res.send('<!DOCTYPE html>' +
-    '<html>' +
-    '<head><title>Laboratório - SNS</title>' +
-    '<style>' +
-    'body{font-family:Arial;margin:0;display:flex;}' +
-    '.sidebar{width:250px;background:#006633;color:white;height:100vh;padding:20px;position:fixed;}' +
-    '.sidebar a{display:block;color:white;text-decoration:none;padding:10px;margin:5px 0;}' +
-    '.sidebar a:hover{background:#004d26;}' +
-    '.main{margin-left:290px;padding:30px;}' +
-    '.btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;margin:5px;}' +
-    '.welcome{background:#e8f5e9;padding:20px;border-left:5px solid #006633;margin-bottom:20px;}' +
-    'table{width:100%;border-collapse:collapse;}' +
-    'th{background:#006633;color:white;padding:10px;}' +
-    'td{padding:10px;border-bottom:1px solid #ddd;}' +
-    '</style>' +
-    '</head>' +
-    '<body>' +
-    '<div class="sidebar">' +
-    '<h2>SNS - Laboratório</h2>' +
-    '<a href="#" onclick="mostrarSecao(\'dashboard\')">📊 Dashboard</a>' +
-    '<a href="#" onclick="mostrarSecao(\'certificados\')">📋 Certificados</a>' +
-    '<button onclick="logout()" style="margin-top:20px;background:#dc3545;color:white;border:none;padding:10px;width:100%;">Sair</button>' +
-    '</div>' +
-    '<div class="main">' +
-    '<div id="secaoDashboard">' +
-    '<div id="welcomeBanner" class="welcome"></div>' +
-    '<h1>Dashboard</h1>' +
-    '<div>Total de certificados emitidos: <span id="totalCerts">0</span></div>' +
-    '</div>' +
-    '<div id="secaoCertificados" style="display:none;">' +
-    '<h1>Certificados</h1>' +
-    '<button class="btn" onclick="mostrarModalCertificado()">+ Novo Certificado</button>' +
-    '<table id="certTable"><thead><tr><th>Número</th><th>Tipo</th><th>Paciente</th><th>Data</th></tr></thead><tbody></tbody></table>' +
-    '</div>' +
-    '</div>' +
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratório - SNS</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { display:flex; background:#f5f5f5; min-height: 100vh; }
+        
+        /* Sidebar Estilizada */
+        .sidebar {
+            width:260px;
+            background:#006633;
+            color:white;
+            height:100vh;
+            padding:20px;
+            position:fixed;
+            display:flex;
+            flex-direction:column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        .sidebar h2 { 
+            margin-bottom:30px; 
+            text-align:center;
+            padding-bottom:15px;
+            border-bottom:1px solid rgba(255,255,255,0.2);
+            font-size: 22px;
+        }
+        .sidebar button, .sidebar .nav-link {
+            display:block;
+            width:100%;
+            color:rgba(255,255,255,0.9);
+            text-decoration:none;
+            padding:14px;
+            margin:5px 0;
+            border-radius:8px;
+            cursor:pointer;
+            text-align:left;
+            font-size:15px;
+            border:none;
+            background:none;
+            transition: 0.3s;
+        }
+        .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
+        
+        .sidebar .novo-btn {
+            background:#ffa500;
+            color:#00331a;
+            font-weight:bold;
+            margin:20px 0;
+            text-align:center;
+        }
+        .sidebar .novo-btn:hover { background:#ffb833; transform: translateY(-2px); }
+        
+        .sidebar .sair-btn {
+            background:#cc3300;
+            margin-top:auto;
+            text-align:center;
+            color: white;
+        }
+        .sidebar .sair-btn:hover { background:#e63900; }
 
-    '<div id="modalCertificado" class="modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">' +
-    '<div class="modal-content" style="background:white;padding:20px;border-radius:10px;width:400px;">' +
-    '<h3>Novo Certificado</h3>' +
-    '<input type="text" id="certNome" placeholder="Nome completo">' +
-    '<select id="certTipo">' +
-    '<option value="1">🧬 Genótipo</option>' +
-    '<option value="2">🩺 Boa Saúde</option>' +
-    '<option value="3">📋 Incapacidade</option>' +
-    '<option value="4">💪 Aptidão</option>' +
-    '</select>' +
-    '<input type="text" id="certBI" placeholder="BI">' +
-    '<button onclick="emitirCertificado()" style="background:#006633;color:white;padding:10px;width:100%;">Emitir</button>' +
-    '<button onclick="fecharModal()" style="margin-top:5px;">Cancelar</button>' +
-    '</div></div>' +
+        /* Área Principal */
+        .main { margin-left:260px; padding:40px; width:100%; }
+        .welcome {
+            background:white;
+            padding:25px;
+            border-left:6px solid #006633;
+            margin-bottom:30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        /* Controle de Seções */
+        .secao { display:none; animation: fadeIn 0.3s ease; }
+        .secao.active { display:block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    '<script>' +
-    'const labKey=localStorage.getItem("labKey");' +
-    'if(!labKey) window.location.href="/lab-login";' +
+        /* Tabelas e Botões */
+        .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
+        table { width:100%; border-collapse:collapse; margin-top:10px; }
+        th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
+        td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
+        tr:hover { background:#fafafa; }
+        
+        .btn-acao { 
+            background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
+            cursor:pointer; transition:0.2s; margin-right:5px;
+        }
+        .btn-acao:hover { background:#e0e0e0; transform: scale(1.1); }
+        
+        .status-badge {
+            background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>SNS - LABORATÓRIO</h2>
+        <button onclick="mostrarSeccion('dashboardSection')">📊 Dashboard</button>
+        <button onclick="mostrarSeccion('certificadosSection')">📋 Histórico</button>
+        <button class="novo-btn" onclick="location.href='/novo-certificado'">➕ NOVO CERTIFICADO</button>
+        <button class="sair-btn" onclick="logout()">🚪 Sair</button>
+    </div>
+    
+    <div class="main">
+        <div id="welcome" class="welcome"><h2>Carregando...</h2></div>
+        
+        <div id="dashboardSection" class="secao active">
+            <div class="card">
+                <h3>📊 Estatísticas e Visão Geral</h3>
+                <p style="margin-top:15px; color:#666;">Selecione uma opção no menu lateral para gerenciar os certificados do Sistema Nacional de Saúde.</p>
+            </div>
+        </div>
+        
+        <div id="certificadosSection" class="secao">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2>📋 Certificados Emitidos</h2>
+                    <button class="btn-acao" onclick="carregarCertificados()">🔄 Atualizar</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nº Certificado</th>
+                            <th>Tipo</th>
+                            <th>Paciente</th>
+                            <th>Data</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela">
+                        <tr><td colspan="5" style="text-align:center;">Carregando registros...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
-    'async function carregarLaboratorio(){' +
-    'const r=await fetch("/api/labs/me",{headers:{"x-api-key":labKey}});' +
-    'const lab=await r.json();' +
-    'if(lab){' +
-    'document.getElementById("welcomeBanner").innerHTML="👋 Olá, "+lab.nome+"! 💪 Pronto para mais um dia de trabalho? Vamos juntos!";' +
-    '}}' +
+    <script>
+        const key = localStorage.getItem("labKey");
+        if (!key) window.location.href = "/lab-login";
 
-    'function mostrarSecao(s){' +
-    'document.getElementById("secaoDashboard").style.display="none";' +
-    'document.getElementById("secaoCertificados").style.display="none";' +
-    'if(s==="dashboard"){document.getElementById("secaoDashboard").style.display="block";carregarStats();}' +
-    'if(s==="certificados"){document.getElementById("secaoCertificados").style.display="block";carregarCertificados();}}' +
+        // Types mis à jour selon vos besoins
+        const tipos = ["", "GENÓTIPO", "BOA SAÚDE", "INCAPACIDADE", "APTIDÃO", "SAÚDE MATERNA", "PRÉ-NATAL", "EPIDEMIOLÓGICO", "CSD"];
 
-    'function mostrarModalCertificado(){document.getElementById("modalCertificado").style.display="flex";}' +
-    'function fecharModal(){document.getElementById("modalCertificado").style.display="none";}' +
+        function mostrarSeccion(id) {
+            document.querySelectorAll('.secao').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if(id === 'certificadosSection') carregarCertificados();
+        }
 
-    'async function carregarStats(){' +
-    'const r=await fetch("/api/certificados/lab",{headers:{"x-api-key":labKey}});' +
-    'const certs=await r.json();' +
-    'document.getElementById("totalCerts").innerText=certs.length;}' +
+        async function carregarDados() {
+            try {
+                const r = await fetch("/api/labs/me", { headers: { "x-api-key": key } });
+                const data = await r.json();
+                document.getElementById("welcome").innerHTML = "<h2>👋 Olá, " + data.nome + "</h2><p>Laboratório Autorizado pelo Ministério da Saúde</p>";
+            } catch (e) { console.error(e); }
+        }
 
-    'async function carregarCertificados(){' +
-    'const r=await fetch("/api/certificados/lab",{headers:{"x-api-key":labKey}});' +
-    'const certs=await r.json();' +
-    'let html="";' +
-    'certs.forEach(c=>{html+="<tr><td>"+c.numero+"</td><td>"+c.tipo+"</td><td>"+c.paciente.nomeCompleto+"</td><td>"+new Date(c.emitidoEm).toLocaleDateString()+"</td></tr>";});' +
-    'document.querySelector("#certTable tbody").innerHTML=html;}' +
+        async function carregarCertificados() {
+            const tbody = document.getElementById("tabela");
+            try {
+                const r = await fetch("/api/certificados/lab", { headers: { "x-api-key": key } });
+                const lista = await r.json();
+                
+                if (!lista || lista.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px;">Nenhum certificado emitido ainda.</td></tr>';
+                    return;
+                }
 
-    'async function emitirCertificado(){' +
-    'const dados={paciente:{nomeCompleto:document.getElementById("certNome").value,bi:document.getElementById("certBI").value},dados:{}};' +
-    'const tipo=document.getElementById("certTipo").value;' +
-    'const r=await fetch("/api/certificados/emitir/"+tipo,{method:"POST",headers:{"Content-Type":"application/json","x-api-key":labKey},body:JSON.stringify(dados)});' +
-    'const d=await r.json();' +
-    'if(d.success){alert("✅ Certificado emitido! Nº: "+d.numero);fecharModal();carregarCertificados();}' +
-    'else alert("Erro: "+d.erro);}' +
+                tbody.innerHTML = lista.map(c => \`
+                    <tr>
+                        <td><strong>\${c.numero}</strong></td>
+                        <td><span class="status-badge">\${tipos[c.tipo] || 'OUTRO'}</span></td>
+                        <td>\${c.paciente?.nomeCompleto || 'N/I'}</td>
+                        <td>\${new Date(c.emitidoEm).toLocaleDateString('pt-PT')}</td>
+                        <td>
+                            <button class="btn-acao" onclick="gerarPDF('\${c.numero}', 'view')" title="Visualizar">👁️</button>
+                            <button class="btn-acao" onclick="gerarPDF('\${c.numero}', 'print')" title="Imprimir">🖨️</button>
+                            <button class="btn-acao" onclick="gerarPDF('\${c.numero}', 'download')" title="Baixar">📥</button>
+                        </td>
+                    </tr>
+                \`).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">Erro ao carregar dados.</td></tr>';
+            }
+        }
 
-    'carregarLaboratorio();' +
-    'mostrarSecao("dashboard");' +
-    'function logout(){localStorage.removeItem("labKey");window.location.href="/";}' +
-    '</script>' +
-    '</body></html>');
+        async function gerarPDF(numero, acao) {
+            try {
+                const res = await fetch('/api/certificados/pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-api-key': key },
+                    body: JSON.stringify({ numero })
+                });
+
+                if (!res.ok) throw new Error();
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+
+                if (acao === 'view') window.open(url, '_blank');
+                if (acao === 'download') {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = \`Certificado-\${numero}.pdf\`;
+                    a.click();
+                }
+                if (acao === 'print') {
+                    const win = window.open(url, '_blank');
+                    win.onload = () => win.print();
+                }
+            } catch (e) { alert("Erro ao processar PDF"); }
+        }
+
+        function logout() {
+            localStorage.removeItem("labKey");
+            window.location.href = "/";
+        }
+
+        // Initialisation
+        carregarDados();
+    </script>
+</body>
+</html>`);
 });
 
-// ============================================
-// API DE LABORATÓRIOS
-// ============================================
+// ==============================================
+// ROTAS DA API
+// ==============================================
+
+// Rota para obter dados do laboratório atual
+app.get('/api/labs/me', labMiddleware, async (req, res) => {
+    res.json(req.lab);
+});
+
+// Criar novo laboratório (apenas admin)
 app.post('/api/labs', authMiddleware, async (req, res) => {
     try {
         const dados = req.body;
-        if (!dados.nif || !validarNIF(dados.nif)) {
-            return res.status(400).json({ erro: 'NIF inválido' });
-        }
-        
-        const labId = 'LAB-' + Date.now();
+        const labId = 'LAB' + Date.now();
         const apiKey = gerarApiKey();
-        
         const lab = new Lab({ ...dados, labId, apiKey });
         await lab.save();
-        
-        res.json({ success: true, apiKey });
+        res.json({ success: true, labId, apiKey });
     } catch (error) {
-        if (error.code === 11000) return res.status(400).json({ erro: 'NIF já cadastrado' });
-        res.status(500).json({ erro: 'Erro ao criar laboratório' });
+        res.status(500).json({ error: 'Erro ao criar laboratório' });
     }
 });
 
+// Listar todos os laboratórios (apenas admin)
 app.get('/api/labs', authMiddleware, async (req, res) => {
     try {
         const labs = await Lab.find({}, { apiKey: 0 });
         res.json(labs);
-    } catch (error) { 
-        res.status(500).json({ erro: 'Erro ao buscar laboratórios' }); 
-    }
-});
-
-app.get('/api/labs/me', async (req, res) => {
-    const apiKey = req.headers['x-api-key'];
-    const lab = await Lab.findOne({ apiKey }, { apiKey: 0 });
-    res.json(lab);
-});
-
-app.delete('/api/labs/:id', authMiddleware, async (req, res) => {
-    try {
-        await Lab.findByIdAndUpdate(req.params.id, { ativo: false });
-        res.json({ success: true });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro interno' });
+        res.status(500).json({ error: 'Erro ao listar laboratórios' });
     }
 });
 
-// ============================================
-// API DE HOSPITAIS
-// ============================================
-app.post('/api/hospitais', authMiddleware, async (req, res) => {
+// Stats detalhados para laboratório
+app.get('/api/certificados/stats-detalhes', labMiddleware, async (req, res) => {
     try {
-        const dados = req.body;
-        if (!dados.nif || !validarNIF(dados.nif)) {
-            return res.status(400).json({ erro: 'NIF inválido' });
-        }
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
         
-        const chave = gerarChaveHospital();
-        const hospital = new Hospital({ ...dados, chaveAcesso: chave });
-        await hospital.save();
+        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        const inicioAno = new Date(hoje.getFullYear(), 0, 1);
         
-        res.json({ success: true, chave });
-    } catch (error) {
-        if (error.code === 11000) return res.status(400).json({ erro: 'NIF já cadastrado' });
-        res.status(500).json({ erro: 'Erro ao criar hospital' });
-    }
-});
-
-app.get('/api/hospitais', authMiddleware, async (req, res) => {
-    try {
-        const hospitais = await Hospital.find({}, { chaveAcesso: 0 });
-        res.json(hospitais);
-    } catch (error) { 
-        res.status(500).json({ erro: 'Erro interno' }); 
-    }
-});
-
-app.delete('/api/hospitais/:id', authMiddleware, async (req, res) => {
-    try {
-        await Hospital.findByIdAndUpdate(req.params.id, { ativo: false });
-        res.json({ success: true });
-    } catch (error) {
-        res.status(500).json({ erro: 'Erro interno' });
-    }
-});
-
-// ============================================
-// API DE EMPRESAS
-// ============================================
-app.post('/api/empresas', authMiddleware, async (req, res) => {
-    try {
-        const dados = req.body;
-        if (!dados.nif || !validarNIF(dados.nif)) {
-            return res.status(400).json({ erro: 'NIF inválido' });
-        }
+        const stats = await Certificate.aggregate([
+            { $match: { emitidoPor: req.lab._id } },
+            {
+                $facet: {
+                    diario: [
+                        { $match: { emitidoEm: { $gte: hoje } } },
+                        { $count: "count" }
+                    ],
+                    mensal: [
+                        { $match: { emitidoEm: { $gte: inicioMes } } },
+                        { $count: "count" }
+                    ],
+                    anual: [
+                        { $match: { emitidoEm: { $gte: inicioAno } } },
+                        { $count: "count" }
+                    ],
+                    porTipo: [
+                        { $group: { _id: "$tipo", count: { $sum: 1 } } }
+                    ]
+                }
+            }
+        ]);
         
-        const chave = gerarChaveEmpresa();
-        const empresa = new Empresa({ ...dados, chaveAcesso: chave });
-        await empresa.save();
-        
-        res.json({ success: true, chave });
+        res.json({
+            diario: stats[0]?.diario[0]?.count || 0,
+            mensal: stats[0]?.mensal[0]?.count || 0,
+            anual: stats[0]?.anual[0]?.count || 0,
+            total: req.lab.totalEmissoes,
+            porTipo: stats[0]?.porTipo || []
+        });
     } catch (error) {
-        if (error.code === 11000) return res.status(400).json({ erro: 'NIF já cadastrado' });
-        res.status(500).json({ erro: 'Erro ao criar empresa' });
+        console.error('Erro stats:', error);
+        res.status(500).json({ error: 'Erro ao calcular estatísticas' });
     }
 });
 
-app.get('/api/empresas', authMiddleware, async (req, res) => {
+// Listar certificados do laboratório
+app.get('/api/certificados/lab', labMiddleware, async (req, res) => {
     try {
-        const empresas = await Empresa.find({}, { chaveAcesso: 0 });
-        res.json(empresas);
-    } catch (error) { 
-        res.status(500).json({ erro: 'Erro interno' }); 
-    }
-});
-
-app.delete('/api/empresas/:id', authMiddleware, async (req, res) => {
-    try {
-        await Empresa.findByIdAndUpdate(req.params.id, { ativo: false });
-        res.json({ success: true });
+        const certificados = await Certificate.find({ emitidoPor: req.lab._id })
+            .sort({ emitidoEm: -1 });
+        res.json(certificados);
     } catch (error) {
-        res.status(500).json({ erro: 'Erro interno' });
+        res.status(500).json({ error: 'Erro ao listar certificados' });
     }
 });
 
-// ============================================
-// API DE CERTIFICADOS
-// ============================================
+// Emitir novo certificado
 app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
     try {
         const tipo = parseInt(req.params.tipo);
         const dados = req.body;
-        
         const numero = gerarNumeroCertificado(tipo);
-        const hash = crypto.createHash('sha256').update(numero + JSON.stringify(dados)).digest('hex');
+        const hash = crypto.createHash('sha256').update(numero + Date.now()).digest('hex');
         
         const certificado = new Certificate({
             numero,
             tipo,
             paciente: dados.paciente,
+            laborantin: dados.laborantin,
             dados: dados.dados,
             hash,
             emitidoPor: req.lab._id
         });
         
+        // Os middlewares pre-save calcularão IMC e idade automaticamente
         await certificado.save();
         
         req.lab.totalEmissoes++;
         await req.lab.save();
         
-        res.json({ success: true, numero, hash });
+        res.json({ 
+            success: true, 
+            numero,
+            imc: certificado.imc,
+            idade: certificado.idade,
+            classificacaoIMC: certificado.classificacaoIMC
+        });
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao emitir certificado' });
+        console.error('Erro emissão:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
-app.get('/api/certificados/lab', labMiddleware, async (req, res) => {
+// =============================================
+// ROUTE POUR GÉNÉRER LES PDF
+// =============================================
+app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
     try {
-        const certs = await Certificate.find({ emitidoPor: req.lab._id })
-            .sort({ emitidoEm: -1 })
-            .limit(50);
-        res.json(certs);
+        const { numero } = req.body;
+        
+        // Vérifier que le numéro est présent
+        if (!numero) {
+            return res.status(400).json({ error: 'Número do certificado não fornecido' });
+        }
+        
+        // Récupérer le certificat avec les données
+        const certificado = await Certificate.findOne({ 
+            numero,
+            emitidoPor: req.lab._id 
+        });
+        
+        if (!certificado) {
+            return res.status(404).json({ error: 'Certificado não encontrado' });
+        }
+        
+        // Utiliser la méthode de l'instance pour préparer les données
+        const dados = certificado.prepararParaPDF ? certificado.prepararParaPDF() : {
+            numero: certificado.numero,
+            tipo: certificado.tipo,
+            paciente: certificado.paciente,
+            laborantin: certificado.laborantin || { nome: 'Não informado', registro: '' },
+            dados: certificado.dados,
+            imc: certificado.imc,
+            idade: certificado.idade,
+            classificacaoIMC: certificado.classificacaoIMC,
+            emitidoEm: certificado.emitidoEm
+        };
+        
+        const lab = req.lab;
+        
+        // Créer un nouveau document PDF
+        const doc = new PDFDocument({
+            size: 'A4',
+            margin: 50,
+            info: {
+                Title: `Certificado ${numero}`,
+                Author: lab.nome,
+                Subject: 'Certificado Médico SNS Angola'
+            }
+        });
+        
+        // Configurer la réponse
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=certificado-${numero}.pdf`);
+        
+        // Pipe le PDF vers la réponse
+        doc.pipe(res);
+        
+        // =========================================
+        // EN-TÊTE DU DOCUMENT (CENTRÉ)
+        // =========================================
+        doc.fillColor('#006633');
+
+        // Première ligne - centrée
+        doc.fontSize(20)
+           .text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+
+        // Deuxième ligne - centrée
+        doc.fontSize(16)
+           .text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+
+        // Troisième ligne - centrée et plus grande
+        doc.fontSize(24)
+           .text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
+
+        // Ligne de séparation centrée
+        doc.strokeColor('#006633')
+           .lineWidth(2)
+           .moveTo(doc.page.width / 2 - 250, 150)
+           .lineTo(doc.page.width / 2 + 250, 150)
+           .stroke();
+
+        let y = 180;
+        
+        // =========================================
+        // LABORATÓRIO EMISSOR
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(14)
+            .text(lab.nome, 50, y);
+
+        doc.fontSize(10)
+            .fillColor('#666')
+            .text(`NIF: ${lab.nif} | ${lab.provincia}`, 50, y + 20)
+            .text(`Endereço: ${lab.endereco || 'Não informado'} | Tel: ${lab.telephone || 'Não informado'}`, 50, y + 35);
+
+        y += 60;
+        
+        // =========================================
+        // NUMÉRO DO CERTIFICADO
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text(`CERTIFICADO Nº: ${numero}`, 50, y);
+
+        doc.fontSize(10)
+            .fillColor('#666')
+            .text(`Data de Emissão: ${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`, 50, y + 15);
+
+        y += 40;
+        
+        // =========================================
+        // RESPONSÁVEL PELA EMISSÃO (LABORANTIN)
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('RESPONSÁVEL PELA EMISSÃO:', 50, y);
+        
+        y += 20;
+        doc.fillColor('#000')
+            .fontSize(11)
+            .text(`Nome: ${dados.laborantin?.nome || 'Não informado'}`, 70, y);
+        y += 15;
+        
+        if (dados.laborantin?.registro) {
+            doc.text(`Registro Profissional: ${dados.laborantin.registro}`, 70, y);
+            y += 25;
+        } else {
+            y += 10;
+        }
+        
+        // =========================================
+        // DADOS DO PACIENTE
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('DADOS DO PACIENTE:', 50, y);
+        
+        y += 20;
+        doc.fillColor('#000')
+            .fontSize(11)
+            .text(`Nome: ${dados.paciente?.nomeCompleto || 'Não informado'}`, 70, y);
+        y += 15;
+        doc.text(`BI: ${dados.paciente?.bi || 'Não informado'}`, 70, y);
+        y += 15;
+        
+        if (dados.paciente?.dataNascimento) {
+            doc.text(`Data Nascimento: ${new Date(dados.paciente.dataNascimento).toLocaleDateString('pt-PT')}`, 70, y);
+            y += 15;
+        }
+        
+        if (dados.idade) {
+            doc.text(`Idade: ${dados.idade} anos`, 70, y);
+            y += 15;
+        }
+        
+        if (dados.paciente?.genero) {
+            const genero = dados.paciente.genero === 'M' ? 'Masculino' : 'Feminino';
+            doc.text(`Género: ${genero}`, 70, y);
+            y += 15;
+        }
+        
+        if (dados.paciente?.telefone) {
+            doc.text(`Telefone: ${dados.paciente.telefone}`, 70, y);
+            y += 20;
+        }
+        
+        // =========================================
+        // DADOS MÉDICOS (AVEC "NÃO SOLICITADO")
+        // =========================================
+        doc.fillColor('#006633')
+            .fontSize(12)
+            .text('DADOS MÉDICOS:', 50, y);
+        
+        y += 20;
+        
+        // Titre du type de certificat
+        const tipos = {
+            1: 'CERTIFICADO DE GENÓTIPO',
+            2: 'CERTIFICADO DE BOA SAÚDE',
+            3: 'CERTIFICADO DE INCAPACIDADE',
+            4: 'CERTIFICADO DE APTIDÃO',
+            5: 'CERTIFICADO DE SAÚDE MATERNA',
+            6: 'CERTIFICADO DE PRÉ-NATAL',
+            7: 'CERTIFICADO EPIDEMIOLÓGICO',
+            8: 'CERTIFICADO DE SAÚDE PARA DESLOCAÇÃO (CSD)'
+        };
+        
+        doc.fillColor('#333')
+            .fontSize(12)
+            .text(tipos[dados.tipo] || 'CERTIFICADO MÉDICO', 70, y);
+        
+        y += 25;
+        
+        if (dados.dados) {
+            // Liste de tous les examens possibles pour ce type de certificat
+            const todosExames = {
+                1: ['grupoSanguineo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese'],
+                2: ['peso', 'altura', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos'],
+                3: ['tipoIncapacidade', 'causa', 'grau', 'dataInicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante'],
+                4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade'],
+                5: ['gestacoes', 'partos', 'abortos', 'nascidosVivos', 'dum', 'dpp', 'idadeGestacional', 'consultasCPN', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguineo', 'fatorRh', 'exsudadoVaginal', 'pesoAtual', 'alturaUterina', 'batimentosCardiacosFeto', 'movimentosFetais', 'edema', 'proteinuria'],
+                6: ['grupoSanguineo', 'fatorRh', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'ureia', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao'],
+                7: ['doenca', 'outraDoenca', 'dataInicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'dataInternamento', 'contatos'],
+                8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais', 'recomendacoes']
+            };
+            
+            const examesTipo = todosExames[dados.tipo] || [];
+            
+            // Préparer tous les examens avec leur statut
+            const todosExamesFormatados = [];
+            
+            for (let i = 0; i < examesTipo.length; i++) {
+                const exame = examesTipo[i];
+                
+                const nomeExame = exame.replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, function(str) { return str.toUpperCase(); });
+                
+                const valor = dados.dados[exame];
+                
+                if (valor && valor.toString().trim() !== '') {
+                    // Examen rempli
+                    todosExamesFormatados.push({
+                        exame: nomeExame,
+                        valor: valor,
+                        solicitado: true
+                    });
+                } else {
+                    // Examen non sollicité
+                    todosExamesFormatados.push({
+                        exame: nomeExame,
+                        valor: '(não solicitado)',
+                        solicitado: false
+                    });
+                }
+            }
+            
+            // Afficher tous les examens en 2 colonnes
+            if (todosExamesFormatados.length > 0) {
+                const metade = Math.ceil(todosExamesFormatados.length / 2);
+                
+                doc.fontSize(9);
+                
+                // Colonne 1
+                let yCol1 = y;
+                for (let j = 0; j < metade; j++) {
+                    const item = todosExamesFormatados[j];
+                    if (item.solicitado) {
+                        doc.fillColor('#000')
+                           .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
+                    } else {
+                        doc.fillColor('#999')
+                           .text(`• ${item.exame}: ${item.valor}`, 70, yCol1);
+                    }
+                    yCol1 += 15;
+                    
+                    if (yCol1 > 700) {
+                        doc.addPage();
+                        yCol1 = 50;
+                    }
+                }
+                
+                // Colonne 2
+                let yCol2 = y;
+                for (let j = metade; j < todosExamesFormatados.length; j++) {
+                    const item = todosExamesFormatados[j];
+                    if (item.solicitado) {
+                        doc.fillColor('#000')
+                           .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
+                    } else {
+                        doc.fillColor('#999')
+                           .text(`• ${item.exame}: ${item.valor}`, 300, yCol2);
+                    }
+                    yCol2 += 15;
+                    
+                    if (yCol2 > 700) {
+                        doc.addPage();
+                        yCol2 = 50;
+                    }
+                }
+                
+                y = (yCol1 > yCol2 ? yCol1 : yCol2) + 10;
+            }
+        }
+        
+        if (dados.imc) {
+            doc.fontSize(11)
+                .fillColor('#000')
+                .text(`IMC: ${dados.imc} (${dados.classificacaoIMC || 'Não classificado'})`, 70, y);
+            y += 25;
+        }
+        
+        // =========================================
+                // =========================================
+               // =========================================
+        // ASSINATURAS
+        // =========================================
+        // Linha para assinatura do laborantin
+        doc.lineWidth(1)
+            .moveTo(70, y)
+            .lineTo(270, y)
+            .stroke();
+        
+        doc.fontSize(10)
+            .text('Assinatura do Laborantin', 70, y + 5)
+            .text(dados.laborantin?.nome || '___________________', 70, y + 20);
+        
+        // Linha para assinatura do diretor
+        doc.lineWidth(1)
+            .moveTo(350, y)
+            .lineTo(550, y)
+            .stroke();
+        
+        doc.fontSize(10)
+            .text('Assinatura do Diretor Clínico', 350, y + 5)
+            .text(lab.diretor || '___________________', 350, y + 20);
+        
+        y += 50;
+        
+        // =========================================
+        // QR CODE DE VERIFICAÇÃO (CENTRADO COM AWAIT)
+        // =========================================
+        try {
+            // Données simplifiées pour le QR code
+            const textoQR = `${numero}|${lab.nome}|${dados.paciente?.nomeCompleto || 'PACIENTE'}|${new Date(dados.emitidoEm).toLocaleDateString('pt-PT')}`;
+            
+            // 👇 ATTENDRE que le QR soit généré (CRITIQUE)
+            const qrBuffer = await QRCode.toBuffer(textoQR, {
+                errorCorrectionLevel: 'H',
+                margin: 1,
+                width: 100,
+                color: { dark: '#006633', light: '#FFFFFF' }
+            });
+            
+            // Position CENTRÉE (entre les deux signatures)
+            const qrX = 310 - 50; // Centre (310) - moitié du QR (50)
+            const qrY = y - 20;   // Position verticale
+            
+            // Afficher le QR code
+            doc.image(qrBuffer, qrX, qrY, { width: 100 });
+            
+            // Texte au-dessus
+            doc.fontSize(7)
+               .fillColor('#006633')
+               .text('SCAN PARA VERIFICAR', qrX, qrY - 12, { 
+                   width: 100, 
+                   align: 'center' 
+               });
+            
+            // Petit texte en dessous
+            doc.fontSize(6)
+               .fillColor('#999')
+               .text('válido por QR', qrX, qrY + 110, { 
+                   width: 100, 
+                   align: 'center' 
+               });
+            
+            console.log('✅ QR code gerado para:', numero);
+            
+        } catch (qrError) {
+            console.error('❌ Erro ao gerar QR:', qrError);
+            
+            // Fallback mínimo (apenas uma mensagem discreta)
+            doc.fontSize(7)
+               .fillColor('#999')
+               .text('QR indisponível', 280, y - 10);
+        }
+        
+        // =========================================
+        // RODAPÉ
+        // =========================================
+        doc.fontSize(8)
+            .fillColor('#666')
+            .text('Documento válido em todo território nacional', 0, 780, { align: 'center' });
+        
+        doc.end();
+        
     } catch (error) {
-        res.status(500).json({ erro: 'Erro ao buscar certificados' });
+        console.error('❌ Erreur PDF:', error);
+        res.status(500).json({ error: 'Erreur lors de la génération du PDF: ' + error.message });
     }
 });
+// =============================================
+// FORMULÁRIO NOVO
+// =============================================
+app.get('/novo-certificado', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'novo-certificado.html'));
+});
 
-// ============================================
-// ESTATÍSTICAS
-// ============================================
+// =============================================
+// STATS GLOBAIS (MINISTÉRIO)
+// =============================================
 app.get('/api/stats', authMiddleware, async (req, res) => {
     try {
         const stats = {
@@ -736,21 +1210,80 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
             empresas: await Empresa.countDocuments({ ativo: true })
         };
         res.json(stats);
-    } catch (err) {
-        res.status(500).json({ erro: 'Erro interno' });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao carregar estatísticas' });
     }
 });
 
-// ============================================
-// INICIAR SERVIDOR
-// ============================================
+// =============================================
+// GÉNÉRATION PDF POUR LABORATOIRE
+// =============================================
+app.post('/api/labs/pdf', authMiddleware, async (req, res) => {
+    try {
+        const labData = req.body; // données du laboratoire (y compris apiKey)
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=Laboratorio_${labData.nome.replace(/\s/g, '_')}.pdf`);
+        doc.pipe(res);
+
+        // En-tête
+        doc.fillColor('#006633').fontSize(20).text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+        doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+        doc.fontSize(24).text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
+        doc.strokeColor('#006633').lineWidth(2).moveTo(doc.page.width / 2 - 250, 150).lineTo(doc.page.width / 2 + 250, 150).stroke();
+
+        let y = 180;
+        doc.fillColor('#006633').fontSize(16).text('REGISTO DE LABORATÓRIO', 50, y);
+        y += 30;
+
+        // Fonction utilitaire pour ajouter une ligne
+        const addLine = (label, value) => {
+            if (value) {
+                doc.fillColor('#000').fontSize(12).text(`${label}: ${value}`, 70, y);
+                y += 20;
+            }
+        };
+
+        addLine('Nome', labData.nome);
+        addLine('NIF', labData.nif);
+        addLine('Tipo', labData.tipo);
+        addLine('Província', labData.provincia);
+        addLine('Município', labData.municipio);
+        addLine('Endereço', labData.endereco);
+        addLine('Telefone 1', labData.telefone);
+        addLine('Telefone 2', labData.telefone2);
+        addLine('Email', labData.email);
+        addLine('Website', labData.website);
+        addLine('Diretor', labData.diretor);
+        addLine('Responsável Técnico', labData.responsavelTecnico);
+        addLine('Licença', labData.licenca);
+        if (labData.validadeLicenca) addLine('Validade Licença', new Date(labData.validadeLicenca).toLocaleDateString('pt-PT'));
+        addLine('Status', labData.ativo ? 'Ativo' : 'Inativo');
+
+        y += 10;
+        doc.fillColor('#b33').fontSize(12).text('CHAVE API (confidencial)', 70, y);
+        y += 20;
+        doc.fillColor('#000').fontSize(10).text(labData.apiKey, 70, y, { width: 400 });
+
+        y += 50;
+        doc.fillColor('#666').fontSize(10).text('Esta chave é pessoal e intransferível. Não a compartilhe.', 70, y);
+
+        doc.end();
+    } catch (error) {
+        console.error('Erro PDF laboratório:', error);
+        res.status(500).json({ error: 'Erro ao gerar PDF' });
+    }
+});
+// =============================================
+// ROUTE POUR LE FORMULAIRE DE CRÉATION DE LABORATOIRE
+// =============================================
+app.get('/novo-laboratorio', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'novo-laboratorio.html'));
+});
+
+// =============================================
+// INICIALIZAÇÃO DO SERVIDOR
+// =============================================
 app.listen(PORT, () => {
-    console.log('\n' + '='.repeat(50));
-    console.log('🚀 SNS - Servidor iniciado');
-    console.log('='.repeat(50));
-    console.log('📱 URL: http://localhost:' + PORT);
-    console.log('🏛️ Ministério: /ministerio (admin@sns.gov.ao)');
-    console.log('🔬 Laboratório: /lab-login (com API Key)');
-    console.log('✅ Todos os botões funcionais');
-    console.log('='.repeat(50) + '\n');
+    console.log('✅ SNS Online na porta ' + PORT);
 });
