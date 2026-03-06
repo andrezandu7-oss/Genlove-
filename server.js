@@ -1172,18 +1172,17 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
 });
 
 // ============================================================
-// ROUTE POUR GÉNÉRER LES PDF (AVEC LICENCE ET RESP. TÉCNICO)
+// ROUTE POUR GÉNÉRER LES PDF (VERSION SÉCURISÉE)
 // ============================================================
 app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
     try {
         const { numero } = req.body;
 
-        // 1. Vérifier la présence du numéro
         if (!numero) {
             return res.status(400).json({ error: 'Número do certificado não fornecido' });
         }
 
-        // 2. Récupérer le certificat ET les infos complètes du labo (via populate)
+        // On cherche le certificat et on tente de lier les infos du labo
         const cert = await Certificate.findOne({ 
             numero, 
             emitidoPor: req.lab._id 
@@ -1193,70 +1192,69 @@ app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
             return res.status(404).json({ error: 'Certificado não encontrado' });
         }
 
-        const lab = cert.emitidoPor; // Accès aux nouvelles données (licença, etc.)
+        // SÉCURITÉ : Si le populate a échoué (ancien certificat), on utilise req.lab
+        const lab = cert.emitidoPor || req.lab; 
+
         const doc = new PDFDocument({ size: 'A4', margin: 50 });
 
-        // Configuration de la réponse pour le téléchargement
+        // On s'assure que les headers sont envoyés AVANT de streamer le PDF
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=Certificado-${cert.numero}.pdf`);
+        
         doc.pipe(res);
 
-        // --- EN-TÊTE OFFICIEL ANGOLAIS ---
+        // --- EN-TÊTE ---
         doc.fillColor('#006633').fontSize(20).text("REPÚBLICA DE ANGOLA", { align: 'center' });
         doc.fontSize(14).text("MINISTÉRIO DA SAÚDE", { align: 'center' });
         doc.moveDown(0.5);
         doc.strokeColor('#006633').lineWidth(1.5).moveTo(50, doc.y).lineTo(545, doc.y).stroke();
         doc.moveDown(2);
 
-        // --- TITRE ET NUMÉRO ---
+        // --- TITRE ---
         doc.fillColor('#000').fontSize(16).text("RESULTADO DE EXAME CLÍNICO", { align: 'center', underline: true });
         doc.fontSize(10).text(`CERTIFICADO Nº: ${cert.numero}`, { align: 'center' });
         doc.moveDown(2);
 
-        // --- SECTION PATIENT ---
+        // --- DONNÉES PATIENT ---
         doc.fontSize(11).fillColor('#444').text("DADOS DO PACIENTE:", { underline: true });
         doc.moveDown(0.5);
         doc.fillColor('#000').fontSize(10);
-        doc.text(`Nome: ${cert.paciente.nomeCompleto.toUpperCase()}`);
-        doc.text(`Documento (BI): ${cert.paciente.bi || '---'}`);
-        doc.text(`Género: ${cert.paciente.genero === 'M' ? 'Masculino' : 'Feminino'}`);
+        doc.text(`Nome: \${cert.paciente.nomeCompleto.toUpperCase()}`);
+        doc.text(`Documento (BI): \${cert.paciente.bi || '---'}`);
         doc.moveDown(2);
 
-        // --- SECTION RÉSULTAT (BIEN VISIBLE) ---
+        // --- RÉSULTAT ---
         doc.rect(50, doc.y, 495, 40).fill('#f2f2f2');
         doc.fillColor('#006633').fontSize(12).text("RESULTADO FINAL:", 60, doc.y - 30);
-        doc.fillColor('#000').fontSize(14).text(`${cert.dados.resultado}`, { align: 'center', stroke: true });
-        doc.moveDown(2);
+        doc.fillColor('#000').fontSize(14).text(`\${cert.dados.resultado}`, { align: 'center', stroke: true });
+        doc.moveDown(3);
 
-        // --- BLOC D'AUTHENTICITÉ DU LABORATOIRE ---
+        // --- INFOS LABO & LICENCE ---
         doc.fontSize(10).fillColor('#444').text("INSTITUIÇÃO EMISSORA:", { underline: true });
         doc.moveDown(0.5);
         doc.fillColor('#000').fontSize(9);
-        doc.text(`Laboratório: ${lab.nome}`);
-        doc.text(`NIF: ${lab.nif}`);
-        doc.text(`Província: ${lab.provincia}`);
-        // Affichage de la licence en gras pour les autorités
-        doc.fillColor('#b30000').text(`Licença Sanitária (Alvará) nº: ${lab.licenca || 'Pendente'}`, { bold: true });
-        doc.fillColor('#000').text(`Validade da Licença: ${lab.validadeLicenca ? new Date(lab.validadeLicenca).toLocaleDateString('pt-AO') : '---'}`);
-        doc.moveDown(3);
-
-        // --- SIGNATURES ---
-        const sigY = doc.y;
-        doc.moveTo(350, sigY).lineTo(520, sigY).stroke();
-        doc.fontSize(8);
-        doc.text(`Dr(a). ${lab.responsavelTecnico || lab.diretor}`, 350, sigY + 5, { width: 170, align: 'center' });
+        doc.text(`Laboratório: \${lab.nome}`);
+        doc.text(`NIF: \${lab.nif || '---'}`);
+        doc.text(`Província: \${lab.provincia || '---'}`);
+        doc.fillColor('#b30000').text(`Licença Sanitária (Alvará) nº: \${lab.licenca || 'Pendente'}`);
+        
+        // --- SIGNATURE ---
+        const sigY = 700; // Position fixe en bas
+        doc.strokeColor('#000').lineWidth(0.5).moveTo(350, sigY).lineTo(520, sigY).stroke();
+        doc.fontSize(8).fillColor('#000');
+        doc.text(`Dr(a). \${lab.responsavelTecnico || lab.diretor || 'O Responsável'}`, 350, sigY + 5, { width: 170, align: 'center' });
         doc.text("Responsável Técnico", 350, sigY + 15, { width: 170, align: 'center' });
-
-        // --- PIED DE PAGE ---
-        doc.fontSize(7).fillColor('#999').text("Este documento é propriedade do SNS - Angola. Autenticidade verificável via portal oficial.", 50, 780, { align: 'center' });
 
         doc.end();
 
     } catch (err) {
-        console.error("Erro PDF:", err);
-        res.status(500).json({ error: "Erro interno ao gerar o PDF." });
+        console.error("Erro Crítico PDF:", err);
+        if (!res.headersSent) {
+            res.status(500).json({ error: "Erro ao gerar PDF: " + err.message });
+        }
     }
 });
+
 
 // =============================================
 // ROUTE POUR LE FORMULAIRE DE CRÉATION DE LABORATOIRE
