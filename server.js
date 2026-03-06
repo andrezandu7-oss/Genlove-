@@ -853,6 +853,12 @@ app.get('/api/certificados/lab', labMiddleware, async (req, res) => {
         res.status(500).json({ erro: 'Erro ao buscar certificados' });
     }
 });
+// ============================================
+// ROUTE POUR LE FORMULAIRE DE CRÉATION DE LABORATOIRE
+// ============================================
+app.get('/novo-laboratorio', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'novo-laboratorio.html'));
+});
 
 // ============================================
 // ESTATÍSTICAS
