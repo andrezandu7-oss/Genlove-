@@ -1,8 +1,8 @@
-// =======================
+// =========================================================
 // SNS - SISTEMA NACIONAL DE SAÚDE
 // MINISTÉRIO DA SAÚDE - ANGOLA
-// VERSÃO FINAL COM RELATÓRIOS DETALHADOS
-// =======================
+// VERSÃO FINAL ROBUSTA: LICENÇAS E PROVÍNCIAS INTEGRADAS
+// =========================================================
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -17,57 +17,48 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// =======================
+// ============================================
 // CONFIGURAÇÕES
-// =======================
+// ============================================
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.static('public'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// =======================
+// ============================================
 // CONEXÃO MONGODB
-// =======================
+// ============================================
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sns';
 mongoose.connect(MONGODB_URI)
-    .then(() => console.log('✅ MongoDB connectado'))
-    .catch(err => console.log('❌ MongoDB erro: ', err));
+  .then(() => console.log('✅ MongoDB Conectado (Render/Atlas)'))
+  .catch(err => console.log('❌ Erro MongoDB:', err));
 
-// =======================
+// ============================================
 // FUNÇÕES AUXILIARES
-// =======================
+// ============================================
 function gerarApiKey() {
     return 'SNS-' + Date.now() + '-' + crypto.randomBytes(8).toString('hex').toUpperCase();
 }
 
-function gerarChaveAcesso(tipo) {
-    const prefixo = tipo === 'hospital' ? 'HOSP' : 'EMP';
-    return prefixo + '-' + Date.now() + '-' + crypto.randomBytes(6).toString('hex').toUpperCase();
+function gerarChaveHospital() {
+    return 'HOSP-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 }
 
-function validatorNIF(nif) {
+function validarNIF(nif) {
     return /^\d{10}$/.test(nif);
 }
 
 function gerarNumeroCertificado(tipo) {
     const ano = new Date().getFullYear();
     const mes = (new Date().getMonth() + 1).toString().padStart(2, '0');
-    const dia = new Date().getDate().toString().padStart(2, '0');
     const random = crypto.randomBytes(4).toString('hex').toUpperCase();
-    const prefixos = {
-        1: 'GEN', 2: 'SAU', 3: 'INC', 
-        4: 'APT', 5: 'MAT', 6: 'CPN', 
-        7: 'EPI', 8: 'CSD'
-    };
-    const sequencia = String(Math.floor(1000 + Math.random() * 9000));
-    return `${prefixos[tipo]}-${ano}${mes}${dia}-${sequencia}-${random}`;
+    return `CERT-${tipo}-${ano}${mes}-${random}`;
 }
 
-// =======================
-// MODELOS DE DADOS
-// =======================
+// ============================================
+// MODELOS DE DADOS (SCHEMAS)
+// ============================================
 
-// USER (Administrador)
+// 1. UTILIZADORES (ADMIN MINSA)
 const userSchema = new mongoose.Schema({
     nome: String,
     email: { type: String, unique: true },
@@ -75,151 +66,65 @@ const userSchema = new mongoose.Schema({
     role: { type: String, default: 'admin' }
 });
 
-// LABORATÓRIO (COM CAMPOS COMPLETOS)
+// 2. LABORATÓRIOS (AVEC VALIDATION LICENCE)
 const labSchema = new mongoose.Schema({
     labId: { type: String, unique: true },
-    
-    // Informações Básicas
     nome: { type: String, required: true },
     nif: { type: String, required: true, unique: true },
-    tipo: { type: String, enum: ['Público', 'Privado', 'Misto'], required: true },
-    
-    // Localização
+    tipo: { type: String, enum: ['laboratorio', 'hospital', 'clinica'], default: 'laboratorio' },
     provincia: { type: String, required: true },
-    municipio: String,
-    endereco: { type: String, required: true },
-    
-    // Contactos
-    telefone: { type: String, required: true },
-    telefone2: String,
+    endereco: String,
     email: { type: String, required: true },
-    website: String,
-    
-    // Responsáveis
-    diretor: { type: String, required: true },
-    responsavelTecnico: String,
-    
-    // Licenciamento
-    licenca: String,
-    validadeLicenca: Date,
-    
-    // Chave e status
+    diretor: String,
+    responsavelTecnico: { type: String, required: true }, // Requis par le MINSA
+    licenca: { type: String, required: true },           // Nº Alvará
+    validadeLicenca: { type: Date, required: true },     // Validation date
     apiKey: { type: String, unique: true },
     ativo: { type: Boolean, default: true },
     totalEmissoes: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now }
 });
 
-// HOSPITAL
+// 3. HOSPITAIS
 const hospitalSchema = new mongoose.Schema({
     nome: { type: String, required: true },
     nif: { type: String, unique: true, required: true },
     provincia: { type: String, required: true },
-    endereco: String,
-    telefone: String,
-    email: String,
-    diretor: String,
-    ativo: { type: Boolean, default: true }
+    diretor: { type: String, required: true },
+    email: { type: String, required: true },
+    chaveAcesso: { type: String, unique: true },
+    ativo: { type: Boolean, default: true },
+    criadoEm: { type: Date, default: Date.now }
 });
 
-// EMPRESA
-const empresaSchema = new mongoose.Schema({
-    nome: { type: String, required: true },
-    nif: { type: String, unique: true, required: true },
-    provincia: { type: String, required: true },
-    endereco: String,
-    telefone: String,
-    email: String,
-    responsavel: String,
-    ativo: { type: Boolean, default: true }
-});
-
-// CERTIFICADO (com calculos automáticos)
+// 4. CERTIFICADOS
 const certificateSchema = new mongoose.Schema({
     numero: { type: String, unique: true },
-    tipo: Number,
+    tipo: { type: Number, required: true }, 
     paciente: {
-        nomeCompleto: String,
-        bi: String,
+        nomeCompleto: { type: String, required: true },
+        genero: { type: String, enum: ['M', 'F'] },
         dataNascimento: Date,
-        genero: String,
-        telefone: String
+        bi: String
     },
-    laborantin: {
-        nome: String,
-        registro: String
-    },
-    dados: mongoose.Schema.Types.Mixed,
-    
-    // Campos calculados automaticamente
-    imc: Number,
-    idade: Number,
-    classificacaoIMC: String,
-    
+    dados: mongoose.Schema.Types.Mixed, // Pour s'adapter à tous les types de tests
     hash: { type: String, unique: true },
     emitidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab' },
     emitidoEm: { type: Date, default: Date.now }
 });
 
-// MIDDLEWARE DE CÁLCULO AUTOMÁTICO (executa ANTES de salvar)
-certificateSchema.pre('save', function(next) {
-    // Calcular idade a partir da data de nascimento
-    if (this.paciente && this.paciente.dataNascimento) {
-        const hoje = new Date();
-        const nascimento = new Date(this.paciente.dataNascimento);
-        let idade = hoje.getFullYear() - nascimento.getFullYear();
-        const mes = hoje.getMonth() - nascimento.getMonth();
-        if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
-            idade--;
-        }
-        this.idade = idade;
-    }
-
-    // Calcular IMC se os dados estiverem presentes
-    if (this.dados && this.dados.peso && this.dados.altura) {
-        const peso = parseFloat(this.dados.peso);
-        const altura = parseFloat(this.dados.altura);
-        if (peso && altura && altura > 0) {
-            this.imc = parseFloat((peso / (altura * altura)).toFixed(2));
-
-            // Classificar IMC
-            if (this.imc < 18.5) this.classificacaoIMC = "Abaixo do peso";
-            else if (this.imc < 25) this.classificacaoIMC = "Peso normal";
-            else if (this.imc < 30) this.classificacaoIMC = "Sobrepeso";
-            else this.classificacaoIMC = "Obesidade";
-        }
-    }
-    next();
-});
-
-// MÉTODO DE INSTÂNCIA PARA PREPARAR DADOS DO PDF
-certificateSchema.methods.prepararParaPDF = function() {
-    return {
-        numero: this.numero,
-        tipo: this.tipo,
-        paciente: this.paciente,
-        laborantin: this.laborantin,
-        dados: this.dados,
-        imc: this.imc,
-        idade: this.idade,
-        classificacaoIMC: this.classificacaoIMC,
-        emitidoEm: this.emitidoEm
-    };
-};
-
-// CRIAÇÃO DOS MODELOS
 const User = mongoose.model('User', userSchema);
 const Lab = mongoose.model('Lab', labSchema);
 const Hospital = mongoose.model('Hospital', hospitalSchema);
-const Empresa = mongoose.model('Empresa', empresaSchema);
 const Certificate = mongoose.model('Certificate', certificateSchema);
 
-// ===============================================
+// ============================================
 // MIDDLEWARES
-// ===============================================
+// ============================================
 const authMiddleware = (req, res, next) => {
     const token = req.headers['authorization']?.split(' ')[1];
     if (!token) return res.status(401).json({ erro: 'Token não fornecido' });
+    
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key');
         req.user = decoded;
@@ -232,465 +137,281 @@ const authMiddleware = (req, res, next) => {
 const labMiddleware = async (req, res, next) => {
     const apiKey = req.headers['x-api-key'];
     if (!apiKey) return res.status(401).json({ erro: 'API Key não fornecida' });
-    try {
-        const lab = await Lab.findOne({ apiKey, ativo: true });
-        if (!lab) return res.status(401).json({ erro: 'Chave invalida.' });
-        req.lab = lab;
-        next();
-    } catch (error) {
-        return res.status(500).json({ erro: 'Erro ao validar chave' });
-    }
+    
+    const lab = await Lab.findOne({ apiKey, ativo: true });
+    if (!lab) return res.status(401).json({ erro: 'API Key inválida' });
+    
+    req.lab = lab;
+    next();
 };
 
-// ==============================================
-// ROTAS PUBLICAS
-// ==============================================
+// ============================================
+// ROTAS PÚBLICAS
+// ============================================
 app.get('/', (req, res) => {
-    res.send('<!DOCTYPE html><html><head><title>SNS - Angola</title><style>body{background:#006633;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}.container{background:white;padding:40px;border-radius:10px;width:350px;text-align:center;}h1{color:#006633;}a{display:block;margin:15px;padding:12px;background:#006633;color:white;text-decoration:none;border-radius:5px;}a:hover{background:#004d26;}</style></head><body><div class="container"><h1>SNS - Angola</h1><a href="/ministerio">Ministério da Saúde</a><a href="/lab-login">Laboratório</a></div></body></html>');
+    res.send('<!DOCTYPE html>' +
+    '<html>' +
+    '<head><title>SNS - Angola</title>' +
+    '<style>' +
+    'body{background:#006633;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;}' +
+    '.box{background:white;padding:30px;border-radius:10px;width:300px;text-align:center;}' +
+    'a{display:block;margin:10px;padding:10px;background:#006633;color:white;text-decoration:none;border-radius:5px;}' +
+    '</style>' +
+    '</head>' +
+    '<body>' +
+    '<div class="box">' +
+    '<h1>SNS - Angola</h1>' +
+    '<a href="/ministerio">🏛️ Ministério da Saúde</a>' +
+    '<a href="/lab-login">🔬 Laboratório</a>' +
+    '</div>' +
+    '</body></html>');
 });
 
-// LOGIN MINISTÉRIO
 app.get('/ministerio', (req, res) => {
-    res.send('<!DOCTYPE html><html><head><title>Login Ministério</title><style>body{background:#006633;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}.container{background:white;padding:30px;border-radius:10px;width:350px;}h2{color:#006633;text-align:center;}input{width:100%;padding:10px;margin:10px 0;border:1px solid #ddd;border-radius:5px;}button{width:100%;padding:12px;background:#006633;color:white;border:none;border-radius:5px;cursor:pointer;}.error{color:red;display:none;text-align:center;}</style></head><body><div class="container"><h2>Ministério da Saúde</h2><div id="error" class="error"></div><input type="email" id="email" placeholder="Email" value="admin@sns.gov.ao"><input type="password" id="password" placeholder="Senha" value="Admin@2025"><button onclick="login()">Entrar</button></div><script>async function login(){const e=document.getElementById("email").value;const p=document.getElementById("password").value;const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:e,password:p})});const d=await r.json();if(d.token){localStorage.setItem("token",d.token);window.location.href="/admin-dashboard";}else{document.getElementById("error").style.display="block";document.getElementById("error").innerText="Erro no login";}}</script></body></html>');
+    res.send('<!DOCTYPE html>' +
+    '<html>' +
+    '<head><title>Login Ministério</title>' +
+    '<style>' +
+    'body{background:#006633;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;}' +
+    '.box{background:white;padding:30px;border-radius:10px;width:300px;}' +
+    'input{width:100%;padding:10px;margin:10px 0;}' +
+    'button{width:100%;padding:10px;background:#006633;color:white;border:none;cursor:pointer;}' +
+    '</style>' +
+    '</head>' +
+    '<body>' +
+    '<div class="box">' +
+    '<h2>Login Ministério</h2>' +
+    '<input type="email" id="email" value="admin@sns.gov.ao">' +
+    '<input type="password" id="password" value="Admin@2025">' +
+    '<button onclick="login()">Entrar</button>' +
+    '</div>' +
+    '<script>' +
+    'async function login(){' +
+    'const r=await fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:document.getElementById("email").value,password:document.getElementById("password").value})});' +
+    'const d=await r.json();' +
+    'if(d.token){localStorage.setItem("token",d.token);window.location.href="/admin-dashboard";}' +
+    'else alert("Erro");}' +
+    '</script>' +
+    '</body></html>');
 });
 
-// LOGIN LABORATÓRIO
 app.get('/lab-login', (req, res) => {
-    res.send('<!DOCTYPE html><html><head><title>Lab Login</title><style>body{background:#006633;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}.container{background:white;padding:30px;border-radius:10px;width:350px;}h2{color:#006633;text-align:center;}input{width:100%;padding:10px;margin:10px 0;border:1px solid #ddd;border-radius:5px;}button{width:100%;padding:12px;background:#006633;color:white;border:none;border-radius:5px;cursor:pointer;}.error{color:red;display:none;text-align:center;}</style></head><body><div class="container"><h2>Acesso Laboratório</h2><div id="error" class="error"></div><input type="text" id="apiKey" placeholder="Digite sua API Key"><button onclick="login()">Entrar</button></div><script>async function login(){const key=document.getElementById("apiKey").value.trim();if(!key)return;const r=await fetch("/api/labs/verificar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({apiKey:key})});const d=await r.json();if(d.valido){localStorage.setItem("labKey",key);window.location.href="/lab-dashboard";}else{alert(d.erro);}}</script></body></html>');
+    res.send('<!DOCTYPE html>' +
+    '<html>' +
+    '<head><title>Login Laboratório</title>' +
+    '<style>' +
+    'body{background:#006633;font-family:Arial;display:flex;justify-content:center;align-items:center;height:100vh;}' +
+    '.box{background:white;padding:30px;border-radius:10px;width:300px;}' +
+    'input{width:100%;padding:10px;margin:10px 0;}' +
+    'button{width:100%;padding:10px;background:#006633;color:white;border:none;cursor:pointer;}' +
+    '</style>' +
+    '</head>' +
+    '<body>' +
+    '<div class="box">' +
+    '<h2>Login Laboratório</h2>' +
+    '<input type="text" id="apiKey" placeholder="Digite sua API Key">' +
+    '<button onclick="login()">Entrar</button>' +
+    '</div>' +
+    '<script>' +
+    'function login(){' +
+    'const key=document.getElementById("apiKey").value;' +
+    'if(key){localStorage.setItem("labKey",key);window.location.href="/lab-dashboard";}' +
+    'else alert("Digite a API Key");}' +
+    '</script>' +
+    '</body></html>');
 });
 
-// ==============================================
-// API DE AUTENTICACAO
-// ==============================================
+// ============================================
+// API DE AUTENTICAÇÃO
+// ============================================
 app.post('/api/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        if (email === 'admin@sns.gov.ao' && password === 'Admin@2025') {
-            let user = await User.findOne({ email });
-            if (!user) {
-                const senhaHash = await bcrypt.hash(password, 10);
-                user = await User.create({ 
-                    nome: 'Administrador', 
-                    email, 
-                    password: senhaHash, 
-                    role: 'admin' 
-                });
-            }
-            const token = jwt.sign(
-                { id: user._id, email, role: user.role }, 
-                process.env.JWT_SECRET || 'secret-key', 
-                { expiresIn: '8h' }
-            );
-            res.json({ token });
-        } else {
-            res.status(401).json({ error: 'Email ou senha incorretos' });
+    const { email, password } = req.body;
+    if (email === 'admin@sns.gov.ao' && password === 'Admin@2025') {
+        let user = await User.findOne({ email });
+        if (!user) {
+            const senhaHash = await bcrypt.hash(password, 10);
+            user = await User.create({ nome: 'Administrador', email, password: senhaHash, role: 'admin' });
         }
-    } catch (error) {
-        res.status(500).json({ error: 'Erro no login' });
-    }
+        const token = jwt.sign({ id: user._id, email, role: user.role }, process.env.JWT_SECRET || 'secret-key', { expiresIn: '8h' });
+        res.json({ token, user: { nome: user.nome, email, role: user.role } });
+    } else res.status(401).json({ erro: 'Email ou senha incorretos' });
 });
 
-app.post('/api/labs/verificar', async (req, res) => {
-    try {
-        const { apiKey } = req.body;
-        const lab = await Lab.findOne({ apiKey, ativo: true });
-        if (lab) return res.json({ valido: true });
-        return res.json({ valido: false, erro: 'Chave invalida ou laboratorio inativo.' });
-    } catch (error) {
-        res.status(500).json({ valido: false, erro: 'Erro no servidor' });
-    }
-});
-
-// ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
-// ================================================
+// =============================================
+// DASHBOARD DO MINISTÉRIO (VERSÃO ATUALIZADA)
+// =============================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ministério da Saúde - SNS Angola</title>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
-        body { display:flex; background:#f5f5f5; min-height: 100vh; }
-        .sidebar {
-            width:260px;
-            background:#006633;
-            color:white;
-            height:100vh;
-            padding:20px;
-            position:fixed;
-            display:flex;
-            flex-direction:column;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-        }
-        .sidebar h2 { 
-            margin-bottom:30px; 
-            text-align:center;
-            padding-bottom:15px;
-            border-bottom:1px solid rgba(255,255,255,0.2);
-            font-size: 22px;
-        }
-        .sidebar button, .sidebar .nav-link {
-            display:block;
-            width:100%;
-            color:rgba(255,255,255,0.9);
-            text-decoration:none;
-            padding:14px;
-            margin:5px 0;
-            border-radius:8px;
-            cursor:pointer;
-            text-align:left;
-            font-size:15px;
-            border:none;
-            background:none;
-            transition: 0.3s;
-        }
-        .sidebar button:hover { background:rgba(255,255,255,0.1); color:white; }
-        .sidebar .novo-btn {
-            background:#ffa500;
-            color:#00331a;
-            font-weight:bold;
-            margin:20px 0;
-            text-align:center;
-        }
-        .sidebar .novo-btn:hover { background:#ffb833; transform: translateY(-2px); }
-        .sidebar .sair-btn {
-            background:#cc3300;
-            margin-top:auto;
-            text-align:center;
-            color: white;
-        }
-        .sidebar .sair-btn:hover { background:#e63900; }
-        .main {
-            margin-left:260px;
-            padding:40px;
-            width:100%;
-        }
-        .welcome {
-            background:white;
-            padding:25px;
-            border-left:6px solid #006633;
-            margin-bottom:30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        .secao { display:none; animation: fadeIn 0.3s ease; }
-        .secao.active { display:block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .stats-grid {
-            display:grid;
-            grid-template-columns:repeat(4,1fr);
-            gap:20px;
-            margin-top:20px;
-        }
-        .stat-card {
-            background:white;
-            padding:20px;
-            border-radius:8px;
-            box-shadow:0 2px 5px rgba(0,0,0,0.1);
-            text-align:center;
-        }
-        .stat-card h3 { color:#666; font-size:14px; margin-bottom:10px; }
-        .stat-card p { color:#006633; font-size:28px; font-weight:bold; }
-        .card { background:white; padding:30px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
-        table { width:100%; border-collapse:collapse; margin-top:20px; }
-        th { background:#f8f9fa; color:#333; padding:15px; text-align:left; border-bottom:2px solid #eee; }
-        td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
-        tr:hover { background:#fafafa; }
-        .btn-acao { 
-            background:#f0f0f0; border:none; padding:8px; border-radius:5px; 
-            cursor:pointer; transition:0.2s; margin-right:5px;
-        }
-        .btn-acao:hover { background:#e0e0e0; transform: scale(1.1); }
-        .status-badge {
-            padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px;
-        }
-        .status-ativo { background:#e8f5e9; color:#2e7d32; }
-        .status-inativo { background:#ffebee; color:#c62828; }
-        .pagination {
-            display:flex;
-            justify-content:center;
-            gap:10px;
-            margin-top:20px;
-        }
-        .pagination button {
-            padding:8px 12px;
-            border:none;
-            background:#006633;
-            color:white;
-            border-radius:5px;
-            cursor:pointer;
-        }
-        .pagination button:disabled {
-            background:#ccc;
-            cursor:not-allowed;
-        }
-        .filtros {
-            display:flex;
-            gap:10px;
-            margin-bottom:20px;
-        }
-        .filtros select, .filtros input {
-            padding:8px;
-            border:1px solid #ddd;
-            border-radius:5px;
-        }
-        .spinner {
-            border:4px solid #f3f3f3;
-            border-top:4px solid #006633;
-            border-radius:50%;
-            width:30px;
-            height:30px;
-            animation: spin 1s linear infinite;
-            margin:10px auto;
-        }
-        @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
-    </style>
-</head>
-<body>
-    <div class="sidebar">
-        <h2>MINISTÉRIO DA SAÚDE</h2>
-        <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
-        <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
-        <button class="novo-btn" onclick="location.href='/novo-laboratorio'">➕ NOVO LABORATÓRIO</button>
-        <button class="sair-btn" onclick="logout()">🚪 Sair</button>
-    </div>
-    
-    <div class="main">
-        <div id="welcome" class="welcome">
-            <h2>👋 Bem-vindo, Administrador</h2>
-            <p>Painel de Controle do Ministério da Saúde</p>
+    <html>
+    <head>
+        <title>Ministério - SNS Angola</title>
+        <style>
+            body{font-family:'Segoe UI',Arial;margin:0;display:flex;background:#f4f7f6;}
+            .sidebar{width:260px;background:#006633;color:white;height:100vh;padding:20px;position:fixed;box-shadow:2px 0 5px rgba(0,0,0,0.1);}
+            .sidebar h2{border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:15px;font-size:20px;}
+            .sidebar a{display:block;color:white;text-decoration:none;padding:12px;margin:5px 0;border-radius:5px;transition:0.3s;}
+            .sidebar a:hover{background:#004d26;}
+            .main{margin-left:280px;padding:40px;width:calc(100% - 320px);}
+            .card{background:white;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.05);margin-bottom:20px;}
+            .btn{background:#006633;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:5px;font-weight:bold;}
+            table{width:100%;border-collapse:collapse;margin-top:20px;background:white;}
+            th{background:#006633;color:white;padding:12px;text-align:left;}
+            td{padding:12px;border-bottom:1px solid #eee;}
+            .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:1000;}
+            .modal-content{background:white;padding:30px;border-radius:10px;width:450px;max-height:90vh;overflow-y:auto;}
+            .modal-content input, .modal-content select{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:4px;box-sizing:border-box;}
+            label{font-size:12px;color:#666;font-weight:bold;}
+        </style>
+    </head>
+    <body>
+        <div class="sidebar">
+            <h2>MINSA - SNS</h2>
+            <a href="#" onclick="mostrarSecao('dashboard')">🏠 Dashboard</a>
+            <a href="#" onclick="mostrarSecao('labs')">🔬 Laboratórios</a>
+            <a href="#" onclick="mostrarSecao('hospitais')">🏥 Hospitais</a>
+            <button onclick="logout()" style="margin-top:30px;background:#cc3300;color:white;border:none;padding:10px;width:100%;border-radius:5px;cursor:pointer;">Sair do Sistema</button>
         </div>
-        
-        <div id="dashboardSection" class="secao active">
-            <h2>📊 Painel de Controle</h2>
-            <div class="stats-grid">
-                <div class="stat-card"><h3>Laboratórios</h3><p id="statsLabs">0</p></div>
-                <div class="stat-card"><h3>Hospitais</h3><p id="statsHospitais">0</p></div>
-                <div class="stat-card"><h3>Empresas</h3><p id="statsEmpresas">0</p></div>
-                <div class="stat-card"><h3>Total</h3><p id="statsTotal">0</p></div>
+
+        <div class="main">
+            <div id="secaoDashboard">
+                <h1>Painel de Controlo</h1>
+                <div style="display:flex;gap:20px;">
+                    <div class="card" style="flex:1;"><h3>Labs</h3><h2 id="totalLabs">0</h2></div>
+                    <div class="card" style="flex:1;"><h3>Hospitais</h3><h2 id="totalHospitais">0</h2></div>
+                </div>
             </div>
-        </div>
-        
-        <div id="laboratoriosSection" class="secao">
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>🏥 Laboratórios Registados</h2>
-                    <button class="btn-acao" onclick="carregarLaboratorios()">🔄 Atualizar</button>
+
+            <div id="secaoLabs" style="display:none;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h1>Gestão de Laboratórios</h1>
+                    <button class="btn" onclick="mostrarModalLab()">+ Registar Laboratório</button>
                 </div>
-                
-                <!-- Filtros -->
-                <div class="filtros">
-                    <select id="filtroProvincia" onchange="carregarLaboratorios()">
-                        <option value="">Todas Províncias</option>
-                        <option value="Luanda">Luanda</option>
-                        <option value="Benguela">Benguela</option>
-                        <option value="Huíla">Huíla</option>
-                        <option value="Cabinda">Cabinda</option>
-                        <option value="Outra">Outra</option>
-                    </select>
-                    <select id="filtroStatus" onchange="carregarLaboratorios()">
-                        <option value="">Todos Status</option>
-                        <option value="true">Ativo</option>
-                        <option value="false">Inativo</option>
-                    </select>
-                </div>
-                
-                <!-- Spinner de carregamento -->
-                <div id="spinnerLabs" class="spinner" style="display:none;"></div>
-                
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>NIF</th>
-                            <th>Província</th>
-                            <th>Telefone</th>
-                            <th>Diretor</th>
-                            <th>Status</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaLabs">
-                        <tr><td colspan="7" style="text-align:center;">Aguardando...</td></tr>
-                    </tbody>
+                <table id="labsTable">
+                    <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Licença</th><th>Status</th><th>Ações</th></tr></thead>
+                    <tbody></tbody>
                 </table>
+            </div>
+            
+            </div>
+
+        <div id="modalLab" class="modal">
+            <div class="modal-content">
+                <h3>Registo de Instituição Sanitária</h3>
+                <label>Nome Oficial</label>
+                <input type="text" id="labNome" placeholder="Ex: Laboratório Central de Luanda">
+                <label>NIF (10 dígitos)</label>
+                <input type="text" id="labNIF" maxlength="10">
                 
-                <!-- Paginação -->
-                <div class="pagination" id="paginacao">
-                    <button id="prevPage" onclick="mudarPagina(-1)" disabled>Anterior</button>
-                    <span id="pageInfo">Página 1</span>
-                    <button id="nextPage" onclick="mudarPagina(1)" disabled>Próxima</button>
-                </div>
+                <label>Província</label>
+                <select id="labProvincia">
+                    <option value="">Seleccione...</option>
+                    <option value="Bengo">Bengo</option><option value="Benguela">Benguela</option>
+                    <option value="Bié">Bié</option><option value="Cabinda">Cabinda</option>
+                    <option value="Cuando Cubango">Cuando Cubango</option><option value="Cuanza Norte">Cuanza Norte</option>
+                    <option value="Cuanza Sul">Cuanza Sul</option><option value="Cunene">Cunene</option>
+                    <option value="Huambo">Huambo</option><option value="Huíla">Huíla</option>
+                    <option value="Luanda">Luanda</option><option value="Lunda Norte">Lunda Norte</option>
+                    <option value="Lunda Sul">Lunda Sul</option><option value="Malanje">Malanje</option>
+                    <option value="Moxico">Moxico</option><option value="Namibe">Namibe</option>
+                    <option value="Uíge">Uíge</option><option value="Zaire">Zaire</option>
+                </select>
+
+                <label>Nº de Alvará / Licença MINSA</label>
+                <input type="text" id="labLicenca" placeholder="Ex: 123/MINSA/2024">
+                <label>Data de Validade da Licença</label>
+                <input type="date" id="labValidade">
+                <label>Director Geral</label>
+                <input type="text" id="labDiretor">
+                <label>Responsável Técnico (Nº Ordem)</label>
+                <input type="text" id="labRespTecnico">
+                <label>Email Oficial</label>
+                <input type="email" id="labEmail">
+
+                <button onclick="criarLaboratorio()" style="background:#006633;color:white;padding:12px;width:100%;border:none;border-radius:5px;cursor:pointer;font-weight:bold;margin-top:10px;">GERAR CHAVE E ACTIVAR</button>
+                <button onclick="fecharModal('modalLab')" style="width:100%;background:none;border:none;color:red;margin-top:10px;cursor:pointer;">Cancelar</button>
             </div>
         </div>
-    </div>
 
-    <script>
-        console.log("Dashboard ministério carregado");
-        var token = localStorage.getItem("token");
-        console.log("Token:", token ? "presente" : "ausente");
-        if (!token) {
-            window.location.href = "/ministerio";
-        }
+        <script>
+            const token = localStorage.getItem("token");
+            if(!token) window.location.href="/ministerio";
 
-        // Variáveis de paginação
-        var currentPage = 1;
-        var totalPages = 1;
-        var limit = 10;
-
-        function mostrarSeccao(id) {
-            document.getElementById('dashboardSection').className = 'secao';
-            document.getElementById('laboratoriosSection').className = 'secao';
-            document.getElementById(id).className = 'secao active';
-            if (id === 'laboratoriosSection') {
-                carregarLaboratorios();
+            function mostrarSecao(s){
+                document.getElementById("secaoDashboard").style.display="none";
+                document.getElementById("secaoLabs").style.display="none";
+                if(s==='dashboard') { document.getElementById("secaoDashboard").style.display="block"; carregarStats(); }
+                if(s==='labs') { document.getElementById("secaoLabs").style.display="block"; carregarLabs(); }
             }
-        }
 
-        // Carregar estatísticas (funciona)
-        function carregarStats() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/stats', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var data = JSON.parse(xhr.responseText);
-                    document.getElementById('statsLabs').innerHTML = data.labs || 0;
-                    document.getElementById('statsHospitais').innerHTML = data.hospitais || 0;
-                    document.getElementById('statsEmpresas').innerHTML = data.empresas || 0;
-                    var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
-                    document.getElementById('statsTotal').innerHTML = total;
-                }
-            };
-            xhr.send();
-        }
-
-        // Carregar laboratórios com paginação e filtros
-        function carregarLaboratorios(pagina = 1) {
-            console.log("Carregando laboratórios, página", pagina);
-            currentPage = pagina;
-            var tbody = document.getElementById('tabelaLabs');
-            var spinner = document.getElementById('spinnerLabs');
-            tbody.innerHTML = ''; // Limpa a tabela
-            spinner.style.display = 'block'; // Mostra spinner
-            
-            var provincia = document.getElementById('filtroProvincia').value;
-            var status = document.getElementById('filtroStatus').value;
-            
-            var url = '/api/labs?page=' + currentPage + '&limit=' + limit;
-            if (provincia) url += '&provincia=' + encodeURIComponent(provincia);
-            if (status !== '') url += '&ativo=' + status;
-            
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    spinner.style.display = 'none';
-                    console.log("Resposta recebida, status:", xhr.status);
-                    if (xhr.status === 200) {
-                        try {
-                            var resposta = JSON.parse(xhr.responseText);
-                            var lista = resposta.labs;
-                            totalPages = resposta.pages;
-                            console.log("Laboratórios recebidos:", lista);
-                            
-                            if (!lista || lista.length === 0) {
-                                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
-                            } else {
-                                var html = '';
-                                for (var i = 0; i < lista.length; i++) {
-                                    var l = lista[i];
-                                    var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
-                                    var statusText = l.ativo ? 'Ativo' : 'Inativo';
-                                    var btnStatus = l.ativo ? '🔴' : '🟢';
-                                    var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
-                                    
-                                    html += '<tr>';
-                                    html += '<td><strong>' + (l.nome || '') + '</strong></td>';
-                                    html += '<td>' + (l.nif || '') + '</td>';
-                                    html += '<td>' + (l.provincia || '') + '</td>';
-                                    html += '<td>' + (l.telefone || '') + '</td>';
-                                    html += '<td>' + (l.diretor || '') + '</td>';
-                                    html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
-                                    html += '<td>';
-                                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button>';
-                                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
-                                    html += '</td>';
-                                    html += '</tr>';
-                                }
-                                tbody.innerHTML = html;
-                            }
-                            
-                            // Atualizar paginação
-                            atualizarPaginacao();
-                        } catch (e) {
-                            console.error("Erro ao parsear JSON:", e);
-                            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro nos dados recebidos</td></tr>';
-                        }
-                    } else {
-                        console.error("Erro HTTP:", xhr.status);
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + xhr.status + '</td></tr>';
-                    }
-                }
-            };
-            xhr.send();
-        }
-
-        function atualizarPaginacao() {
-            document.getElementById('pageInfo').innerText = 'Página ' + currentPage + ' de ' + totalPages;
-            document.getElementById('prevPage').disabled = currentPage <= 1;
-            document.getElementById('nextPage').disabled = currentPage >= totalPages;
-        }
-
-        function mudarPagina(direcao) {
-            var novaPagina = currentPage + direcao;
-            if (novaPagina >= 1 && novaPagina <= totalPages) {
-                carregarLaboratorios(novaPagina);
+            async function carregarLabs(){
+                const r = await fetch("/api/labs", {headers:{"Authorization":"Bearer "+token}});
+                const labs = await r.json();
+                let html = "";
+                labs.forEach(l => {
+                    html += \`<tr>
+                        <td>\${l.nome}</td>
+                        <td>\${l.nif}</td>
+                        <td>\${l.provincia}</td>
+                        <td>\${l.licenca || 'N/D'}</td>
+                        <td>\${l.ativo ? '✅ Ativo' : '❌ Inativo'}</td>
+                        <td><button onclick="desativarLab('\${l._id}')">Suspender</button></td>
+                    </tr>\`;
+                });
+                document.querySelector("#labsTable tbody").innerHTML = html;
             }
-        }
 
-        function verDetalhes(id) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/labs', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var resposta = JSON.parse(xhr.responseText);
-                    // Como agora a resposta é paginada, precisamos buscar o laboratório específico
-                    // Alternativa: fazer uma requisição para /api/labs/:id se existir
-                    // Por simplicidade, vamos buscar em todos os laboratórios (pode ser ineficiente)
-                    // Para este exemplo, vamos apenas exibir as informações que temos na tabela
-                    alert("Detalhes do laboratório em breve...");
+            async function criarLaboratorio(){
+                const dados = {
+                    nome: document.getElementById("labNome").value,
+                    nif: document.getElementById("labNIF").value,
+                    provincia: document.getElementById("labProvincia").value,
+                    licenca: document.getElementById("labLicenca").value,
+                    validadeLicenca: document.getElementById("labValidade").value,
+                    diretor: document.getElementById("labDiretor").value,
+                    responsavelTecnico: document.getElementById("labRespTecnico").value,
+                    email: document.getElementById("labEmail").value,
+                    tipo: "laboratorio"
+                };
+
+                if(!dados.nome || !dados.nif || !dados.licenca || !dados.provincia){
+                    alert("Erro: Preencha todos os campos obrigatórios (Nome, NIF, Província e Licença)");
+                    return;
                 }
-            };
-            xhr.send();
-        }
 
-        function toggleStatus(id, ativoAtual) {
-            var acao = ativoAtual ? 'desativar' : 'ativar';
-            if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
-                alert('Função em desenvolvimento: ' + acao);
-                carregarLaboratorios(currentPage);
+                const r = await fetch("/api/labs", {
+                    method:"POST",
+                    headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+                    body:JSON.stringify(dados)
+                });
+                const d = await r.json();
+                if(d.success){
+                    alert("✅ INSTITUIÇÃO REGISTADA!\\n\\nChave API: " + d.apiKey);
+                    fecharModal("modalLab");
+                    carregarLabs();
+                } else {
+                    alert("Erro ao criar: " + (d.error || "Verifique os dados"));
+                }
             }
-        }
 
-        function logout() {
-            localStorage.removeItem("token");
-            localStorage.removeItem("labKey");
-            window.location.href = "/";
-        }
-
-        carregarStats();
-    </script>
-</body>
-</html>`);
+            function mostrarModalLab(){ document.getElementById("modalLab").style.display="flex"; }
+            function fecharModal(id){ document.getElementById(id).style.display="none"; }
+            function logout(){ localStorage.removeItem("token"); window.location.href="/"; }
+            
+            // Iniciar dashboard
+            mostrarSecao('dashboard');
+            async function carregarStats(){
+                const r = await fetch("/api/stats", {headers:{"Authorization":"Bearer "+token}});
+                const d = await r.json();
+                document.getElementById("totalLabs").innerText = d.labs || 0;
+                document.getElementById("totalHospitais").innerText = d.hospitais || 0;
+            }
+        </script>
+    </body>
+    </html>`);
 });
 
-// ================================================
+
+
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
@@ -1522,6 +1243,4 @@ app.get('/novo-laboratorio', (req, res) => {
 app.listen(PORT, () => {
     console.log('✅ SNS Online na porta ' + PORT);
 });
-
-
 
