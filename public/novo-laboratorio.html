@@ -51,10 +51,13 @@
 
         <form id="formLab">
             <div class="form-grid">
+                <!-- Nome -->
                 <div class="campo full-width">
                     <label>🏥 Nome do Laboratório <span style="color:#c62828;">*</span></label>
                     <input type="text" id="nome" class="required" placeholder="Ex.: LabCentral Luanda" required>
                 </div>
+
+                <!-- NIF + Tipo -->
                 <div class="campo">
                     <label>📄 NIF <span style="color:#c62828;">*</span></label>
                     <input type="text" id="nif" class="required" placeholder="10 dígitos" maxlength="10" pattern="\d{10}" title="Deve conter 10 dígitos" required>
@@ -68,18 +71,44 @@
                         <option value="clinica">Clínica</option>
                     </select>
                 </div>
+
+                <!-- Província (agora com as 18 províncias) + Município -->
                 <div class="campo">
                     <label>📍 Província <span style="color:#c62828;">*</span></label>
-                    <input type="text" id="provincia" class="required" placeholder="Ex.: Luanda, Benguela, ..." required>
+                    <select id="provincia" class="required" required>
+                        <option value="">Selecione a província</option>
+                        <option value="Bengo">Bengo</option>
+                        <option value="Benguela">Benguela</option>
+                        <option value="Bié">Bié</option>
+                        <option value="Cabinda">Cabinda</option>
+                        <option value="Cuando Cubango">Cuando Cubango</option>
+                        <option value="Cuanza Norte">Cuanza Norte</option>
+                        <option value="Cuanza Sul">Cuanza Sul</option>
+                        <option value="Cunene">Cunene</option>
+                        <option value="Huambo">Huambo</option>
+                        <option value="Huíla">Huíla</option>
+                        <option value="Luanda">Luanda</option>
+                        <option value="Lunda Norte">Lunda Norte</option>
+                        <option value="Lunda Sul">Lunda Sul</option>
+                        <option value="Malanje">Malanje</option>
+                        <option value="Moxico">Moxico</option>
+                        <option value="Namibe">Namibe</option>
+                        <option value="Uíge">Uíge</option>
+                        <option value="Zaire">Zaire</option>
+                    </select>
                 </div>
                 <div class="campo">
                     <label>🗺️ Município</label>
                     <input type="text" id="municipio" placeholder="Ex.: Ingombota">
                 </div>
+
+                <!-- Endereço (full) -->
                 <div class="campo full-width">
                     <label>🏛️ Endereço completo <span style="color:#c62828;">*</span></label>
                     <input type="text" id="endereco" class="required" placeholder="Rua, número, bairro" required>
                 </div>
+
+                <!-- Telefones -->
                 <div class="campo">
                     <label>📞 Telefone 1 <span style="color:#c62828;">*</span></label>
                     <input type="tel" id="telephone" class="required" placeholder="+244 900 000 000" required>
@@ -88,6 +117,8 @@
                     <label>📞 Telefone 2</label>
                     <input type="tel" id="telephone2" placeholder="Opcional">
                 </div>
+
+                <!-- Email + Website -->
                 <div class="campo">
                     <label>✉️ Email <span style="color:#c62828;">*</span></label>
                     <input type="email" id="email" class="required" placeholder="lab@exemplo.ao" required>
@@ -96,6 +127,8 @@
                     <label>🌐 Website</label>
                     <input type="url" id="website" placeholder="https://...">
                 </div>
+
+                <!-- Diretor + Resp.Técnico -->
                 <div class="campo">
                     <label>👨‍⚕️ Diretor <span style="color:#c62828;">*</span></label>
                     <input type="text" id="diretor" class="required" placeholder="Nome completo" required>
@@ -104,6 +137,8 @@
                     <label>🧪 Responsável Técnico</label>
                     <input type="text" id="responsavelTecnico" placeholder="Se diferente do diretor">
                 </div>
+
+                <!-- Licença + Validade -->
                 <div class="campo">
                     <label>📜 Nº Licença</label>
                     <input type="text" id="licenca" placeholder="Ex.: 1234/MINSAL/25">
@@ -112,12 +147,16 @@
                     <label>📅 Validade da Licença</label>
                     <input type="date" id="validadeLicenca">
                 </div>
+
+                <!-- Status ativo (checkbox) -->
                 <div class="campo full-width checkbox-group">
                     <input type="checkbox" id="ativo" checked>
                     <label for="ativo" style="font-weight:500;">✅ Laboratório ativo (pode emitir certificados)</label>
                 </div>
             </div>
+
             <hr>
+
             <div class="acoes">
                 <a href="/admin-dashboard" class="btn btn-secondary">← Cancelar</a>
                 <button type="submit" class="btn btn-primary" id="btnSalvar">💾 Registar Laboratório</button>
@@ -171,10 +210,19 @@
         function mostrarRecap(dados) {
             let html = '';
             const campos = [
-                ['Nome', dados.nome], ['NIF', dados.nif], ['Tipo', dados.tipo], ['Província', dados.provincia],
-                ['Município', dados.municipio], ['Endereço', dados.endereco], ['Telefone', dados.telephone],
-                ['Telefone 2', dados.telephone2], ['Email', dados.email], ['Website', dados.website],
-                ['Diretor', dados.diretor], ['Resp. Técnico', dados.responsavelTecnico], ['Licença', dados.licenca],
+                ['Nome', dados.nome],
+                ['NIF', dados.nif],
+                ['Tipo', dados.tipo],
+                ['Província', dados.provincia],
+                ['Município', dados.municipio],
+                ['Endereço', dados.endereco],
+                ['Telefone', dados.telephone],
+                ['Telefone 2', dados.telephone2],
+                ['Email', dados.email],
+                ['Website', dados.website],
+                ['Diretor', dados.diretor],
+                ['Resp. Técnico', dados.responsavelTecnico],
+                ['Licença', dados.licenca],
                 ['Validade', dados.validadeLicenca ? new Date(dados.validadeLicenca).toLocaleDateString('pt-PT') : ''],
                 ['Status', dados.ativo ? 'Ativo' : 'Inativo']
             ];
@@ -207,8 +255,9 @@
             if (!/^\d{10}$/.test(nif)) { alert('NIF inválido'); return; }
             const dados = {
                 nome: document.getElementById('nome').value.trim(),
-                nif, tipo: document.getElementById('tipo').value,
-                provincia: document.getElementById('provincia').value.trim(),
+                nif: nif,
+                tipo: document.getElementById('tipo').value,
+                provincia: document.getElementById('provincia').value,
                 municipio: document.getElementById('municipio').value.trim() || undefined,
                 endereco: document.getElementById('endereco').value.trim(),
                 telephone: document.getElementById('telephone').value.trim(),
