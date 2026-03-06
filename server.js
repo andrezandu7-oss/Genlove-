@@ -535,6 +535,7 @@ app.get('/admin-dashboard', (req, res) => {
         if (!token) {
             window.location.href = "/ministerio";
         }
+carregarStats();
 
         // Variáveis de paginação
         var currentPage = 1;
