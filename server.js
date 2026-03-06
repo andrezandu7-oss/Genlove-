@@ -266,8 +266,9 @@ app.post('/api/login', async (req, res) => {
 // DASHBOARD DO MINISTÉRIO
 // ============================================
 app.get('/admin-dashboard', (req, res) => {
+    [span_0](start_span)[span_1](start_span)// Note : Correction des syntaxes de chaînes et des IDs pour éviter les erreurs JS au chargement[span_0](end_span)[span_1](end_span)
     res.send(`<!DOCTYPE html>
-    <html>
+    <html lang="pt">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -276,7 +277,7 @@ app.get('/admin-dashboard', (req, res) => {
             * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', Arial, sans-serif; }
             body { display:flex; background:#f0f2f5; min-height: 100vh; }
             
-            /* Sidebar Estilizada */
+            [span_2](start_span)/* Sidebar - Design conforme à la partie labo[span_2](end_span) */
             .sidebar {
                 width:260px;
                 background:#006633;
@@ -293,14 +294,13 @@ app.get('/admin-dashboard', (req, res) => {
                 text-align:center;
                 padding-bottom:15px;
                 border-bottom:1px solid rgba(255,255,255,0.2);
-                font-size: 20px;
+                font-size: 18px;
                 letter-spacing: 1px;
             }
             .sidebar button {
                 display:block;
                 width:100%;
                 color:rgba(255,255,255,0.9);
-                text-decoration:none;
                 padding:14px;
                 margin:5px 0;
                 border-radius:8px;
@@ -320,24 +320,13 @@ app.get('/admin-dashboard', (req, res) => {
                 text-align:center;
                 color: white;
             }
-            .sidebar .sair-btn:hover { background:#e63900; }
 
             /* Área Principal */
             .main { margin-left:260px; padding:40px; width:calc(100% - 260px); }
             
-            /* Cabeçalho de Seção */
-            .header-section {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 30px;
-            }
-            .header-section h1 { color: #333; font-size: 24px; }
-
-            /* Cartões de Stats */
             .stats-grid {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                grid-template-columns: repeat(3, 1fr);
                 gap: 20px;
                 margin-bottom: 30px;
             }
@@ -347,52 +336,46 @@ app.get('/admin-dashboard', (req, res) => {
                 border-radius: 12px;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.05);
                 text-align: center;
+                border-top: 4px solid #006633;
             }
             .stat-card h3 { color: #666; font-size: 14px; margin-bottom: 10px; }
-            .stat-card .value { color: #006633; font-size: 28px; font-weight: bold; }
+            .stat-card .value { color: #006633; font-size: 32px; font-weight: bold; }
 
-            /* Tabelas e Cards */
             .card { background:white; padding:25px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); }
-            table { width:100%; border-collapse:collapse; }
-            th { background:#f8f9fa; color:#555; padding:15px; text-align:left; border-bottom:2px solid #eee; font-size: 14px; }
-            td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; color: #444; }
-            tr:hover { background:#fafafa; }
-
-            /* Botões e Badges */
+            
+            table { width:100%; border-collapse:collapse; margin-top:15px; }
+            th { background:#f8f9fa; color:#555; padding:15px; text-align:left; border-bottom:2px solid #eee; }
+            td { padding:15px; border-bottom:1px solid #eee; font-size: 14px; }
+            
             .btn-novo { background:#006633; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; font-weight: 500; }
             .btn-desativar { background:#fff0f0; color:#c00; border:1px solid #ffcaca; padding:6px 12px; border-radius:4px; cursor:pointer; }
+            
             .status-badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
             .badge-ativo { background: #e8f5e9; color: #2e7d32; }
             .badge-inativo { background: #ffebee; color: #c62828; }
 
-            /* Modais */
+            /* Modal */
             .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index: 1000; }
             .modal-content { background:white; padding:30px; border-radius:12px; width:450px; }
-            .modal-content h3 { margin-bottom: 20px; color: #333; }
-            .modal-content input { width:100%; padding:12px; margin:8px 0; border: 1px solid #ddd; border-radius: 6px; }
-            .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-            .btn-save { flex: 1; background: #006633; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; }
-            .btn-cancel { flex: 1; background: #eee; color: #333; border: none; padding: 12px; border-radius: 6px; cursor: pointer; }
-
+            .modal-content input { width:100%; padding:12px; margin:10px 0; border: 1px solid #ddd; border-radius: 6px; }
+            
             .secao { display:none; animation: fadeIn 0.3s ease; }
             @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         </style>
     </head>
     <body>
         <div class="sidebar">
-            <h2>SNS - MINISTÉRIO</h2>
-            <button onclick="mostrarSecao('dashboard')" id="btn-dashboard">📊 Dashboard</button>
+            <h2>SNS MINISTÉRIO</h2>
+            <button onclick="mostrarSecao('dashboard')" id="btn-dashboard" class="active">📊 Dashboard</button>
             <button onclick="mostrarSecao('labs')" id="btn-labs">🔬 Laboratórios</button>
             <button onclick="mostrarSecao('hospitais')" id="btn-hospitais">🏥 Hospitais</button>
             <button onclick="mostrarSecao('empresas')" id="btn-empresas">🏢 Empresas</button>
-            <button class="sair-btn" onclick="logout()">🚪 Sair do Painel</button>
+            <button class="sair-btn" onclick="logout()">🚪 Sair</button>
         </div>
 
         <div class="main">
-            <div id="secaoDashboard" class="secao">
-                <div class="header-section">
-                    <h1>Visão Geral do Sistema</h1>
-                </div>
+            <div id="secaoDashboard" class="secao" style="display:block;">
+                <h1>Painel de Controle</h1>
                 <div class="stats-grid">
                     <div class="stat-card"><h3>Laboratórios</h3><div class="value" id="totalLabs">0</div></div>
                     <div class="stat-card"><h3>Hospitais</h3><div class="value" id="totalHospitais">0</div></div>
@@ -401,11 +384,11 @@ app.get('/admin-dashboard', (req, res) => {
             </div>
 
             <div id="secaoLabs" class="secao">
-                <div class="header-section">
-                    <h1>Gestão de Laboratórios</h1>
-                    <button class="btn-novo" onclick="mostrarModalLab()">+ Novo Laboratório</button>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h1>Laboratórios</h1>
+                    <button class="btn-novo" onclick="abrirModal('modalLab')">+ Novo Laboratório</button>
                 </div>
-                <div class="card">
+                <div class="card" style="margin-top:20px;">
                     <table id="labsTable">
                         <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Status</th><th>Ações</th></tr></thead>
                         <tbody></tbody>
@@ -414,11 +397,11 @@ app.get('/admin-dashboard', (req, res) => {
             </div>
 
             <div id="secaoHospitais" class="secao">
-                <div class="header-section">
-                    <h1>Gestão de Hospitais</h1>
-                    <button class="btn-novo" onclick="mostrarModalHospital()">+ Novo Hospital</button>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h1>Hospitais</h1>
+                    <button class="btn-novo" onclick="abrirModal('modalHospital')">+ Novo Hospital</button>
                 </div>
-                <div class="card">
+                <div class="card" style="margin-top:20px;">
                     <table id="hospitaisTable">
                         <thead><tr><th>Nome</th><th>NIF</th><th>Província</th><th>Diretor</th><th>Status</th><th>Ações</th></tr></thead>
                         <tbody></tbody>
@@ -427,11 +410,11 @@ app.get('/admin-dashboard', (req, res) => {
             </div>
 
             <div id="secaoEmpresas" class="secao">
-                <div class="header-section">
-                    <h1>Gestão de Empresas</h1>
-                    <button class="btn-novo" onclick="mostrarModalEmpresa()">+ Nova Empresa</button>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h1>Empresas</h1>
+                    <button class="btn-novo" onclick="abrirModal('modalEmpresa')">+ Nova Empresa</button>
                 </div>
-                <div class="card">
+                <div class="card" style="margin-top:20px;">
                     <table id="empresasTable">
                         <thead><tr><th>Nome</th><th>NIF</th><th>Responsável</th><th>Status</th><th>Ações</th></tr></thead>
                         <tbody></tbody>
@@ -442,44 +425,47 @@ app.get('/admin-dashboard', (req, res) => {
 
         <div id="modalLab" class="modal">
             <div class="modal-content">
-                <h3>Cadastrar Laboratório</h3>
+                <h3>Novo Laboratório</h3>
                 <input type="text" id="labNome" placeholder="Nome da Instituição">
                 <input type="text" id="labNIF" placeholder="NIF (10 dígitos)" maxlength="10">
                 <input type="text" id="labProvincia" placeholder="Província">
-                <input type="email" id="labEmail" placeholder="Email de contacto">
-                <input type="text" id="labDiretor" placeholder="Diretor Técnico">
-                <p id="labError" style="color:red; font-size:12px; display:none;">NIF inválido</p>
-                <div class="modal-actions">
-                    <button class="btn-save" onclick="criarLaboratorio()">Salvar</button>
-                    <button class="btn-cancel" onclick="fecharModal('modalLab')">Cancelar</button>
-                </div>
+                <input type="email" id="labEmail" placeholder="Email">
+                <input type="text" id="labDiretor" placeholder="Diretor">
+                <button class="btn-novo" style="width:100%; margin-top:10px;" onclick="criarLaboratorio()">Salvar</button>
+                <button onclick="fecharModal('modalLab')" style="width:100%; border:none; background:none; margin-top:10px; cursor:pointer;">Cancelar</button>
             </div>
         </div>
 
         <script>
             const token = localStorage.getItem("token");
-            if(!token) window.location.href="/ministerio";
+            [span_3](start_span)if(!token) window.location.href="/ministerio";[span_3](end_span)
 
             function mostrarSecao(s){
-                document.querySelectorAll('.secao').forEach(div => div.style.display = 'none');
-                document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
+                [span_4](start_span)// Correction de la syntaxe de masquage[span_4](end_span)
+                const secoes = ['secaoDashboard', 'secaoLabs', 'secaoHospitais', 'secaoEmpresas'];
+                secoes.forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.style.display = 'none';
+                });
                 
-                const secaoId = "secao" + s.charAt(0).toUpperCase() + s.slice(1);
-                document.getElementById(secaoId).style.display = "block";
+                document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
+                
+                const targetId = "secao" + s.charAt(0).toUpperCase() + s.slice(1);
+                const targetEl = document.getElementById(targetId);
+                if(targetEl) targetEl.style.display = "block";
                 document.getElementById('btn-' + s).classList.add('active');
 
-                if(s === 'dashboard') carregarStats();
+                [span_5](start_span)if(s === 'dashboard') carregarStats();[span_5](end_span)
                 if(s === 'labs') carregarLabs();
                 if(s === 'hospitais') carregarHospitais();
                 if(s === 'empresas') carregarEmpresas();
             }
 
+            function abrirModal(id){ document.getElementById(id).style.display="flex"; }
             function fecharModal(id){ document.getElementById(id).style.display="none"; }
-            function mostrarModalLab(){ document.getElementById("modalLab").style.display="flex"; }
-            // Adicionar outras funções de modal conforme necessário...
 
             async function carregarStats(){
-                const r = await fetch("/api/stats", {headers:{"Authorization":"Bearer "+token}});
+                [span_6](start_span)const r = await fetch("/api/stats", {headers:{"Authorization":"Bearer "+token}});[span_6](end_span)
                 const d = await r.json();
                 document.getElementById("totalLabs").innerText = d.labs || 0;
                 document.getElementById("totalHospitais").innerText = d.hospitais || 0;
@@ -487,7 +473,7 @@ app.get('/admin-dashboard', (req, res) => {
             }
 
             async function carregarLabs(){
-                const r = await fetch("/api/labs", {headers:{"Authorization":"Bearer "+token}});
+                [span_7](start_span)const r = await fetch("/api/labs", {headers:{"Authorization":"Bearer "+token}});[span_7](end_span)
                 const labs = await r.json();
                 let html = labs.map(l => \`
                     <tr>
@@ -498,18 +484,41 @@ app.get('/admin-dashboard', (req, res) => {
                         <td><button class="btn-desativar" onclick="desativarLab('\${l._id}')">Desativar</button></td>
                     </tr>
                 \`).join('');
-                document.querySelector("#labsTable tbody").innerHTML = html;
+                [span_8](start_span)document.querySelector("#labsTable tbody").innerHTML = html;[span_8](end_span)
             }
 
-            // ... (Conservez vos fonctions créerLaboratorio, carregarHospitais, carregarEmpresas existantes)
+            // Fonctions de création (similaires au code original mais nettoyées)
+            async function criarLaboratorio(){
+                const nif = document.getElementById("labNIF").value;
+                [span_9](start_span)if(!/^\\d{10}$/.test(nif)) return alert("NIF Inválido");[span_9](end_span)
+                const dados = {
+                    nome: document.getElementById("labNome").value,
+                    nif,
+                    provincia: document.getElementById("labProvincia").value,
+                    email: document.getElementById("labEmail").value,
+                    diretor: document.getElementById("labDiretor").value,
+                    tipo: "laboratorio"
+                };
+                const r = await fetch("/api/labs", {
+                    method:"POST",
+                    headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
+                    body:JSON.stringify(dados)
+                });
+                const d = await r.json();
+                if(d.success){
+                    alert("✅ Sucesso! API KEY: " + d.apiKey);
+                    fecharModal('modalLab');
+                    carregarLabs();
+                }
+            }
+
+            function logout(){ localStorage.removeItem("token"); window.location.href="/"; [span_10](start_span)}
             
-            function logout(){ localStorage.removeItem("token"); window.location.href="/"; }
-            
-            // Iniciar no Dashboard
-            mostrarSecao('dashboard');
+            // Init
+            carregarStats();
         </script>
     </body>
-    </html>\`);
+    </html>`);
 });
 
 
