@@ -1543,6 +1543,63 @@ app.get('/novo-laboratorio', (req, res) => {
 });
 
 // =============================================
+// STATS GLOBAIS (MINISTÉRIO)
+// =============================================
+app.get('/api/stats', authMiddleware, async (req, res) => {
+    try {
+        // Contagem real dos documentos no MongoDB
+        const nLabs = await Lab.countDocuments();
+        const nHospitais = await Hospital.countDocuments();
+        const nEmpresas = await Empresa.countDocuments();
+        
+        // Contagem de certificados (se a coleção existir)
+        const nCertificados = await mongoose.model('Certificado').countDocuments().catch(() => 0);
+
+        // Envia os dados para o Dashboard
+        res.json({
+            labs: nLabs || 0,
+            hospitais: nHospitais || 0,
+            empresas: nEmpresas || 0,
+            certificados: nCertificados || 0
+        });
+    } catch (error) {
+        console.error('Erro ao carregar stats:', error);
+        res.status(500).json({ error: 'Erro ao carregar estatísticas' });
+    }
+});
+
+// =============================================
+// LISTAR LABORATÓRIOS (PARA O TABULEIRO)
+// =============================================
+app.get('/api/labs', authMiddleware, async (req, res) => {
+    try {
+        const { provincia, page = 1 } = req.query;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        let filtro = {};
+        if (provincia && provincia !== "") {
+            filtro.provincia = provincia;
+        }
+
+        const total = await Lab.countDocuments(filtro);
+        const labs = await Lab.find(filtro)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        // O Dashboard espera o objeto "labs"
+        res.json({
+            labs: labs,
+            pages: Math.ceil(total / limit),
+            total: total
+        });
+    } catch (error) {
+        res.status(500).json({ error: 'Erro ao listar laboratórios' });
+    }
+});
+
+// =============================================
 // INICIALIZAÇÃO DO SERVIDOR
 // =============================================
 app.listen(PORT, () => {
