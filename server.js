@@ -856,61 +856,88 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
     }
 });
 
-// =============================================
-// ROUTE POUR GÉNÉRER LES PDF
-// =============================================
-app.post('/api/certificados/pdf', labMiddleware, async (req, res) => {
+// --- ROTA COMPLETA: GERAÇÃO DE PDF OFICIAL ---
+app.post('/api/certificados/pdf', authMiddleware, async (req, res) => {
     try {
         const { numero } = req.body;
-        
-        // Vérifier que le numéro est présent
-        if (!numero) {
-            return res.status(400).json({ error: 'Número do certificado não fornecido' });
-        }
-        
-        // Récupérer le certificat avec les données
-        const certificado = await Certificate.findOne({ 
-            numero,
-            emitidoPor: req.lab._id 
-        });
-        
+
+        // 1. BUSCA OS DADOS (O 'populate' traz NIF, Província e Licença do Lab)
+        const certificado = await Certificate.findOne({ numero }).populate('emitidoPor');
+
         if (!certificado) {
-            return res.status(404).json({ error: 'Certificado não encontrado' });
+            return res.status(404).json({ error: 'Certificado não encontrado.' });
         }
-        
-        // Utiliser la méthode de l'instance pour préparer les données
-        const dados = certificado.prepararParaPDF ? certificado.prepararParaPDF() : {
-            numero: certificado.numero,
-            tipo: certificado.tipo,
-            paciente: certificado.paciente,
-            laborantin: certificado.laborantin || { nome: 'Não informado', registro: '' },
-            dados: certificado.dados,
-            imc: certificado.imc,
-            idade: certificado.idade,
-            classificacaoIMC: certificado.classificacaoIMC,
-            emitidoEm: certificado.emitidoEm
-        };
-        
-        const lab = req.lab;
-        
-        // Créer un nouveau document PDF
-        const doc = new PDFDocument({
-            size: 'A4',
-            margin: 50,
-            info: {
-                Title: `Certificado ${numero}`,
-                Author: lab.nome,
-                Subject: 'Certificado Médico SNS Angola'
-            }
-        });
-        
-        // Configurer la réponse
+
+        // 2. CONFIGURAÇÃO DO DOCUMENTO PDF
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=certificado-${numero}.pdf`);
-        
-        // Pipe le PDF vers la réponse
+        res.setHeader('Content-Disposition', `attachment; filename=Certificado_${numero}.pdf`);
         doc.pipe(res);
+
+        // --- CABEÇALHO OFICIAL ---
+        doc.fillColor('#006633').fontSize(14).text('REPÚBLICA DE ANGOLA', { align: 'center' });
+        doc.fontSize(12).text('MINISTÉRIO DA SAÚDE', { align: 'center' });
+        doc.moveDown(1);
+        doc.fontSize(16).text('CERTIFICADO DE EXAME SANITÁRIO', { align: 'center', underline: true });
+        doc.moveDown(2);
+
+        let y = 160;
+
+        // --- BLOCO: IDENTIFICAÇÃO DA UNIDADE (DADOS DO NOVO LABORATÓRIO) ---
+        doc.fillColor('#006633').fontSize(11).text('IDENTIFICAÇÃO DA UNIDADE EMISSORA', 50, y);
+        y += 20;
+
+        doc.fillColor('#000000').fontSize(10);
+        doc.text(`Unidade: ${certificado.emitidoPor.nome}`, 50, y);
+        doc.text(`NIF: ${certificado.emitidoPor.nif || '---'}`, 350, y); // Campo NIF
+        y += 15;
+
+        doc.text(`Província: ${certificado.emitidoPor.provincia}`, 50, y); // Campo Província
+        doc.text(`Alvará Sanitário: ${certificado.emitidoPor.licenca || 'Em dia'}`, 350, y); // Campo Licença
+        y += 15;
+
+        doc.text(`Endereço: ${certificado.emitidoPor.endereco}`, 50, y);
+        y += 30;
+
+        // --- BLOCO: DADOS DO UTENTE ---
+        doc.fillColor('#006633').fontSize(11).text('DADOS DO UTENTE / PACIENTE', 50, y);
+        y += 20;
+        doc.fillColor('#000000').fontSize(10)
+           .text(`Nome: ${certificado.nome}`, 50, y)
+           .text(`Identificação: ${certificado.identificacao}`, 350, y);
+        y += 30;
+
+        // --- BLOCO: RESULTADOS DOS EXAMES ---
+        doc.fillColor('#006633').fontSize(11).text('RESULTADOS LABORATORIAIS', 50, y);
+        y += 20;
         
+        doc.fillColor('#000000').fontSize(10);
+        certificado.exames.forEach(exame => {
+            doc.text(`• ${exame.nome}:`, 50, y);
+            doc.text(`${exame.resultado}`, 200, y, { font: 'Helvetica-Bold' });
+            y += 15;
+        });
+
+        y += 30;
+
+        // --- AUTENTICAÇÃO E QR CODE ---
+        const qrUrl = `https://saude.onrender.com/verificar/${certificado.numero}`;
+        const qrImage = await QRCode.toDataURL(qrUrl);
+        doc.image(qrImage, 450, y, { width: 80 });
+
+        doc.fontSize(8).fillColor('#666666')
+           .text(`Código de Autenticidade: ${certificado.hashAutenticidade}`, 50, y + 20)
+           .text(`Data de Emissão: ${new Date(certificado.dataEmissao).toLocaleString('pt-PT')}`, 50, y + 35);
+
+        // 3. FINALIZA O PDF
+        doc.end();
+
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        res.status(500).send('Erro interno ao gerar o documento.');
+    }
+});
+
         // =========================================
         // EN-TÊTE DU DOCUMENT (CENTRÉ)
         // =========================================
