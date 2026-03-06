@@ -996,10 +996,17 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
         const dados = req.body;
         const labId = 'LAB' + Date.now();
         const apiKey = gerarApiKey();
+
+        // Correction du format de date avant sauvegarde
+        if (dados.validadeLicenca) {
+            dados.validadeLicenca = new Date(dados.validadeLicenca);
+        }
+
         const lab = new Lab({ ...dados, labId, apiKey });
         await lab.save();
         res.json({ success: true, labId, apiKey });
     } catch (error) {
+        console.error('Erro ao criar laboratório:', error);
         res.status(500).json({ error: 'Erro ao criar laboratório' });
     }
 });
