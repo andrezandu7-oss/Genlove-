@@ -264,7 +264,7 @@ app.post('/api/login', async (req, res) => {
 
 // ============================================
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION MODERNE CORRIGÉE)
+// DASHBOARD DO MINISTÉRIO (VERSION CORRIGÉE)
 // ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
@@ -458,7 +458,7 @@ app.get('/admin-dashboard', (req, res) => {
                         </tr>
                     </thead>
                     <tbody id="tabelaLabs">
-                        <tr><td colspan="7" style="text-align:center;">Aguardando...</td></tr>
+                        <tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -487,20 +487,18 @@ app.get('/admin-dashboard', (req, res) => {
 
         // Carregar estatísticas
         function carregarStats() {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/stats', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    var data = JSON.parse(xhr.responseText);
-                    document.getElementById('statsLabs').innerHTML = data.labs || 0;
-                    document.getElementById('statsHospitais').innerHTML = data.hospitais || 0;
-                    document.getElementById('statsEmpresas').innerHTML = data.empresas || 0;
-                    var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
-                    document.getElementById('statsTotal').innerHTML = total;
-                }
-            };
-            xhr.send();
+            fetch('/api/stats', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('statsLabs').innerText = data.labs || 0;
+                document.getElementById('statsHospitais').innerText = data.hospitais || 0;
+                document.getElementById('statsEmpresas').innerText = data.empresas || 0;
+                var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
+                document.getElementById('statsTotal').innerText = total;
+            })
+            .catch(err => console.error('Erro stats:', err));
         }
 
         // Carregar laboratórios (sem paginação)
@@ -513,59 +511,57 @@ app.get('/admin-dashboard', (req, res) => {
             var provincia = document.getElementById('filtroProvincia').value;
             var status = document.getElementById('filtroStatus').value;
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/api/labs', true);
-            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4) {
-                    spinner.style.display = 'none';
-                    if (xhr.status === 200) {
-                        try {
-                            var lista = JSON.parse(xhr.responseText); // tableau direct
-                            // Filtrar lado cliente
-                            if (provincia) {
-                                lista = lista.filter(l => l.provincia === provincia);
-                            }
-                            if (status !== '') {
-                                var ativo = (status === 'true');
-                                lista = lista.filter(l => l.ativo === ativo);
-                            }
-                            if (lista.length === 0) {
-                                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
-                            } else {
-                                var html = '';
-                                for (var i = 0; i < lista.length; i++) {
-                                    var l = lista[i];
-                                    var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
-                                    var statusText = l.ativo ? 'Ativo' : 'Inativo';
-                                    var btnStatus = l.ativo ? '🔴' : '🟢';
-                                    var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
-                                    html += '<tr>';
-                                    html += '<td><strong>' + (l.nome || '') + '</strong></td>';
-                                    html += '<td>' + (l.nif || '') + '</td>';
-                                    html += '<td>' + (l.provincia || '') + '</td>';
-                                    html += '<td>' + (l.telefone || '') + '</td>';
-                                    html += '<td>' + (l.diretor || '') + '</td>';
-                                    html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
-                                    html += '<td>';
-                                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button>';
-                                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
-                                    html += '</td>';
-                                    html += '</tr>';
-                                }
-                                tbody.innerHTML = html;
-                            }
-                        } catch (e) {
-                            console.error("Erro ao parsear JSON:", e);
-                            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro nos dados recebidos</td></tr>';
-                        }
-                    } else {
-                        console.error("Erro HTTP:", xhr.status);
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + xhr.status + '</td></tr>';
-                    }
+            fetch('/api/labs', {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Erro HTTP ' + response.status);
+                return response.json();
+            })
+            .then(lista => {
+                spinner.style.display = 'none';
+                console.log('Laboratórios recebidos:', lista);
+
+                // Filtrar lado cliente
+                if (provincia) {
+                    lista = lista.filter(l => l.provincia === provincia);
                 }
-            };
-            xhr.send();
+                if (status !== '') {
+                    var ativo = (status === 'true');
+                    lista = lista.filter(l => l.ativo === ativo);
+                }
+
+                if (lista.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
+                } else {
+                    var html = '';
+                    for (var i = 0; i < lista.length; i++) {
+                        var l = lista[i];
+                        var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
+                        var statusText = l.ativo ? 'Ativo' : 'Inativo';
+                        var btnStatus = l.ativo ? '🔴' : '🟢';
+                        var titleStatus = l.ativo ? 'Desativar' : 'Ativar';
+                        html += '<tr>';
+                        html += '<td><strong>' + (l.nome || '') + '</strong></td>';
+                        html += '<td>' + (l.nif || '') + '</td>';
+                        html += '<td>' + (l.provincia || '') + '</td>';
+                        html += '<td>' + (l.telefone || '') + '</td>';
+                        html += '<td>' + (l.diretor || '') + '</td>';
+                        html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
+                        html += '<td>';
+                        html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')" title="Ver detalhes">👁️</button>';
+                        html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')" title="' + titleStatus + '">' + btnStatus + '</button>';
+                        html += '</td>';
+                        html += '</tr>';
+                    }
+                    tbody.innerHTML = html;
+                }
+            })
+            .catch(error => {
+                spinner.style.display = 'none';
+                console.error('Erro ao carregar laboratórios:', error);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar dados</td></tr>';
+            });
         }
 
         function verDetalhes(id) {
