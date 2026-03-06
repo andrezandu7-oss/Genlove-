@@ -302,73 +302,401 @@ app.post('/api/labs/verificar', async (req, res) => {
 });
 
 // ================================================
-// DASHBOARD DO MINISTÉRIO (VERSION FINALE)
 // ================================================
-(admin-dashboard.html) -->
-<!DOCTYPE html>
-<html lang="pt">
+// DASHBOARD DO MINISTÉRIO (VERSÃO CORRIGIDA)
+// ================================================
+app.get('/admin-dashboard', (req, res) => {
+    res.send(`<!DOCTYPE html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Ministério - SNS</title>
-<style>
-/* Styles dashboard */
-...
-</style>
+    <meta charset="UTF-8">
+    <title>Ministério da Saúde - SNS Angola</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif; }
+        body { display:flex; background:#f5f5f5; }
+        .sidebar {
+            width:250px;
+            background:#006633;
+            color:white;
+            height:100vh;
+            padding:20px;
+            position:fixed;
+            display:flex;
+            flex-direction:column;
+        }
+        .sidebar h2 {
+            margin-bottom:30px;
+            text-align:center;
+        }
+        .sidebar button {
+            display:block;
+            width:100%;
+            color:white;
+            text-decoration:none;
+            padding:12px;
+            margin:5px 0;
+            border-radius:5px;
+            cursor:pointer;
+            text-align:left;
+            font-size:16px;
+            border:none;
+            background:none;
+        }
+        .sidebar button:hover {
+            background:#004d26;
+        }
+        .sidebar .novo-btn {
+            background:#ffa500;
+            color:#006633;
+            font-weight:bold;
+            text-align:center;
+            margin:20px 0;
+        }
+        .sidebar .novo-btn:hover {
+            background:#ff8c00;
+        }
+        .sidebar .sair-btn {
+            background:#dc3545;
+            margin-top:auto;
+            text-align:center;
+        }
+        .sidebar .sair-btn:hover {
+            background:#c82333;
+        }
+        .main {
+            margin-left:270px;
+            padding:30px;
+            width:100%;
+        }
+        .welcome {
+            background:#e8f5e9;
+            padding:20px;
+            border-left:5px solid #006633;
+            margin-bottom:20px;
+        }
+        .secao {
+            display:none;
+        }
+        .secao.active {
+            display:block;
+        }
+        .stats-grid {
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:20px;
+            margin-bottom:30px;
+        }
+        .stat-card {
+            background:white;
+            padding:20px;
+            border-radius:8px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
+            text-align:center;
+        }
+        .stat-card h3 {
+            color:#666;
+            font-size:14px;
+            margin-bottom:10px;
+        }
+        .stat-card p {
+            color:#006633;
+            font-size:28px;
+            font-weight:bold;
+        }
+        table {
+            width:100%;
+            background:white;
+            border-collapse:collapse;
+            margin-top:20px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        }
+        th {
+            background:#006633;
+            color:white;
+            padding:12px;
+            text-align:left;
+        }
+        td {
+            padding:12px;
+            border-bottom:1px solid #ddd;
+        }
+        .btn-acao {
+            background:#f0f0f0;
+            border:none;
+            padding:5px 10px;
+            border-radius:4px;
+            cursor:pointer;
+            margin:0 2px;
+        }
+        .btn-acao:hover {
+            background:#e0e0e0;
+        }
+        .status-badge {
+            padding:4px 8px;
+            border-radius:4px;
+            font-size:12px;
+            font-weight:bold;
+        }
+        .status-ativo {
+            background:#e8f5e9;
+            color:#2e7d32;
+        }
+        .status-inativo {
+            background:#ffebee;
+            color:#c62828;
+        }
+        .modal {
+            display:none;
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            background:rgba(0,0,0,0.5);
+            z-index:1000;
+            align-items:center;
+            justify-content:center;
+        }
+        .modal-content {
+            background:white;
+            padding:30px;
+            border-radius:10px;
+            width:600px;
+            max-width:90%;
+            max-height:80vh;
+            overflow-y:auto;
+        }
+        .modal h3 {
+            color:#006633;
+            margin-bottom:20px;
+        }
+        .info-row {
+            display:flex;
+            margin-bottom:10px;
+            border-bottom:1px solid #eee;
+            padding-bottom:5px;
+        }
+        .info-label {
+            font-weight:bold;
+            width:40%;
+            color:#333;
+        }
+        .info-value {
+            width:60%;
+            color:#666;
+        }
+    </style>
 </head>
 <body>
-
-<div class="sidebar">
-<h2>SNS</h2>
-<p onclick="window.location.href='/admin-dashboard'">Dashboard</p>
-<p onclick="window.location.href='/novo-laboratorio'">Novo Laboratório</p>
-<p onclick="window.location.href='/certificados'">Certificados</p>
-</div>
-
-<div class="main">
-<button class="logout" onclick="logout()">Sair</button>
-<h1>Laboratórios Registrados</h1>
-<div id="labsContainer">
-<p>Carregando laboratórios...</p>
-</div>
-</div>
-
-<script>
-(async function() {
-    const token = localStorage.getItem('token');
-    if(!token){ alert('Sessão expirada. Faça login novamente.'); window.location.href = '/'; return; }
-
-    function logout(){ localStorage.removeItem('token'); window.location.href = '/'; }
-    window.logout = logout;
-
-    try{
-        const res = await fetch('/api/labs', { headers:{ 'Authorization':'Bearer '+token } });
-        const data = await res.json();
-        const container = document.getElementById('labsContainer');
-        container.innerHTML = '';
+    <div class="sidebar">
+        <h2>SNS-Admin</h2>
+        <button onclick="mostrarSeccao('dashboardSection')">📊 Dashboard</button>
+        <button onclick="mostrarSeccao('laboratoriosSection')">🏥 Laboratórios</button>
+        <button class="novo-btn" onclick="window.location.href='/novo-laboratorio'">+ NOVO LABORATÓRIO</button>
+        <button class="sair-btn" onclick="logout()">Sair</button>
+    </div>
+    
+    <div class="main">
+        <div id="welcome" class="welcome">
+            <h2>👋 Bem-vindo, Administrador</h2>
+        </div>
         
-        if(res.ok && data.success && data.labs.length){
-            data.labs.forEach(lab=>{
-                const div = document.createElement('div');
-                div.className='lab-item';
-                div.innerHTML=`
-                    <h3>${lab.nome}</h3>
-                    <p>Tipo: ${lab.tipo} | Província: ${lab.provincia}</p>
-                    <p>Email: ${lab.email} | Tel: ${lab.telefone}</p>
-                    <p>Status: ${lab.ativo ? 'Ativo' : 'Inativo'}</p>
-                    <button onclick="editarLab('${lab._id}')">✏️ Editar</button>
-                `;
-                container.appendChild(div);
-            });
-        } else { container.innerHTML = '<p>Nenhum laboratório registrado.</p>'; }
-    } catch(e){ console.error(e); document.getElementById('labsContainer').innerHTML = '<p>Erro ao carregar laboratórios.</p>'; }
+        <div id="dashboardSection" class="secao active">
+            <h2>Painel de Controle</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Laboratórios</h3>
+                    <p id="statsLabs">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Hospitais</h3>
+                    <p id="statsHospitais">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Empresas</h3>
+                    <p id="statsEmpresas">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total</h3>
+                    <p id="statsTotal">0</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="laboratoriosSection" class="secao">
+            <h2>Laboratórios</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>NIF</th>
+                        <th>Província</th>
+                        <th>Telefone</th>
+                        <th>Diretor</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaLabs">
+                    <tr><td colspan="7" style="text-align:center;">Carregando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-    window.editarLab = function(id){ localStorage.setItem('editLabId', id); window.location.href='/novo-laboratorio'; }
-})();
-</script>
+    <div id="modalDetalhes" class="modal">
+        <div class="modal-content">
+            <h3>📋 Detalhes do Laboratório</h3>
+            <div id="conteudoDetalhes"></div>
+            <div style="text-align:right; margin-top:20px;">
+                <button class="btn-acao" onclick="fecharModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
 
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "/ministerio";
+
+        function mostrarSeccao(id) {
+            document.querySelectorAll('.secao').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (id === 'dashboardSection') carregarStats();
+            if (id === 'laboratoriosSection') carregarLaboratorios();
+        }
+
+        async function carregarStats() {
+            try {
+                const r = await fetch("/api/stats", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const data = await r.json();
+                document.getElementById("statsLabs").innerText = data.labs || 0;
+                document.getElementById("statsHospitais").innerText = data.hospitais || 0;
+                document.getElementById("statsEmpresas").innerText = data.empresas || 0;
+                document.getElementById("statsTotal").innerText = (data.labs + data.hospitais + data.empresas) || 0;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function carregarLaboratorios() {
+            const tbody = document.getElementById("tabelaLabs");
+            try {
+                const r = await fetch("/api/labs", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const lista = await r.json();
+                
+                if (!lista || lista.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                for (let i = 0; i < lista.length; i++) {
+                    const l = lista[i];
+                    html += '<tr>';
+                    html += '<td><strong>' + (l.nome || '') + '</strong></td>';
+                    html += '<td>' + (l.nif || '') + '</td>';
+                    html += '<td>' + (l.provincia || '') + '</td>';
+                    html += '<td>' + (l.telefone || '') + '</td>';
+                    html += '<td>' + (l.diretor || '') + '</td>';
+                    html += '<td><span class="status-badge ' + (l.ativo ? 'status-ativo' : 'status-inativo') + '">' + (l.ativo ? 'Ativo' : 'Inativo') + '</span></td>';
+                    html += '<td>';
+                    html += '<button class="btn-acao" onclick="verDetalhes(\'' + l._id + '\')">👁️</button>';
+                    html += '<button class="btn-acao" onclick="toggleStatus(\'' + l._id + '\', ' + l.ativo + ')">' + (l.ativo ? '🔴' : '🟢') + '</button>';
+                    html += '</td>';
+                    html += '</tr>';
+                }
+                tbody.innerHTML = html;
+                
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar</td></tr>';
+            }
+        }
+
+        async function verDetalhes(id) {
+            try {
+                const r = await fetch("/api/labs", {
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                const lista = await r.json();
+                const lab = null;
+                for (let i = 0; i < lista.length; i++) {
+                    if (lista[i]._id === id) {
+                        lab = lista[i];
+                        break;
+                    }
+                }
+                
+                if (!lab) {
+                    alert('Laboratório não encontrado');
+                    return;
+                }
+                
+                let html = '';
+                html += '<div class="info-row"><span class="info-label">ID:</span><span class="info-value">' + (lab.labId || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Nome:</span><span class="info-value">' + (lab.nome || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">NIF:</span><span class="info-value">' + (lab.nif || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Tipo:</span><span class="info-value">' + (lab.tipo || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Província:</span><span class="info-value">' + (lab.provincia || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Município:</span><span class="info-value">' + (lab.municipio || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Endereço:</span><span class="info-value">' + (lab.endereco || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Telefone:</span><span class="info-value">' + (lab.telefone || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Telefone 2:</span><span class="info-value">' + (lab.telefone2 || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Email:</span><span class="info-value">' + (lab.email || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Website:</span><span class="info-value">' + (lab.website || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Diretor:</span><span class="info-value">' + (lab.diretor || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Resp. Técnico:</span><span class="info-value">' + (lab.responsavelTecnico || 'N/I') + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Licença:</span><span class="info-value">' + (lab.licenca || 'N/I') + '</span></div>';
+                
+                let validade = 'N/I';
+                if (lab.validadeLicenca) {
+                    const data = new Date(lab.validadeLicenca);
+                    validade = data.toLocaleDateString('pt-PT');
+                }
+                html += '<div class="info-row"><span class="info-label">Validade:</span><span class="info-value">' + validade + '</span></div>';
+                
+                html += '<div class="info-row"><span class="info-label">Status:</span><span class="info-value">' + (lab.ativo ? 'Ativo' : 'Inativo') + '</span></div>';
+                
+                let criado = 'N/I';
+                if (lab.createdAt) {
+                    const data = new Date(lab.createdAt);
+                    criado = data.toLocaleDateString('pt-PT');
+                }
+                html += '<div class="info-row"><span class="info-label">Criado em:</span><span class="info-value">' + criado + '</span></div>';
+                html += '<div class="info-row"><span class="info-label">Total emissões:</span><span class="info-value">' + (lab.totalEmissoes || 0) + '</span></div>';
+                
+                document.getElementById('conteudoDetalhes').innerHTML = html;
+                document.getElementById('modalDetalhes').style.display = 'flex';
+                
+            } catch (e) {
+                console.error(e);
+                alert('Erro ao carregar detalhes');
+            }
+        }
+
+        function fecharModal() {
+            document.getElementById('modalDetalhes').style.display = 'none';
+        }
+
+        function toggleStatus(id, ativo) {
+            alert('Função em desenvolvimento: ' + (ativo ? 'Desativar' : 'Ativar') + ' laboratório ' + id);
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            localStorage.removeItem("labKey");
+            window.location.href = "/";
+        }
+
+        carregarStats();
+    </script>
 </body>
-</html>
+</html>`);
+});
 // ================================================
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
