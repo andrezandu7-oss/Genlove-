@@ -343,6 +343,46 @@ app.get('/api/labs', authMiddleware, async (req, res) => {
     }
 });
 
+// Ajoutez cette route POST pour salvar o laboratório
+app.post('/api/labs/novo', authMiddleware, async (req, res) => {
+    try {
+        const dados = req.body;
+        
+        // Validar NIF único
+        const nifExistente = await Lab.findOne({ nif: dados.nif });
+        if (nifExistente) {
+            return res.status(400).json({ error: 'NIF já está registrado' });
+        }
+
+        // Criar API Key única
+        let apiKey;
+        let tentativa = 0;
+        do {
+            apiKey = gerarApiKey();
+            tentativa++;
+        } while (await Lab.findOne({ apiKey }) && tentativa < 5);
+
+        const laboratorio = new Lab({
+            ...dados,
+            labId: 'LAB-' + Date.now(),
+            apiKey: apiKey,
+            ativo: true
+        });
+
+        const salvo = await laboratorio.save();
+        console.log('✅ Novo laboratório:', salvo.nome, 'API Key:', apiKey);
+
+        res.json({
+            success: true,
+            id: salvo._id,
+            apiKey: apiKey,
+            mensagem: 'Laboratório registrado com sucesso!'
+        });
+    } catch (error) {
+        console.error('❌ Erro salvar lab:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
 // ================================================
 // DASHBOARD MINISTÉRIO - VERSION FINALE CORRIGÉE
 // ================================================
