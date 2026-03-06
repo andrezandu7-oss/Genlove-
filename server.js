@@ -272,9 +272,9 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// ============================================
-// DASHBOARD DO MINISTÉRIO (VERSÃO MODERNA)
-// ============================================
+// ================================================
+// DASHBOARD DO MINISTÉRIO (DESIGN MODERNE, LOGIQUE FONCTIONNELLE)
+// ================================================
 app.get('/admin-dashboard', (req, res) => {
     res.send(`<!DOCTYPE html>
 <html lang="pt">
