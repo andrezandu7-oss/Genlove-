@@ -1,8 +1,8 @@
-// ============================================
+// =========================================================
 // SNS - SISTEMA NACIONAL DE SAÚDE
 // MINISTÉRIO DA SAÚDE - ANGOLA
-// VERSÃO FINAL COM TODOS OS BOTÕES FUNCIONAIS
-// ============================================
+// VERSÃO FINAL ROBUSTA: LICENÇAS E PROVÍNCIAS INTEGRADAS
+// =========================================================
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -29,8 +29,8 @@ app.use(express.urlencoded({ extended: true }));
 // ============================================
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sns';
 mongoose.connect(MONGODB_URI)
-.then(() => console.log('✅ MongoDB conectado'))
-.catch(err => console.log('❌ MongoDB erro:', err));
+  .then(() => console.log('✅ MongoDB Conectado (Render/Atlas)'))
+  .catch(err => console.log('❌ Erro MongoDB:', err));
 
 // ============================================
 // FUNÇÕES AUXILIARES
@@ -43,10 +43,6 @@ function gerarChaveHospital() {
     return 'HOSP-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 }
 
-function gerarChaveEmpresa() {
-    return 'EMP-' + Date.now() + '-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-}
-
 function validarNIF(nif) {
     return /^\d{10}$/.test(nif);
 }
@@ -55,12 +51,14 @@ function gerarNumeroCertificado(tipo) {
     const ano = new Date().getFullYear();
     const mes = (new Date().getMonth() + 1).toString().padStart(2, '0');
     const random = crypto.randomBytes(4).toString('hex').toUpperCase();
-    return 'CERT-' + tipo + '-' + ano + mes + '-' + random;
+    return `CERT-${tipo}-${ano}${mes}-${random}`;
 }
 
 // ============================================
-// MODELOS DE DADOS
+// MODELOS DE DADOS (SCHEMAS)
 // ============================================
+
+// 1. UTILIZADORES (ADMIN MINSA)
 const userSchema = new mongoose.Schema({
     nome: String,
     email: { type: String, unique: true },
@@ -68,70 +66,48 @@ const userSchema = new mongoose.Schema({
     role: { type: String, default: 'admin' }
 });
 
+// 2. LABORATÓRIOS (AVEC VALIDATION LICENCE)
 const labSchema = new mongoose.Schema({
     labId: { type: String, unique: true },
     nome: { type: String, required: true },
     nif: { type: String, required: true, unique: true },
-    tipo: { type: String, enum: ['laboratorio', 'hospital', 'clinica'] },
-    provincia: String,
+    tipo: { type: String, enum: ['laboratorio', 'hospital', 'clinica'], default: 'laboratorio' },
+    provincia: { type: String, required: true },
     endereco: String,
-    email: String,
-    telefone: String,
+    email: { type: String, required: true },
     diretor: String,
+    responsavelTecnico: { type: String, required: true }, // Requis par le MINSA
+    licenca: { type: String, required: true },           // Nº Alvará
+    validadeLicenca: { type: Date, required: true },     // Validation date
     apiKey: { type: String, unique: true },
     ativo: { type: Boolean, default: true },
     totalEmissoes: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now }
 });
 
+// 3. HOSPITAIS
 const hospitalSchema = new mongoose.Schema({
     nome: { type: String, required: true },
     nif: { type: String, unique: true, required: true },
     provincia: { type: String, required: true },
-    endereco: String,
     diretor: { type: String, required: true },
     email: { type: String, required: true },
-    telefone: String,
     chaveAcesso: { type: String, unique: true },
     ativo: { type: Boolean, default: true },
     criadoEm: { type: Date, default: Date.now }
 });
 
-const empresaSchema = new mongoose.Schema({
-    nome: { type: String, required: true },
-    nif: { type: String, unique: true, required: true },
-    endereco: String,
-    email: { type: String, required: true },
-    telefone: String,
-    responsavel: {
-        nome: { type: String, required: true },
-        cargo: String,
-        email: String
-    },
-    chaveAcesso: { type: String, unique: true },
-    ativo: { type: Boolean, default: true },
-    criadoEm: { type: Date, default: Date.now }
-});
-
+// 4. CERTIFICADOS
 const certificateSchema = new mongoose.Schema({
     numero: { type: String, unique: true },
-    tipo: { type: Number, required: true, enum: [1, 2, 3, 4, 5] },
+    tipo: { type: Number, required: true }, 
     paciente: {
         nomeCompleto: { type: String, required: true },
         genero: { type: String, enum: ['M', 'F'] },
         dataNascimento: Date,
         bi: String
     },
-    dados: {
-        genotipo: String,
-        grupoSanguineo: String,
-        avaliacao: String,
-        periodoInicio: Date,
-        periodoFim: Date,
-        diasIncapacidade: Number,
-        tipoAptidao: String,
-        restricoes: [String]
-    },
+    dados: mongoose.Schema.Types.Mixed, // Pour s'adapter à tous les types de tests
     hash: { type: String, unique: true },
     emitidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab' },
     emitidoEm: { type: Date, default: Date.now }
@@ -140,7 +116,6 @@ const certificateSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 const Lab = mongoose.model('Lab', labSchema);
 const Hospital = mongoose.model('Hospital', hospitalSchema);
-const Empresa = mongoose.model('Empresa', empresaSchema);
 const Certificate = mongoose.model('Certificate', certificateSchema);
 
 // ============================================
