@@ -424,7 +424,6 @@ app.get('/admin-dashboard', (req, res) => {
                     <button class="btn-acao" onclick="carregarLaboratorios()">🔄 Atualizar</button>
                 </div>
                 
-                <!-- Filtros -->
                 <div class="filtros">
                     <select id="filtroProvincia" onchange="carregarLaboratorios()">
                         <option value="">Todas Províncias</option>
@@ -441,7 +440,6 @@ app.get('/admin-dashboard', (req, res) => {
                     </select>
                 </div>
                 
-                <!-- Spinner de carregamento -->
                 <div id="spinnerLabs" class="spinner" style="display:none;"></div>
                 
                 <table>
@@ -485,19 +483,16 @@ app.get('/admin-dashboard', (req, res) => {
         }
 
         function carregarStats() {
-            fetch('/api/stats', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            })
-            .then(response => response.json())
+            fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } })
+            .then(r => r.json())
             .then(data => {
-                console.log("Stats recebidas:", data);
                 document.getElementById('statsLabs').innerText = data.labs || 0;
                 document.getElementById('statsHospitais').innerText = data.hospitais || 0;
                 document.getElementById('statsEmpresas').innerText = data.empresas || 0;
                 var total = (data.labs||0) + (data.hospitais||0) + (data.empresas||0);
                 document.getElementById('statsTotal').innerText = total;
             })
-            .catch(err => console.error('Erro stats:', err));
+            .catch(console.error);
         }
 
         function carregarLaboratorios() {
@@ -509,21 +504,13 @@ app.get('/admin-dashboard', (req, res) => {
             var provincia = document.getElementById('filtroProvincia').value;
             var status = document.getElementById('filtroStatus').value;
 
-            fetch('/api/labs', {
-                headers: { 'Authorization': 'Bearer ' + token }
-            })
-            .then(response => {
-                if (!response.ok) throw new Error('Erro HTTP ' + response.status);
-                return response.json();
-            })
+            fetch('/api/labs', { headers: { 'Authorization': 'Bearer ' + token } })
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
             .then(lista => {
                 spinner.style.display = 'none';
-                console.log('Laboratórios recebidos:', lista);
+                console.log('Laboratórios:', lista);
 
-                // Filtrar lado cliente
-                if (provincia) {
-                    lista = lista.filter(l => l.provincia === provincia);
-                }
+                if (provincia) lista = lista.filter(l => l.provincia === provincia);
                 if (status !== '') {
                     var ativo = (status === 'true');
                     lista = lista.filter(l => l.ativo === ativo);
@@ -533,7 +520,7 @@ app.get('/admin-dashboard', (req, res) => {
                     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Nenhum laboratório encontrado</td></tr>';
                 } else {
                     var html = '';
-                    for (var i = 0; i < lista.length; i++) {
+                    for (var i=0; i<lista.length; i++) {
                         var l = lista[i];
                         var statusClass = l.ativo ? 'status-ativo' : 'status-inativo';
                         var statusText = l.ativo ? 'Ativo' : 'Inativo';
@@ -543,7 +530,7 @@ app.get('/admin-dashboard', (req, res) => {
                         html += '<td><strong>' + (l.nome || '') + '</strong></td>';
                         html += '<td>' + (l.nif || '') + '</td>';
                         html += '<td>' + (l.provincia || '') + '</td>';
-                        html += '<td>' + (l.telephone || '') + '</td>'; // campo correto: telephone
+                        html += '<td>' + (l.telephone || '') + '</td>';
                         html += '<td>' + (l.diretor || '') + '</td>';
                         html += '<td><span class="status-badge ' + statusClass + '">' + statusText + '</span></td>';
                         html += '<td>';
@@ -555,24 +542,15 @@ app.get('/admin-dashboard', (req, res) => {
                     tbody.innerHTML = html;
                 }
             })
-            .catch(error => {
+            .catch(err => {
                 spinner.style.display = 'none';
-                console.error('Erro ao carregar laboratórios:', error);
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar dados: ' + error.message + '</td></tr>';
+                console.error(err);
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Erro ao carregar: ' + err.message + '</td></tr>';
             });
         }
 
-        function verDetalhes(id) {
-            alert("Detalhes do laboratório em breve...");
-        }
-
-        function toggleStatus(id, ativoAtual) {
-            var acao = ativoAtual ? 'desativar' : 'ativar';
-            if (confirm('Tem certeza que deseja ' + acao + ' este laboratório?')) {
-                alert('Função em desenvolvimento: ' + acao);
-                carregarLaboratorios();
-            }
-        }
+        function verDetalhes(id) { alert("Em breve..."); }
+        function toggleStatus(id, ativo) { alert("Função em desenvolvimento"); carregarLaboratorios(); }
 
         function logout() {
             localStorage.removeItem("token");
