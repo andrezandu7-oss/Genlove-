@@ -1259,63 +1259,126 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
 });
 
 // =============================================
-// GÉNÉRATION PDF POUR LABORATOIRE
+// GÉNÉRATION PDF POUR LABORATOIRE (OPTIMISÉ)
 // =============================================
 app.post('/api/labs/pdf', authMiddleware, async (req, res) => {
-    try {
-        const labData = req.body; // données du laboratoire (y compris apiKey)
-        const doc = new PDFDocument({ size: 'A4', margin: 50 });
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=Laboratorio_${labData.nome.replace(/\s/g, '_')}.pdf`);
-        doc.pipe(res);
+  try {
+    const labData = req.body;
 
-        // En-tête
-        doc.fillColor('#006633').fontSize(20).text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
-        doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
-        doc.fontSize(24).text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
-        doc.strokeColor('#006633').lineWidth(2).moveTo(doc.page.width / 2 - 250, 150).lineTo(doc.page.width / 2 + 250, 150).stroke();
-
-        let y = 180;
-        doc.fillColor('#006633').fontSize(16).text('REGISTO DE LABORATÓRIO', 50, y);
-        y += 30;
-
-        // Fonction utilitaire pour ajouter une ligne
-        const addLine = (label, value) => {
-            if (value) {
-                doc.fillColor('#000').fontSize(12).text(`${label}: ${value}`, 70, y);
-                y += 20;
-            }
-        };
-
-        addLine('Nome', labData.nome);
-        addLine('NIF', labData.nif);
-        addLine('Tipo', labData.tipo);
-        addLine('Província', labData.provincia);
-        addLine('Município', labData.municipio);
-        addLine('Endereço', labData.endereco);
-        addLine('Telefone 1', labData.telefone);
-        addLine('Telefone 2', labData.telefone2);
-        addLine('Email', labData.email);
-        addLine('Website', labData.website);
-        addLine('Diretor', labData.diretor);
-        addLine('Responsável Técnico', labData.responsavelTecnico);
-        addLine('Licença', labData.licenca);
-        if (labData.validadeLicenca) addLine('Validade Licença', new Date(labData.validadeLicenca).toLocaleDateString('pt-PT'));
-        addLine('Status', labData.ativo ? 'Ativo' : 'Inativo');
-
-        y += 10;
-        doc.fillColor('#b33').fontSize(12).text('CHAVE API (confidencial)', 70, y);
-        y += 20;
-        doc.fillColor('#000').fontSize(10).text(labData.apiKey, 70, y, { width: 400 });
-
-        y += 50;
-        doc.fillColor('#666').fontSize(10).text('Esta chave é pessoal e intransferível. Não a compartilhe.', 70, y);
-
-        doc.end();
-    } catch (error) {
-        console.error('Erro PDF laboratório:', error);
-        res.status(500).json({ error: 'Erro ao gerar PDF' });
+    // Validation minimale
+    if (!labData || !labData.nome) {
+      return res.status(400).json({ error: 'Données du laboratoire incomplètes' });
     }
+
+    // Création du document PDF avec métadonnées
+    const doc = new PDFDocument({
+      size: 'A4',
+      margin: 50,
+      info: {
+        Title: `Laboratoire ${labData.nome}`,
+        Author: 'SNS Angola',
+        Subject: 'Fiche d\'enregistrement de laboratoire'
+      }
+    });
+
+    // Configuration de la réponse HTTP
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Laboratorio_${labData.nome.replace(/\s/g, '_')}.pdf`);
+    doc.pipe(res);
+
+    // ---------- EN-TÊTE OFFICIEL (identique aux certificats) ----------
+    doc.fillColor('#006633');
+    doc.fontSize(20).text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
+    doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
+    doc.fontSize(24).text('SISTEMA NACIONAL DE SAÚDE', 0, 110, { align: 'center' });
+
+    doc.strokeColor('#006633')
+      .lineWidth(2)
+      .moveTo(doc.page.width / 2 - 250, 150)
+      .lineTo(doc.page.width / 2 + 250, 150)
+      .stroke();
+
+    let y = 180;
+
+    // ---------- TITRE DE LA SECTION ----------
+    doc.fillColor('#006633')
+      .fontSize(16)
+      .text('REGISTO DE LABORATÓRIO', 50, y);
+    y += 30;
+
+    // ---------- FONCTION D'AJOUT DE LIGNE AVEC GESTION DE PAGE ----------
+    const addLine = (label, value, defaultValue = 'Não informado') => {
+      const displayValue = (value && value.toString().trim() !== '') ? value : defaultValue;
+      // Vérifier si on a besoin d'une nouvelle page
+      if (y > 750) {
+        doc.addPage();
+        y = 50;
+        // Rappeler l'en-tête simplifié sur nouvelle page
+        doc.fillColor('#006633').fontSize(12).text('SNS Angola – Registo de Laboratório (continuação)', 50, y, { align: 'center' });
+        y += 30;
+      }
+      doc.fillColor('#000')
+        .fontSize(11)
+        .text(`${label}: ${displayValue}`, 70, y);
+      y += 20;
+    };
+
+    // ---------- INFORMATIONS PRINCIPALES (tous les champs disponibles) ----------
+    addLine('ID do Laboratório', labData.labId);
+    addLine('Nome', labData.nome);
+    addLine('NIF', labData.nif);
+    addLine('Tipo', labData.tipo); // laboratorio / hospital / clinica
+    addLine('Província', labData.provincia);
+    addLine('Município', labData.municipio); // champ issu du formulaire, même s'il n'est pas dans le schéma
+    addLine('Endereço', labData.endereco);
+    addLine('Telefone', labData.telefone);
+    addLine('Email', labData.email);
+    addLine('Diretor', labData.diretor);
+    addLine('Responsável Técnico', labData.responsavelTecnico);
+    addLine('Licença', labData.licenca);
+
+    if (labData.validadeLicenca) {
+      const dateVal = new Date(labData.validadeLicenca).toLocaleDateString('pt-PT');
+      addLine('Validade da Licença', dateVal);
+    }
+
+    addLine('Status', labData.ativo ? 'Ativo' : 'Inativo');
+    addLine('Total de Emissões', labData.totalEmissoes ?? 0);
+    
+    if (labData.createdAt) {
+      const created = new Date(labData.createdAt).toLocaleDateString('pt-PT');
+      addLine('Data de Registo', created);
+    }
+
+    y += 10;
+
+    // ---------- ZONE CONFIDENTIELLE : API KEY (avec avertissement) ----------
+    doc.fillColor('#b33')
+      .fontSize(12)
+      .text('CHAVE API (confidencial)', 70, y);
+    y += 20;
+
+    doc.fillColor('#000')
+      .fontSize(10)
+      .text(labData.apiKey || 'Não gerada', 70, y, { width: 400, align: 'left' });
+    y += 30;
+
+    doc.fillColor('#666')
+      .fontSize(9)
+      .text('Esta chave é pessoal e intransferível. Não a compartilhe.', 70, y);
+    y += 30;
+
+    // ---------- RODAPÉ ----------
+    doc.fontSize(8)
+      .fillColor('#666')
+      .text('Documento emitido pelo Sistema Nacional de Saúde de Angola', 0, 780, { align: 'center' });
+
+    doc.end();
+
+  } catch (error) {
+    console.error('❌ Erreur PDF laboratoire:', error);
+    res.status(500).json({ error: 'Erreur lors de la génération du PDF' });
+  }
 });
 // =============================================
 // ROUTE POUR LE FORMULAIRE DE CRÉATION DE LABORATOIRE
