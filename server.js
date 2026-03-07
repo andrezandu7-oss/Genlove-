@@ -398,42 +398,122 @@ app.get('/admin-dashboard', (req, res) => {
     </div>
 
     <script>
-        const token = localStorage.getItem("token");
-        if (!token) window.location.href = "/ministerio";
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "/ministerio";
 
-        function showTab(tab) {
-            document.querySelectorAll(".section").forEach(s => s.style.display = "none");
-            document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
-            document.getElementById("sec-" + tab).style.display = "block";
-            document.getElementById("btn-" + tab).classList.add("active");
-            if (tab === "dash") loadStats();
-            if (tab === "labs") loadLabs();
-        }
+    let dadosTemporarios = null; // Stockage pour la révision
 
-        async function loadStats() {
+    // --- NAVIGATION ---
+    function showTab(tab) {
+        document.querySelectorAll(".section").forEach(s => s.style.display = "none");
+        document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
+        const sec = document.getElementById("sec-" + tab);
+        if(sec) sec.style.display = "block";
+        document.getElementById("btn-" + tab).classList.add("active");
+        if (tab === "dash") loadStats();
+        if (tab === "labs") loadLabs();
+    }
+
+    // --- CHARGEMENT ---
+    async function loadStats() {
+        try {
             const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
             const labs = await r.json();
             document.getElementById("countLabs").innerText = labs.length;
-        }
+        } catch(e) { console.error(e); }
+    }
 
-        async function loadLabs() {
+    async function loadLabs() {
+        try {
             const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
             const labs = await r.json();
-            document.getElementById("tableLabs").innerHTML = labs.map(l => \`
+            document.getElementById("tableLabs").innerHTML = labs.map(l => `
                 <tr>
-                    <td><strong>\${l.nome}</strong></td>
-                    <td>\${l.nif}</td>
-                    <td>\${l.provincia}</td>
+                    <td><strong>${l.nome}</strong></td>
+                    <td>${l.nif}</td>
+                    <td>${l.provincia}</td>
                     <td>
-                        <button class="btn-acao" onclick="acaoPDF('\${l._id}', 'view')">👁️</button>
-                        <button class="btn-acao" onclick="acaoPDF('\${l._id}', 'print')">🖨️</button>
-                        <button class="btn-acao" onclick="acaoPDF('\${l._id}', 'download')">📥</button>
+                        <button class="btn-acao" onclick="acaoPDF('${l._id}', 'view')">👁️</button>
+                        <button class="btn-acao" onclick="acaoPDF('${l._id}', 'print')">🖨️</button>
+                        <button class="btn-acao" onclick="acaoPDF('${l._id}', 'download')">📥</button>
                     </td>
                 </tr>
-            \`).join("");
+            `).join("");
+        } catch(e) { console.error(e); }
+    }
+
+    // --- PHASE 1: RÉVISION (AMENDEMENT 1) ---
+    function salvarLaboratorio() {
+        // Capture précise de tous les champs pour éviter le "Não informado"
+        dadosTemporarios = {
+            nome: document.getElementById("labNome").value,
+            nif: document.getElementById("labNIF").value,
+            tipo: document.getElementById("labTipo").value,
+            provincia: document.getElementById("labProvincia").value,
+            municipio: document.getElementById("labMunicipio").value,
+            endereco: document.getElementById("labEndereco").value,
+            telefone: document.getElementById("labTelefone").value,
+            email: document.getElementById("labEmail").value,
+            licenca: document.getElementById("labLicenca").value,
+            expiracao: document.getElementById("labExpira").value,
+            ativo: true
+        };
+
+        if(!dadosTemporarios.nome || !dadosTemporarios.nif || !dadosTemporarios.provincia) {
+            return alert("Por favor, preencha o Nome, NIF e Província.");
         }
 
-        async function acaoPDF(id, acao) {
+        // Affichage du mode Révision dans le modal
+        document.getElementById("formCorpo").style.display = "none";
+        let rev = document.getElementById("revisaoCorpo");
+        rev.style.display = "block";
+        rev.innerHTML = `
+            <h2 style="color:#e67e22; margin-bottom:15px;">🔍 Rever Dados</h2>
+            <div style="background:#f4f4f4; padding:15px; border-radius:10px; font-size:14px; line-height:1.8;">
+                <p><strong>Instituição:</strong> ${dadosTemporarios.nome}</p>
+                <p><strong>NIF:</strong> ${dadosTemporarios.nif} | <strong>Tipo:</strong> ${dadosTemporarios.tipo}</p>
+                <p><strong>Local:</strong> ${dadosTemporarios.municipio}, ${dadosTemporarios.provincia}</p>
+                <p><strong>Endereço:</strong> ${dadosTemporarios.endereco || "---"}</p>
+                <p><strong>Contacto:</strong> ${dadosTemporarios.telefone} | ${dadosTemporarios.email}</p>
+                <p><strong>Licença:</strong> ${dadosTemporarios.licenca} (Expira em: ${dadosTemporarios.expiracao})</p>
+            </div>
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button class="btn-add" style="flex:2" onclick="confirmarOficialmente()">✅ Confirmar e Gerar Acesso</button>
+                <button onclick="voltarEdicao()" style="flex:1; background:#ccc; border:none; border-radius:8px; cursor:pointer;">✏️ Corrigir</button>
+            </div>
+        `;
+    }
+
+    function voltarEdicao() {
+        document.getElementById("revisaoCorpo").style.display = "none";
+        document.getElementById("formCorpo").style.display = "block";
+    }
+
+    // --- PHASE 2: CONFIRMATION OFFICIELLE ---
+    async function confirmarOficialmente() {
+        try {
+            const r = await fetch("/api/labs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+                body: JSON.stringify(dadosTemporarios)
+            });
+            const res = await r.json();
+            if(res.success) {
+                alert("Unidade registada com sucesso!");
+                closeModal();
+                loadLabs();
+                loadStats();
+            } else {
+                alert("Erro ao salvar: " + res.error);
+            }
+        } catch(e) { 
+            alert("Erro de conexão com o servidor."); 
+        }
+    }
+
+    // --- PDF & MODAL ---
+    async function acaoPDF(id, acao) {
+        try {
             const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
             const labs = await r.json();
             const lab = labs.find(x => x._id === id);
@@ -442,42 +522,24 @@ app.get('/admin-dashboard', (req, res) => {
                 headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
                 body: JSON.stringify(lab)
             });
+            if(!res.ok) throw new Error();
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             if(acao==='view') window.open(url);
             else if(acao==='print') { const w = window.open(url); w.onload = () => w.print(); }
-            else { const a = document.createElement("a"); a.href=url; a.download="Registo.pdf"; a.click(); }
-        }
+            else { const a = document.createElement("a"); a.href=url; a.download=`Registo_${lab.nome}.pdf`; a.click(); }
+        } catch(e) { alert("Documento não encontrado ou erro no servidor."); }
+    }
 
-        async function salvarLaboratorio() {
-            const dados = {
-                nome: document.getElementById("labNome").value,
-                nif: document.getElementById("labNIF").value,
-                tipo: document.getElementById("labTipo").value,
-                provincia: document.getElementById("labProvincia").value,
-                municipio: document.getElementById("labMunicipio").value,
-                endereco: document.getElementById("labEndereco").value,
-                telefone: document.getElementById("labTelefone").value,
-                email: document.getElementById("labEmail").value,
-                licenca: document.getElementById("labLicenca").value,
-                expiracao: document.getElementById("labExpira").value,
-                ativo: true
-            };
-            await fetch("/api/labs", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-                body: JSON.stringify(dados)
-            });
-            closeModal();
-            loadLabs();
-            loadStats();
-        }
+    function openModal() { 
+        document.getElementById("modalLab").style.display = "flex"; 
+        voltarEdicao(); // Toujours ouvrir sur le formulaire vide
+    }
+    function closeModal() { document.getElementById("modalLab").style.display = "none"; }
+    function logout() { localStorage.clear(); window.location.href = "/"; }
+    window.onload = loadStats;
+</script>
 
-        function openModal() { document.getElementById("modalLab").style.display = "flex"; }
-        function closeModal() { document.getElementById("modalLab").style.display = "none"; }
-        function logout() { localStorage.clear(); window.location.href = "/"; }
-        window.onload = loadStats;
-    </script>
 </body>
 </html>
 `);
