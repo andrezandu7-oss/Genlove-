@@ -517,6 +517,7 @@ app.get('/admin-dashboard', (req, res) => {
 
 
 
+
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
 app.get('/lab-dashboard', (req, res) => {
