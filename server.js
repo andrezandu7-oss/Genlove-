@@ -1264,13 +1264,10 @@ app.get('/api/stats', authMiddleware, async (req, res) => {
 app.post('/api/labs/pdf', authMiddleware, async (req, res) => {
   try {
     const labData = req.body;
-
-    // Validation minimale
     if (!labData || !labData.nome) {
       return res.status(400).json({ error: 'Données du laboratoire incomplètes' });
     }
 
-    // Création du document PDF avec métadonnées
     const doc = new PDFDocument({
       size: 'A4',
       margin: 50,
@@ -1281,12 +1278,11 @@ app.post('/api/labs/pdf', authMiddleware, async (req, res) => {
       }
     });
 
-    // Configuration de la réponse HTTP
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=Laboratorio_${labData.nome.replace(/\s/g, '_')}.pdf`);
+    res.setHeader('Content-Disposition', `inline; filename=Laboratorio_${labData.nome.replace(/\s/g, '_')}.pdf`);
     doc.pipe(res);
 
-    // ---------- EN-TÊTE OFFICIEL (identique aux certificats) ----------
+    // ---------- EN-TÊTE OFFICIEL ----------
     doc.fillColor('#006633');
     doc.fontSize(20).text('REPÚBLICA DE ANGOLA', 0, 50, { align: 'center' });
     doc.fontSize(16).text('MINISTÉRIO DA SAÚDE', 0, 80, { align: 'center' });
@@ -1300,20 +1296,16 @@ app.post('/api/labs/pdf', authMiddleware, async (req, res) => {
 
     let y = 180;
 
-    // ---------- TITRE DE LA SECTION ----------
     doc.fillColor('#006633')
       .fontSize(16)
       .text('REGISTO DE LABORATÓRIO', 50, y);
     y += 30;
 
-    // ---------- FONCTION D'AJOUT DE LIGNE AVEC GESTION DE PAGE ----------
     const addLine = (label, value, defaultValue = 'Não informado') => {
       const displayValue = (value && value.toString().trim() !== '') ? value : defaultValue;
-      // Vérifier si on a besoin d'une nouvelle page
       if (y > 750) {
         doc.addPage();
         y = 50;
-        // Rappeler l'en-tête simplifié sur nouvelle page
         doc.fillColor('#006633').fontSize(12).text('SNS Angola – Registo de Laboratório (continuação)', 50, y, { align: 'center' });
         y += 30;
       }
@@ -1323,13 +1315,12 @@ app.post('/api/labs/pdf', authMiddleware, async (req, res) => {
       y += 20;
     };
 
-    // ---------- INFORMATIONS PRINCIPALES (tous les champs disponibles) ----------
     addLine('ID do Laboratório', labData.labId);
     addLine('Nome', labData.nome);
     addLine('NIF', labData.nif);
-    addLine('Tipo', labData.tipo); // laboratorio / hospital / clinica
+    addLine('Tipo', labData.tipo);
     addLine('Província', labData.provincia);
-    addLine('Município', labData.municipio); // champ issu du formulaire, même s'il n'est pas dans le schéma
+    addLine('Município', labData.municipio);
     addLine('Endereço', labData.endereco);
     addLine('Telefone', labData.telefone);
     addLine('Email', labData.email);
@@ -1352,7 +1343,6 @@ app.post('/api/labs/pdf', authMiddleware, async (req, res) => {
 
     y += 10;
 
-    // ---------- ZONE CONFIDENTIELLE : API KEY (avec avertissement) ----------
     doc.fillColor('#b33')
       .fontSize(12)
       .text('CHAVE API (confidencial)', 70, y);
@@ -1368,7 +1358,6 @@ app.post('/api/labs/pdf', authMiddleware, async (req, res) => {
       .text('Esta chave é pessoal e intransferível. Não a compartilhe.', 70, y);
     y += 30;
 
-    // ---------- RODAPÉ ----------
     doc.fontSize(8)
       .fillColor('#666')
       .text('Documento emitido pelo Sistema Nacional de Saúde de Angola', 0, 780, { align: 'center' });
