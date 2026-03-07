@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Laboratórios · SNS Angola</title>
+    <title>Novo Laboratório · SNS Angola</title>
     <style>
         * {
             margin: 0;
@@ -20,7 +20,7 @@
             padding: 2rem 1rem;
         }
         .container {
-            max-width: 1200px;
+            max-width: 950px;
             width: 100%;
             background: white;
             border-radius: 24px;
@@ -54,8 +54,8 @@
             margin-top: 6px;
             font-size: 1rem;
         }
-        .content {
-            padding: 2rem 2.5rem;
+        .form-card {
+            padding: 2.5rem;
         }
         .section-title {
             font-size: 1.4rem;
@@ -71,10 +71,9 @@
         .section-title:first-of-type {
             margin-top: 0;
         }
-        .badge-obrigatorio {
-            color: #cc3300;
-            font-size: 0.7rem;
-            margin-left: 5px;
+        .section-title i {
+            font-size: 1.6rem;
+            opacity: 0.8;
         }
         .grid-2 {
             display: grid;
@@ -110,57 +109,62 @@
             border-color: #006633;
             box-shadow: 0 0 0 3px rgba(0, 102, 51, 0.2);
         }
-        .btn-principal {
+        .btn-primary {
             background: #006633;
             color: white;
             border: none;
             font-size: 1.2rem;
             font-weight: 700;
-            padding: 1rem 2rem;
+            padding: 1.2rem;
             border-radius: 50px;
+            width: 100%;
             cursor: pointer;
             transition: 0.15s;
+            margin-top: 2rem;
             box-shadow: 0 8px 16px rgba(0, 102, 51, 0.3);
             letter-spacing: 0.5px;
         }
-        .btn-principal:hover {
+        .btn-primary:hover {
             background: #008040;
             transform: scale(1.02);
         }
-        .btn-principal:disabled {
+        .btn-primary:disabled {
             background: #99bbaa;
             box-shadow: none;
             cursor: not-allowed;
         }
         .btn-secondary {
-            background: #6c757d;
-            color: white;
+            background: #e0e0e0;
+            color: #333;
             border: none;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
-            padding: 0.8rem 1.5rem;
-            border-radius: 40px;
+            padding: 1rem;
+            border-radius: 50px;
             cursor: pointer;
             transition: 0.15s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
         }
         .btn-secondary:hover {
-            background: #5a6268;
+            background: #d0d0d0;
         }
-        .btn-acao {
-            background: none;
-            border: none;
-            font-size: 1.4rem;
-            cursor: pointer;
-            padding: 0 5px;
-            transition: 0.1s;
+        .revisao-card {
+            background: #f9fdfa;
+            border-radius: 24px;
+            padding: 1.8rem 1.5rem;
+            border: 1px solid #cce8d5;
+            margin: 1.5rem 0;
         }
-        .btn-acao:hover {
-            transform: scale(1.2);
+        .revisao-card p {
+            margin: 10px 0;
+            font-size: 1rem;
+            border-bottom: 1px dashed #d0ded5;
+            padding-bottom: 8px;
         }
-        .acoes {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: flex-end;
+        .revisao-card strong {
+            display: inline-block;
+            width: 160px;
+            color: #006633;
         }
         .info-message {
             color: #2c5e3f;
@@ -171,59 +175,27 @@
             border-left: 4px solid #ffaa00;
             margin-bottom: 1.5rem;
         }
-        .tabela-container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            overflow-x: auto;
-            margin-top: 1.5rem;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 700px;
-        }
-        th {
-            background: #f8f9fa;
-            color: #333;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            padding: 1.2rem 1rem;
-            text-align: left;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        td {
-            padding: 1.2rem 1rem;
-            border-bottom: 1px solid #eee;
-            font-size: 0.95rem;
-        }
-        tr:hover {
-            background: #fafafa;
-        }
-        .status-badge {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            display: inline-block;
-        }
-        .status-badge.inativo {
-            background: #ffebee;
-            color: #c62828;
-        }
-        .cabecalho-tabela {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
         .hidden {
             display: none;
         }
-        .loading-spinner {
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .button-group .btn-primary {
+            margin-top: 0;
+            flex: 2;
+        }
+        .button-group .btn-secondary {
+            flex: 1;
+        }
+        .badge-obrigatorio {
+            color: #cc3300;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+        .spinner {
             border: 5px solid #e6f0ea;
             border-top: 5px solid #006633;
             border-radius: 50%;
@@ -236,32 +208,32 @@
     </style>
 </head>
 <body>
-<div class="container">
+<div class="container" id="app">
     <div class="header">
         <h1>
-            🏥 Laboratórios / Hospitais
-            <span>MINSA</span>
+            🏥 Novo Laboratório
+            <span>MINISTÉRIO</span>
         </h1>
-        <p>Registo e gestão de unidades sanitárias no Sistema Nacional de Saúde</p>
+        <p>Registo de nova unidade no Sistema Nacional de Saúde</p>
     </div>
 
-    <div class="content">
+    <div class="form-card">
         <!-- Mensagem de autenticação -->
-        <div id="loadingMessage" class="info-message">🔐 A validar credenciais...</div>
+        <div id="authMessage" class="info-message">🔐 A validar credenciais...</div>
 
-        <!-- Formulário de registo -->
+        <!-- Formulário de entrada (exibido inicialmente) -->
         <form id="labForm" style="display: none;">
             <div class="section-title">
-                <span>➕</span> Novo registo
+                <span>🏛️</span> Dados da unidade
             </div>
             <div class="grid-2">
                 <div class="campo full-width">
-                    <label>Nome da instituição <span class="badge-obrigatorio">obrigatório</span></label>
-                    <input type="text" id="nome" placeholder="Ex: Hospital Central de Luanda" required>
+                    <label>Nome do Laboratório / Hospital / Clínica <span class="badge-obrigatorio">obrigatório</span></label>
+                    <input type="text" id="nome" required placeholder="Ex: LabCentral Luanda">
                 </div>
                 <div class="campo">
-                    <label>NIF <span class="badge-obrigatorio">10 dígitos</span></label>
-                    <input type="text" id="nif" maxlength="10" placeholder="1234567890" required>
+                    <label>NIF <span class="badge-obrigatorio">obrigatório</span></label>
+                    <input type="text" id="nif" maxlength="10" placeholder="10 dígitos" required>
                 </div>
                 <div class="campo">
                     <label>Tipo <span class="badge-obrigatorio">obrigatório</span></label>
@@ -304,74 +276,42 @@
                     <input type="text" id="endereco" placeholder="Rua, número, bairro">
                 </div>
                 <div class="campo">
-                    <label>Telefone 1</label>
+                    <label>Telefone</label>
                     <input type="tel" id="telefone" placeholder="923000000">
                 </div>
                 <div class="campo">
-                    <label>Telefone 2</label>
-                    <input type="tel" id="telefone2" placeholder="923111111">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="contato@lab.ao">
                 </div>
                 <div class="campo">
-                    <label>E-mail</label>
-                    <input type="email" id="email" placeholder="contato@instituicao.ao">
-                </div>
-                <div class="campo">
-                    <label>Website</label>
-                    <input type="url" id="website" placeholder="https://">
-                </div>
-                <div class="campo">
-                    <label>Diretor geral</label>
+                    <label>Diretor</label>
                     <input type="text" id="diretor" placeholder="Nome do diretor">
                 </div>
                 <div class="campo">
-                    <label>Responsável técnico</label>
-                    <input type="text" id="responsavelTecnico" placeholder="Nome do resp. técnico">
-                </div>
-                <div class="campo">
-                    <label>Licença (nº)</label>
-                    <input type="text" id="licenca" placeholder="Ex: 123/2024">
-                </div>
-                <div class="campo">
-                    <label>Validade da licença</label>
-                    <input type="date" id="validadeLicenca">
-                </div>
-                <div class="campo full-width">
-                    <label>Observações</label>
-                    <textarea id="observacoes" rows="2" placeholder="Informações adicionais..."></textarea>
+                    <label>Responsável Técnico</label>
+                    <input type="text" id="responsavelTecnico" placeholder="Se diferente do diretor">
                 </div>
             </div>
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                <button type="submit" class="btn-principal" id="btnSalvar">📌 Registrar</button>
-                <button type="button" class="btn-secondary" onclick="limparFormulario()">Limpar</button>
-            </div>
+
+            <!-- Botão para avançar para revisão -->
+            <button type="button" class="btn-primary" id="btnRevisar">🔍 Revisar dados</button>
         </form>
 
-        <!-- Lista de laboratórios -->
-        <div class="section-title" style="margin-top: 3rem;">
-            <span>📋</span> Laboratórios registados
-        </div>
-        <div class="cabecalho-tabela">
-            <span id="totalLabs" style="font-weight: 600;"></span>
-            <button class="btn-secondary" onclick="carregarLaboratorios()">🔄 Atualizar</button>
-        </div>
-        <div id="tabelaContainer" class="tabela-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>NIF</th>
-                        <th>Província</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaCorpo">
-                    <tr><td colspan="5" style="text-align: center; padding: 2rem;">Carregando...</td></tr>
-                </tbody>
-            </table>
+        <!-- Área de revisão (oculta inicialmente) -->
+        <div id="revisaoArea" class="hidden">
+            <div class="section-title">
+                <span>✅</span> Confirme os dados
+            </div>
+            <div class="revisao-card" id="dadosRevisao">
+                <!-- preenchido via js -->
+            </div>
+            <div class="button-group">
+                <button class="btn-primary" id="btnConfirmar">📌 Confirmar registo</button>
+                <button class="btn-secondary" id="btnVoltar">✏️ Voltar</button>
+            </div>
         </div>
 
-        <!-- Área de resultado do registo (API Key) -->
+        <!-- Área de resultado / sucesso -->
         <div id="resultadoArea" class="hidden"></div>
     </div>
 </div>
@@ -379,104 +319,38 @@
 <script>
     (function() {
         const token = localStorage.getItem('token');
-        const loadingEl = document.getElementById('loadingMessage');
-        const form = document.getElementById('labForm');
-        const btnSalvar = document.getElementById('btnSalvar');
+        const authMsg = document.getElementById('authMessage');
+        const labForm = document.getElementById('labForm');
+        const revisaoArea = document.getElementById('revisaoArea');
+        const dadosRevisao = document.getElementById('dadosRevisao');
         const resultadoArea = document.getElementById('resultadoArea');
-        const tabelaCorpo = document.getElementById('tabelaCorpo');
-        const totalLabs = document.getElementById('totalLabs');
+        const btnRevisar = document.getElementById('btnRevisar');
+        const btnConfirmar = document.getElementById('btnConfirmar');
+        const btnVoltar = document.getElementById('btnVoltar');
 
-        // Verifica autenticação
+        // Verificar autenticação
         if (!token) {
-            loadingEl.innerHTML = '❌ Sessão expirada. <a href="/ministerio" style="color:#006633;font-weight:bold;">Faça login novamente</a>.';
-            form.style.display = 'none';
+            authMsg.innerHTML = '❌ Sessão expirada. <a href="/ministerio" style="color:#006633;font-weight:bold;">Fazer login</a>';
+            labForm.style.display = 'none';
         } else {
-            // Valida o token e carrega laboratórios
+            // Opcional: validar token com uma chamada simples (ex: /api/stats)
             fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } })
                 .then(res => {
                     if (!res.ok) throw new Error('Token inválido');
-                    loadingEl.innerHTML = '✅ Autenticado como <strong>Ministério da Saúde</strong>';
-                    form.style.display = 'block';
-                    carregarLaboratorios(); // carrega lista após validação
+                    return res.json();
+                })
+                .then(() => {
+                    authMsg.innerHTML = '✅ Autenticado como <strong>Ministério da Saúde</strong>';
+                    labForm.style.display = 'block';
                 })
                 .catch(err => {
-                    loadingEl.innerHTML = `❌ Erro de autenticação: ${err.message}. <a href="/ministerio" style="color:#006633;">Tentar novamente</a>`;
-                    form.style.display = 'none';
+                    authMsg.innerHTML = `❌ Erro de autenticação: ${err.message}. <a href="/ministerio" style="color:#006633;">Re-login</a>`;
+                    labForm.style.display = 'none';
                 });
         }
 
-        // Função para carregar a lista de laboratórios
-        window.carregarLaboratorios = async function() {
-            tabelaCorpo.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;"><div class="loading-spinner"></div></td></tr>';
-            try {
-                const response = await fetch('/api/labs', {
-                    headers: { 'Authorization': 'Bearer ' + token }
-                });
-                if (!response.ok) throw new Error('Erro ao carregar');
-                const labs = await response.json();
-                if (!labs.length) {
-                    tabelaCorpo.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem;">Nenhum laboratório registado.</td></tr>';
-                    totalLabs.textContent = '';
-                    return;
-                }
-                totalLabs.textContent = `Total: ${labs.length} unidade(s)`;
-                let html = '';
-                labs.forEach(lab => {
-                    const statusClass = lab.ativo ? 'status-badge' : 'status-badge inativo';
-                    const statusText = lab.ativo ? 'Ativo' : 'Inativo';
-                    html += `
-                        <tr>
-                            <td><strong>${lab.nome || '—'}</strong></td>
-                            <td>${lab.nif || '—'}</td>
-                            <td>${lab.provincia || '—'}</td>
-                            <td><span class="${statusClass}">${statusText}</span></td>
-                            <td class="acoes">
-                                <button class="btn-acao" onclick="verDetalhes('${lab._id}')" title="Ver detalhes">👁️</button>
-                                <button class="btn-acao" onclick="gerarPdfLab('${lab._id}')" title="Gerar PDF">📄</button>
-                                <button class="btn-acao" onclick="editarLab('${lab._id}')" title="Editar">✏️</button>
-                                <button class="btn-acao" onclick="toggleStatus('${lab._id}', ${lab.ativo})" title="${lab.ativo ? 'Desativar' : 'Ativar'}">${lab.ativo ? '❌' : '✅'}</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                tabelaCorpo.innerHTML = html;
-            } catch (error) {
-                tabelaCorpo.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red; padding: 2rem;">Erro: ${error.message}</td></tr>`;
-            }
-        };
-
-        // Funções de ação (exemplo, podem ser implementadas)
-        window.verDetalhes = function(id) {
-            alert('Ver detalhes do laboratório ID: ' + id + ' (a implementar)');
-        };
-        window.gerarPdfLab = function(id) {
-            alert('Gerar PDF do laboratório ID: ' + id + ' (a implementar)');
-        };
-        window.editarLab = function(id) {
-            alert('Editar laboratório ID: ' + id + ' (a implementar)');
-        };
-        window.toggleStatus = async function(id, ativo) {
-            if (!confirm(`Deseja ${ativo ? 'desativar' : 'ativar'} este laboratório?`)) return;
-            try {
-                const response = await fetch(`/api/labs/${id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body: JSON.stringify({ ativo: !ativo })
-                });
-                if (!response.ok) throw new Error('Erro ao alterar status');
-                carregarLaboratorios(); // recarrega lista
-            } catch (error) {
-                alert('Erro: ' + error.message);
-            }
-        };
-
-        // Submissão do formulário de registo
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
+        // Botão "Revisar dados": valida campos obrigatórios e mostra pré-visualização
+        btnRevisar.addEventListener('click', function() {
             const nome = document.getElementById('nome').value.trim();
             const nif = document.getElementById('nif').value.trim();
             const provincia = document.getElementById('provincia').value;
@@ -485,38 +359,56 @@
                 alert('Preencha os campos obrigatórios: Nome, NIF e Província.');
                 return;
             }
-            if (!/^\d{10}$/.test(nif)) {
-                alert('NIF deve conter exatamente 10 dígitos numéricos.');
-                return;
-            }
 
+            // Recolher todos os valores
             const dados = {
                 nome,
                 nif,
                 tipo: document.getElementById('tipo').value,
                 provincia,
-                municipio: document.getElementById('municipio').value.trim(),
-                endereco: document.getElementById('endereco').value.trim(),
-                telefone: document.getElementById('telefone').value.trim(),
-                telefone2: document.getElementById('telefone2').value.trim(),
-                email: document.getElementById('email').value.trim(),
-                website: document.getElementById('website').value.trim(),
-                diretor: document.getElementById('diretor').value.trim(),
-                responsavelTecnico: document.getElementById('responsavelTecnico').value.trim(),
-                licenca: document.getElementById('licenca').value.trim(),
-                validadeLicenca: document.getElementById('validadeLicenca').value,
-                observacoes: document.getElementById('observacoes').value.trim(),
-                ativo: true
+                municipio: document.getElementById('municipio').value.trim() || 'Não informado',
+                endereco: document.getElementById('endereco').value.trim() || 'Não informado',
+                telefone: document.getElementById('telefone').value.trim() || 'Não informado',
+                email: document.getElementById('email').value.trim() || 'Não informado',
+                diretor: document.getElementById('diretor').value.trim() || 'Não informado',
+                responsavelTecnico: document.getElementById('responsavelTecnico').value.trim() || 'Não informado'
             };
 
-            // Remove campos vazios
-            Object.keys(dados).forEach(key => {
-                if (dados[key] === '') delete dados[key];
-            });
+            // Preencher card de revisão
+            dadosRevisao.innerHTML = `
+                <p><strong>Nome:</strong> ${dados.nome}</p>
+                <p><strong>NIF:</strong> ${dados.nif}</p>
+                <p><strong>Tipo:</strong> ${dados.tipo}</p>
+                <p><strong>Província:</strong> ${dados.provincia}</p>
+                <p><strong>Município:</strong> ${dados.municipio}</p>
+                <p><strong>Endereço:</strong> ${dados.endereco}</p>
+                <p><strong>Telefone:</strong> ${dados.telefone}</p>
+                <p><strong>Email:</strong> ${dados.email}</p>
+                <p><strong>Diretor:</strong> ${dados.diretor}</p>
+                <p><strong>Resp. Técnico:</strong> ${dados.responsavelTecnico}</p>
+            `;
 
-            btnSalvar.disabled = true;
-            btnSalvar.textContent = '⏳ Registrando...';
-            resultadoArea.classList.add('hidden');
+            // Guardar dados temporariamente para uso na confirmação
+            window.dadosTemp = dados;
+
+            // Alternar visibilidade
+            labForm.style.display = 'none';
+            revisaoArea.classList.remove('hidden');
+        });
+
+        // Botão "Voltar" da revisão
+        btnVoltar.addEventListener('click', function() {
+            revisaoArea.classList.add('hidden');
+            labForm.style.display = 'block';
+        });
+
+        // Botão "Confirmar registo"
+        btnConfirmar.addEventListener('click', async function() {
+            if (!window.dadosTemp) return;
+
+            const dados = window.dadosTemp;
+            btnConfirmar.disabled = true;
+            btnConfirmar.textContent = '⏳ A registar...';
 
             try {
                 const response = await fetch('/api/labs', {
@@ -525,43 +417,92 @@
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify(dados)
+                    body: JSON.stringify({
+                        nome: dados.nome,
+                        nif: dados.nif,
+                        tipo: dados.tipo,
+                        provincia: dados.provincia,
+                        municipio: dados.municipio === 'Não informado' ? '' : dados.municipio,
+                        endereco: dados.endereco === 'Não informado' ? '' : dados.endereco,
+                        telefone: dados.telefone === 'Não informado' ? '' : dados.telefone,
+                        email: dados.email === 'Não informado' ? '' : dados.email,
+                        diretor: dados.diretor === 'Não informado' ? '' : dados.diretor,
+                        responsavelTecnico: dados.responsavelTecnico === 'Não informado' ? '' : dados.responsavelTecnico,
+                        ativo: true
+                    })
                 });
 
                 const result = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(result.erro || result.message || 'Erro ao registrar');
+                    throw new Error(result.error || 'Erro ao registar laboratório');
                 }
 
-                // Mostra API Key e oculta formulário opcionalmente
+                // Sucesso: gerar PDF com os dados + apiKey
+                const pdfData = {
+                    nome: dados.nome,
+                    nif: dados.nif,
+                    tipo: dados.tipo,
+                    provincia: dados.provincia,
+                    municipio: dados.municipio === 'Não informado' ? '' : dados.municipio,
+                    endereco: dados.endereco === 'Não informado' ? '' : dados.endereco,
+                    telefone: dados.telefone === 'Não informado' ? '' : dados.telefone,
+                    email: dados.email === 'Não informado' ? '' : dados.email,
+                    diretor: dados.diretor === 'Não informado' ? '' : dados.diretor,
+                    responsavelTecnico: dados.responsavelTecnico === 'Não informado' ? '' : dados.responsavelTecnico,
+                    apiKey: result.apiKey,
+                    ativo: true
+                };
+
+                // Chamar geração PDF (abre automaticamente)
+                await gerarPDF(pdfData);
+
+                // Mostrar mensagem de sucesso com a chave
                 resultadoArea.innerHTML = `
-                    <div style="background: #e8f5e9; border-left: 6px solid #006633; border-radius: 16px; padding: 2rem; margin-top: 2rem;">
-                        <h3 style="color: #006633;">✅ Laboratório registado com sucesso!</h3>
-                        <p style="margin: 1rem 0;"><strong>API Key:</strong></p>
-                        <div style="background: white; padding: 1rem; border-radius: 12px; font-family: monospace; font-size: 1.2rem; word-break: break-all; border: 1px dashed #006633;">${result.apiKey || 'Chave não fornecida'}</div>
-                        <p style="color: #666; margin-top: 1rem;">Guarde esta chave em local seguro. Ela será necessária para o laboratório aceder ao sistema.</p>
-                        <button class="btn-secondary" onclick="fecharResultado()">Fechar</button>
+                    <div class="revisao-card" style="text-align:center;">
+                        <div style="font-size:2rem; color:#006633;">✅</div>
+                        <h3 style="color:#006633; margin:10px 0;">Laboratório registado com sucesso!</h3>
+                        <p><strong>API Key gerada:</strong></p>
+                        <p style="background:#f0f0f0; padding:10px; border-radius:8px; font-family:monospace; word-break:break-all;">${result.apiKey}</p>
+                        <p style="margin-top:20px;">O PDF foi aberto automaticamente.</p>
+                        <button class="btn-primary" style="margin-top:20px;" onclick="window.location.href='/admin-dashboard'">📋 Ir para dashboard</button>
                     </div>
                 `;
                 resultadoArea.classList.remove('hidden');
-                form.reset();
-                carregarLaboratorios(); // atualiza lista
+                revisaoArea.classList.add('hidden');
+                labForm.style.display = 'none'; // esconder formulário
+
             } catch (error) {
-                alert('❌ ' + error.message);
-            } finally {
-                btnSalvar.disabled = false;
-                btnSalvar.textContent = '📌 Registrar';
+                alert('Erro: ' + error.message);
+                btnConfirmar.disabled = false;
+                btnConfirmar.textContent = '📌 Confirmar registo';
             }
         });
 
-        window.fecharResultado = function() {
-            resultadoArea.classList.add('hidden');
-        };
+        // Função para gerar PDF (mesma lógica do dashboard)
+        async function gerarPDF(dados) {
+            try {
+                const response = await fetch('/api/labs/pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(dados)
+                });
+                if (!response.ok) throw new Error('Erro ao gerar PDF');
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+            } catch (e) {
+                console.error('Erro PDF', e);
+                alert('Erro ao gerar PDF do laboratório, mas o registo foi concluído.');
+            }
+        }
 
-        window.limparFormulario = function() {
-            form.reset();
-        };
+        // Opcional: voltar ao dashboard se clicar em "Cancelar" não existe, mas pode-se adicionar um botão
+        // (já temos o botão no resultado)
     })();
 </script>
 </body>
