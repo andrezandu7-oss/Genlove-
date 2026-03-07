@@ -263,7 +263,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ============================================
-// DASHBOARD DO MINISTÉRIO (FIXED & COMPLETE)
+// DASHBOARD DO MINISTÉRIO - VERSÃO FINAL CORRIGIDA
 // ============================================
 app.get('/admin-dashboard', (req, res) => {
   res.send(`
@@ -277,39 +277,66 @@ app.get('/admin-dashboard', (req, res) => {
         :root {--primary: #006633; --bg: #f4f7f6; --text: #333; }
         * { margin:0; padding:0; box-sizing:border-box; font-family: "Segoe UI", sans-serif; }
         body { display: flex; background: var(--bg); min-height: 100vh; color: var(--text); }
+        
+        /* Sidebar Fixa */
         .sidebar { width: 260px; background: var(--primary); color: white; position: fixed; height: 100vh; padding: 20px; display: flex; flex-direction: column; z-index: 100; }
         .sidebar h2 { font-size: 18px; text-align: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
         .sidebar button { background: none; border: none; color: white; padding: 15px; text-align: left; width: 100%; cursor: pointer; border-radius: 8px; margin-bottom: 5px; }
         .sidebar button.active { background: rgba(255,255,255,0.2); font-weight: bold; }
-        .main { margin-left: 260px; padding: 40px 20px; width: calc(100% - 260px); display: flex; flex-direction: column; align-items: center; }
-        .section { width: 100%; max-width: 1100px; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; width: 100%; }
-        .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid var(--primary); }
-        .stat-card p { font-size: 32px; font-weight: bold; color: var(--primary); }
+        
+        /* Main Centralizado */
+        .main { 
+            margin-left: 260px; 
+            padding: 40px 20px; 
+            width: calc(100% - 260px); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; /* Centraliza conteúdo horizontalmente */
+        }
+        
+        .section { width: 100%; max-width: 1100px; display: flex; flex-direction: column; }
+        
+        /* Cards de Estatísticas (Foto 61781) */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; width: 100%; }
+        .stat-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 5px solid var(--primary); }
+        .stat-card p { font-size: 38px; font-weight: bold; color: var(--primary); margin-top: 10px; }
+
+        /* Tabela e Ações (Foto 61740) */
         .card-table { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; width: 100%; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 700px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-        .btn-acao { background: #f0f0f0; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin-right: 5px; font-size: 16px; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { text-align: left; padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .btn-acao { background: #f0f0f0; border: none; padding: 10px; border-radius: 6px; cursor: pointer; margin-right: 5px; font-size: 18px; transition: 0.2s; }
+        .btn-acao:hover { background: #e0e0e0; }
+        
         .btn-add { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+
+        /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
         .modal-content { background: white; padding: 30px; border-radius: 15px; width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
         .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .campo { display: flex; flex-direction: column; margin-bottom: 10px; }
         .campo label { font-weight: bold; font-size: 12px; margin-bottom: 5px; color: #555; }
-        .campo input, .campo select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .campo input, .campo select { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; }
+            .sidebar h2, .sidebar button span { display: none; }
+            .main { margin-left: 70px; width: calc(100% - 70px); }
+            .grid-form { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
     <div class="sidebar">
-        <h2>SNS</h2>
+        <h2>SNS - MINISTÉRIO</h2>
         <button onclick="showTab('dash')" id="btn-dash" class="active">📊 <span>Dashboard</span></button>
         <button onclick="showTab('labs')" id="btn-labs">🔬 <span>Laboratórios</span></button>
-        <button onclick="logout()" class="logout-btn" style="margin-top:auto; background:#c0392b; color:white; border-radius:8px; padding:10px; text-align:center;">🚪 Sair</button>
+        <button onclick="logout()" style="margin-top:auto; background:#c0392b; color:white; border-radius:8px; padding:10px; text-align:center;">🚪 Sair</button>
     </div>
 
     <div class="main">
         <div id="sec-dash" class="section">
-            <h1 style="margin-bottom:20px;">Painel Geral</h1>
+            <h1 style="margin-bottom:25px; align-self: flex-start;">Painel Geral</h1>
             <div class="stats-grid">
                 <div class="stat-card"><h3>Laboratórios</h3><p id="countLabs">0</p></div>
                 <div class="stat-card"><h3>Hospitais</h3><p>0</p></div>
@@ -318,14 +345,19 @@ app.get('/admin-dashboard', (req, res) => {
         </div>
 
         <div id="sec-labs" class="section" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
                 <h2>Unidades Registadas</h2>
                 <button class="btn-add" onclick="openModal()">➕ Novo Registo</button>
             </div>
             <div class="card-table">
                 <table>
                     <thead>
-                        <tr><th>Nome</th><th>NIF</th><th>Província</th><th>Ações</th></tr>
+                        <tr>
+                            <th>Instituição</th>
+                            <th>NIF</th>
+                            <th>Província</th>
+                            <th style="text-align:center">Ações</th>
+                        </tr>
                     </thead>
                     <tbody id="tableLabs"></tbody>
                 </table>
@@ -336,9 +368,9 @@ app.get('/admin-dashboard', (req, res) => {
     <div id="modalLab" class="modal">
         <div class="modal-content">
             <div id="formCorpo">
-                <h2 style="color:var(--primary); margin-bottom:20px;">Registar Unidade</h2>
+                <h2 style="color:var(--primary); margin-bottom:20px;">Ficha de Registo</h2>
                 <div class="grid-form">
-                    <div class="campo" style="grid-column: span 2;"><label>Nome *</label><input type="text" id="labNome"></div>
+                    <div class="campo" style="grid-column: span 2;"><label>Nome da Instituição *</label><input type="text" id="labNome"></div>
                     <div class="campo"><label>NIF *</label><input type="text" id="labNIF"></div>
                     <div class="campo">
                         <label>Tipo *</label>
@@ -346,28 +378,34 @@ app.get('/admin-dashboard', (req, res) => {
                             <option value="Laboratório">Laboratório</option>
                             <option value="Hospital">Hospital</option>
                             <option value="Clínica">Clínica</option>
+                            <option value="Centro de Saúde">Centro de Saúde</option>
                         </select>
                     </div>
-                    <div class="campo"><label>Província *</label><select id="labProvincia"><option value="Luanda">Luanda</option><option value="Benguela">Benguela</option><option value="Huambo">Huambo</option></select></div>
+                    <div class="campo">
+                        <label>Província *</label>
+                        <select id="labProvincia">
+                            <option value="Bengo">Bengo</option><option value="Benguela">Benguela</option><option value="Bié">Bié</option><option value="Cabinda">Cabinda</option><option value="Cuando Cubango">Cuando Cubango</option><option value="Cuanza Norte">Cuanza Norte</option><option value="Cuanza Sul">Cuanza Sul</option><option value="Cunene">Cunene</option><option value="Huambo">Huambo</option><option value="Huíla">Huíla</option><option value="Luanda">Luanda</option><option value="Lunda Norte">Lunda Norte</option><option value="Lunda Sul">Lunda Sul</option><option value="Malanje">Malanje</option><option value="Moxico">Moxico</option><option value="Namibe">Namibe</option><option value="Uíge">Uíge</option><option value="Zaire">Zaire</option>
+                        </select>
+                    </div>
                     <div class="campo"><label>Município</label><input type="text" id="labMunicipio"></div>
-                    <div class="campo" style="grid-column: span 2;"><label>Endereço</label><input type="text" id="labEndereco"></div>
+                    <div class="campo" style="grid-column: span 2;"><label>Endereço Completo</label><input type="text" id="labEndereco"></div>
                     <div class="campo"><label>Telefone</label><input type="text" id="labTelefone"></div>
-                    <div class="campo"><label>Email</label><input type="email" id="labEmail"></div>
-                    <div class="campo"><label>Licença</label><input type="text" id="labLicenca"></div>
-                    <div class="campo"><label>Expiração</label><input type="date" id="labExpira"></div>
+                    <div class="campo"><label>E-mail</label><input type="email" id="labEmail"></div>
+                    <div class="campo"><label>Nº da Licença</label><input type="text" id="labLicenca"></div>
+                    <div class="campo"><label>Data de Expiração</label><input type="date" id="labExpira"></div>
                 </div>
-                <div style="margin-top:20px; display:flex; gap:10px;">
-                    <button class="btn-add" style="flex:2" onclick="preVisualizar()">✅ Revisar Dados</button>
+                <div style="margin-top:25px; display:flex; gap:10px;">
+                    <button class="btn-add" style="flex:2" onclick="preVisualizar()">✅ Revisar Informação</button>
                     <button onclick="closeModal()" style="flex:1; background:#eee; border:none; border-radius:8px; cursor:pointer;">Cancelar</button>
                 </div>
             </div>
 
             <div id="revisaoCorpo" style="display:none;">
-                <h2 style="color:orange; margin-bottom:20px;">🔍 Confirmar Informação</h2>
-                <div id="dadosResumo" style="background:#f9f9f9; padding:20px; border-radius:10px; line-height:1.8;"></div>
-                <div style="margin-top:20px; display:flex; gap:10px;">
-                    <button class="btn-add" style="flex:2" onclick="confirmarOficialmente()">🚀 Confirmar e Salvar</button>
-                    <button onclick="voltarEdicao()" style="flex:1; background:#ccc; border:none; border-radius:8px; cursor:pointer;">✏️ Corrigir</button>
+                <h2 style="color:orange; margin-bottom:20px;">🔍 Confirmar Dados</h2>
+                <div id="dadosResumo" style="background:#f9f9f9; padding:20px; border-radius:10px; line-height:2; font-size:15px;"></div>
+                <div style="margin-top:25px; display:flex; gap:10px;">
+                    <button class="btn-add" style="flex:2" onclick="confirmarOficialmente()">🚀 Confirmar e Registar</button>
+                    <button onclick="voltarEdicao()" style="flex:1; background:#ccc; border:none; border-radius:8px; cursor:pointer;">✏️ Editar</button>
                 </div>
             </div>
         </div>
@@ -381,7 +419,9 @@ app.get('/admin-dashboard', (req, res) => {
 
         function showTab(t) {
             document.querySelectorAll(".section").forEach(s => s.style.display="none");
-            document.getElementById("sec-"+t).style.display="block";
+            document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
+            document.getElementById("sec-"+t).style.display="flex";
+            document.getElementById("btn-"+t).classList.add("active");
             if(t==='labs') loadLabs();
             if(t==='dash') loadStats();
         }
@@ -389,9 +429,17 @@ app.get('/admin-dashboard', (req, res) => {
         async function loadLabs() {
             const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer "+token } });
             const labs = await r.json();
-            document.getElementById("tableLabs").innerHTML = labs.map(l => \`
-                <tr><td>\${l.nome}</td><td>\${l.nif}</td><td>\${l.provincia}</td>
-                <td><button class="btn-acao" onclick="acaoPDF('\${l._id}', 'view')">👁️</button></td></tr>\`).join("");
+            document.getElementById("tableLabs").innerHTML = labs.map(l => `
+                <tr>
+                    <td><strong>${l.nome}</strong></td>
+                    <td>${l.nif}</td>
+                    <td>${l.provincia}</td>
+                    <td style="text-align:center">
+                        <button class="btn-acao" title="Ver" onclick="acaoPDF('${l._id}', 'view')">👁️</button>
+                        <button class="btn-acao" title="Imprimir" onclick="acaoPDF('${l._id}', 'print')">🖨️</button>
+                        <button class="btn-acao" title="Baixar" onclick="acaoPDF('${l._id}', 'download')">📥</button>
+                    </td>
+                </tr>`).join("");
         }
 
         async function loadStats() {
@@ -406,22 +454,27 @@ app.get('/admin-dashboard', (req, res) => {
                 nif: document.getElementById("labNIF").value,
                 tipo: document.getElementById("labTipo").value,
                 provincia: document.getElementById("labProvincia").value,
-                municipio: document.getElementById("labMunicipio").value,
-                endereco: document.getElementById("labEndereco").value,
-                telefone: document.getElementById("labTelefone").value,
-                email: document.getElementById("labEmail").value,
-                licenca: document.getElementById("labLicenca").value,
-                expiracao: document.getElementById("labExpira").value,
+                municipio: document.getElementById("labMunicipio").value || "Não informado",
+                endereco: document.getElementById("labEndereco").value || "Não informado",
+                telefone: document.getElementById("labTelefone").value || "Não informado",
+                email: document.getElementById("labEmail").value || "Não informado",
+                licenca: document.getElementById("labLicenca").value || "Não informado",
+                expiracao: document.getElementById("labExpira").value || "Não informado",
                 ativo: true
             };
-            if(!dadosTemp.nome || !dadosTemp.nif) return alert("Preencha Nome e NIF");
+
+            if(!dadosTemp.nome || !dadosTemp.nif) return alert("Nome e NIF são obrigatórios!");
+
             document.getElementById("formCorpo").style.display="none";
             document.getElementById("revisaoCorpo").style.display="block";
-            document.getElementById("dadosResumo").innerHTML = \`
-                <p><strong>Instituição:</strong> \${dadosTemp.nome}</p>
-                <p><strong>NIF:</strong> \${dadosTemp.nif} | <strong>Tipo:</strong> \${dadosTemp.tipo}</p>
-                <p><strong>Local:</strong> \${dadosTemp.municipio}, \${dadosTemp.provincia}</p>
-                <p><strong>Contacto:</strong> \${dadosTemp.telefone} | \${dadosTemp.email}</p>\`;
+            document.getElementById("dadosResumo").innerHTML = `
+                <p><strong>Instituição:</strong> ${dadosTemp.nome}</p>
+                <p><strong>NIF:</strong> ${dadosTemp.nif} | <strong>Tipo:</strong> ${dadosTemp.tipo}</p>
+                <p><strong>Província:</strong> ${dadosTemp.provincia} | <strong>Município:</strong> ${dadosTemp.municipio}</p>
+                <p><strong>Endereço:</strong> ${dadosTemp.endereco}</p>
+                <p><strong>Contacto:</strong> ${dadosTemp.telefone} | ${dadosTemp.email}</p>
+                <p><strong>Licença:</strong> ${dadosTemp.licenca} (Expira: ${dadosTemp.expiracao})</p>
+            `;
         }
 
         function voltarEdicao() {
@@ -435,7 +488,30 @@ app.get('/admin-dashboard', (req, res) => {
                 headers: { "Content-Type": "application/json", "Authorization": "Bearer "+token },
                 body: JSON.stringify(dadosTemp)
             });
-            if(r.ok) { alert("Sucesso!"); closeModal(); loadLabs(); loadStats(); }
+            if(r.ok) { 
+                alert("Unidade registada com sucesso!"); 
+                closeModal(); 
+                loadLabs(); 
+                loadStats(); 
+            } else {
+                alert("Erro ao guardar os dados.");
+            }
+        }
+
+        async function acaoPDF(id, acao) {
+            const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer "+token } });
+            const labs = await r.json();
+            const lab = labs.find(x => x._id === id);
+            const res = await fetch("/api/labs/pdf", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": "Bearer "+token },
+                body: JSON.stringify(lab)
+            });
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            if(acao==='view') window.open(url);
+            else if(acao==='print') { const w = window.open(url); w.onload = () => w.print(); }
+            else { const a = document.createElement("a"); a.href=url; a.download="Registo.pdf"; a.click(); }
         }
 
         function openModal() { document.getElementById("modalLab").style.display="flex"; voltarEdicao(); }
@@ -447,8 +523,6 @@ app.get('/admin-dashboard', (req, res) => {
 </html>
 `);
 });
-
-
 
 // DASHBOARD DO LABORATORIO (TOUS BOUTONS ACTIFS)
 // ================================================
