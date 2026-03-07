@@ -307,6 +307,8 @@ app.get('/admin-dashboard', (req, res) => {
     '    .campo { margin-bottom: 15px; }' +
     '    .campo label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #555; }' +
     '    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }' +
+    '    #revisaoLab p { margin: 8px 0; font-size: 14px; }' +
+    '    #revisaoLab strong { display: inline-block; width: 140px; color: #333; }' +
     '  </style>' +
     '</head>' +
     '<body>' +
@@ -346,7 +348,7 @@ app.get('/admin-dashboard', (req, res) => {
     '    <!-- Modal de Registro de Laboratório -->' +
     '    <div id="modalLab" class="modal">' +
     '      <div class="modal-content">' +
-    '        <h3 style="color:var(--primary); margin-bottom:20px;">➕ Registro de Novo Laboratório</h3>' +
+    '        <!-- Formulaire de saisie -->' +
     '        <div class="grid-2">' +
     '          <div class="campo" style="grid-column: span 2;">' +
     '            <label>🏥 Nome do Laboratório *</label>' +
@@ -404,6 +406,27 @@ app.get('/admin-dashboard', (req, res) => {
     '            <input type="text" id="labResponsavel" placeholder="Se diferente">' +
     '          </div>' +
     '        </div>' +
+    '        <!-- Zone de révision (cachée par défaut) -->' +
+    '        <div id="revisaoLab" style="display:none;">' +
+    '          <h3 style="color:var(--primary); margin-bottom:20px;">🔍 Revisão dos Dados</h3>' +
+    '          <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px;">' +
+    '            <p><strong>Nome:</strong> <span id="revNome"></span></p>' +
+    '            <p><strong>NIF:</strong> <span id="revNIF"></span></p>' +
+    '            <p><strong>Tipo:</strong> <span id="revTipo"></span></p>' +
+    '            <p><strong>Província:</strong> <span id="revProvincia"></span></p>' +
+    '            <p><strong>Município:</strong> <span id="revMunicipio"></span></p>' +
+    '            <p><strong>Endereço:</strong> <span id="revEndereco"></span></p>' +
+    '            <p><strong>Telefone:</strong> <span id="revTelefone"></span></p>' +
+    '            <p><strong>Email:</strong> <span id="revEmail"></span></p>' +
+    '            <p><strong>Diretor:</strong> <span id="revDiretor"></span></p>' +
+    '            <p><strong>Resp. Técnico:</strong> <span id="revResponsavel"></span></p>' +
+    '          </div>' +
+    '          <div style="display: flex; gap:10px;">' +
+    '            <button class="btn-add" style="flex:2" onclick="confirmarLaboratorio()">✅ Confirmar Registo</button>' +
+    '            <button onclick="voltarEdicao()" style="flex:1; border:none; border-radius:8px; cursor:pointer;">✏️ Voltar para Edição</button>' +
+    '          </div>' +
+    '        </div>' +
+    '        <!-- Boutons du formulaire (cachés quand révision affichée) -->' +
     '        <div style="display: flex; gap:10px; margin-top:20px;">' +
     '          <button class="btn-add" style="flex:2" onclick="salvarLaboratorio()">Salvar Laboratório</button>' +
     '          <button onclick="closeModal(\'modalLab\')" style="flex:1; border:none; border-radius:8px; cursor:pointer;">Cancelar</button>' +
@@ -414,6 +437,7 @@ app.get('/admin-dashboard', (req, res) => {
     '  <script>' +
     '    const token = localStorage.getItem("token");' +
     '    if (!token) window.location.href = "/ministerio";' +
+    '    let dadosTemp = null;' +
     '    function showTab(tab) {' +
     '      document.querySelectorAll(".section").forEach(s => s.style.display = "none");' +
     '      document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));' +
@@ -444,6 +468,83 @@ app.get('/admin-dashboard', (req, res) => {
     '        </tr>`' +
     '      ).join("");' +
     '    }' +
+    '    function mostrarRevisao() {' +
+    '      dadosTemp = {' +
+    '        nome: document.getElementById("labNome").value,' +
+    '        nif: document.getElementById("labNIF").value,' +
+    '        tipo: document.getElementById("labTipo").value,' +
+    '        provincia: document.getElementById("labProvincia").value,' +
+    '        municipio: document.getElementById("labMunicipio").value,' +
+    '        endereco: document.getElementById("labEndereco").value,' +
+    '        telefone: document.getElementById("labTelefone").value,' +
+    '        email: document.getElementById("labEmail").value,' +
+    '        diretor: document.getElementById("labDiretor").value,' +
+    '        responsavel: document.getElementById("labResponsavel").value' +
+    '      };' +
+    '      if (!dadosTemp.nome || !dadosTemp.nif || !dadosTemp.provincia) {' +
+    '        alert("Preencha os campos obrigatórios!");' +
+    '        return;' +
+    '      }' +
+    '      document.getElementById("revNome").innerText = dadosTemp.nome;' +
+    '      document.getElementById("revNIF").innerText = dadosTemp.nif;' +
+    '      document.getElementById("revTipo").innerText = dadosTemp.tipo;' +
+    '      document.getElementById("revProvincia").innerText = dadosTemp.provincia;' +
+    '      document.getElementById("revMunicipio").innerText = dadosTemp.municipio || "Não informado";' +
+    '      document.getElementById("revEndereco").innerText = dadosTemp.endereco || "Não informado";' +
+    '      document.getElementById("revTelefone").innerText = dadosTemp.telefone || "Não informado";' +
+    '      document.getElementById("revEmail").innerText = dadosTemp.email || "Não informado";' +
+    '      document.getElementById("revDiretor").innerText = dadosTemp.diretor || "Não informado";' +
+    '      document.getElementById("revResponsavel").innerText = dadosTemp.responsavel || "Não informado";' +
+    '      document.querySelector(".grid-2").style.display = "none";' +
+    '      document.getElementById("revisaoLab").style.display = "block";' +
+    '      document.querySelector("#modalLab .modal-content > div:last-child").style.display = "none";' +
+    '    }' +
+    '    function voltarEdicao() {' +
+    '      document.querySelector(".grid-2").style.display = "grid";' +
+    '      document.getElementById("revisaoLab").style.display = "none";' +
+    '      document.querySelector("#modalLab .modal-content > div:last-child").style.display = "flex";' +
+    '    }' +
+    '    async function confirmarLaboratorio() {' +
+    '      if (!dadosTemp) return alert("Erro: dados não encontrados.");' +
+    '      const r = await fetch("/api/labs", {' +
+    '        method: "POST",' +
+    '        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },' +
+    '        body: JSON.stringify({ ...dadosTemp, ativo: true })' +
+    '      });' +
+    '      const res = await r.json();' +
+    '      if (res.success) {' +
+    '        const pdfData = {' +
+    '          nome: dadosTemp.nome,' +
+    '          nif: dadosTemp.nif,' +
+    '          tipo: dadosTemp.tipo,' +
+    '          provincia: dadosTemp.provincia,' +
+    '          municipio: dadosTemp.municipio,' +
+    '          endereco: dadosTemp.endereco,' +
+    '          telefone: dadosTemp.telefone,' +
+    '          email: dadosTemp.email,' +
+    '          diretor: dadosTemp.diretor,' +
+    '          responsavelTecnico: dadosTemp.responsavel,' +
+    '          apiKey: res.apiKey,' +
+    '          ativo: true' +
+    '        };' +
+    '        await gerarPDFLab(pdfData);' +
+    '        closeModal("modalLab");' +
+    '        loadLabs();' +
+    '        voltarEdicao();' +
+    '        document.getElementById("labNome").value = "";' +
+    '        document.getElementById("labNIF").value = "";' +
+    '        document.getElementById("labTipo").value = "laboratorio";' +
+    '        document.getElementById("labProvincia").value = "";' +
+    '        document.getElementById("labMunicipio").value = "";' +
+    '        document.getElementById("labEndereco").value = "";' +
+    '        document.getElementById("labTelefone").value = "";' +
+    '        document.getElementById("labEmail").value = "";' +
+    '        document.getElementById("labDiretor").value = "";' +
+    '        document.getElementById("labResponsavel").value = "";' +
+    '      } else {' +
+    '        alert("Erro ao salvar.");' +
+    '      }' +
+    '    }' +
     '    async function gerarPDFLab(dados) {' +
     '      try {' +
     '        const response = await fetch("/api/labs/pdf", {' +
@@ -461,53 +562,8 @@ app.get('/admin-dashboard', (req, res) => {
     '        alert("Erro ao gerar PDF do laboratório");' +
     '      }' +
     '    }' +
-    '    async function salvarLaboratorio() {' +
-    '      const dados = {' +
-    '        nome: document.getElementById("labNome").value,' +
-    '        nif: document.getElementById("labNIF").value,' +
-    '        tipo: document.getElementById("labTipo").value,' +
-    '        provincia: document.getElementById("labProvincia").value,' +
-    '        municipio: document.getElementById("labMunicipio").value,' +
-    '        endereco: document.getElementById("labEndereco").value,' +
-    '        telefone: document.getElementById("labTelefone").value,' +
-    '        email: document.getElementById("labEmail").value,' +
-    '        diretor: document.getElementById("labDiretor").value,' +
-    '        responsavel: document.getElementById("labResponsavel").value,' +
-    '        ativo: true' +
-    '      };' +
-    '      if (!dados.nome || !dados.nif || !dados.provincia) return alert("Preencha os campos obrigatórios!");' +
-    '      const r = await fetch("/api/labs", {' +
-    '        method: "POST",' +
-    '        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },' +
-    '        body: JSON.stringify(dados)' +
-    '      });' +
-    '      const res = await r.json();' +
-    '      if (res.success) {' +
-    '        const pdfData = {' +
-    '          nome: dados.nome,' +
-    '          nif: dados.nif,' +
-    '          tipo: dados.tipo,' +
-    '          provincia: dados.provincia,' +
-    '          municipio: dados.municipio,' +
-    '          endereco: dados.endereco,' +
-    '          telefone: dados.telefone,' +
-    '          email: dados.email,' +
-    '          diretor: dados.diretor,' +
-    '          responsavelTecnico: dados.responsavel,' +
-    '          apiKey: res.apiKey,' +
-    '          ativo: true' +
-    '        };' +
-    '        await gerarPDFLab(pdfData);' +
-    '        closeModal("modalLab");' +
-    '        loadLabs();' +
-    '      } else {' +
-    '        alert("Erro ao salvar.");' +
-    '      }' +
-    '    }' +
-    '    function logout() {' +
-    '      localStorage.clear();' +
-    '      window.location.href = "/";' +
-    '    }' +
+    '    function salvarLaboratorio() { mostrarRevisao(); }' +
+    '    function logout() { localStorage.clear(); window.location.href = "/"; }' +
     '    window.onload = () => { if (document.getElementById("sec-dash").style.display !== "none") loadStats(); };' +
     '  </script>' +
     '</body>' +
