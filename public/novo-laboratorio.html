@@ -3,45 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo Laboratório · SNS Angola</title>
+    <title>Novo Registo · SNS Angola</title>
     <style>
-        /* Styles conservés pour l'élégance de l'interface */
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f0f4f0; display: flex; justify-content: center; padding: 2rem 1rem; }
-        .container { max-width: 950px; width: 100%; background: white; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #cce8d5; }
-        .header { background: #006633; color: white; padding: 2rem; }
-        .form-card { padding: 2.5rem; }
-        .section-title { font-size: 1.4rem; font-weight: 600; color: #006633; border-bottom: 2px solid #eee; margin: 2rem 0 1rem; }
-        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
-        .campo { display: flex; flex-direction: column; gap: 5px; }
-        .full-width { grid-column: span 2; }
-        label { font-weight: 600; font-size: 0.85rem; color: #2d4a3b; }
-        input, select { padding: 12px; border: 1.5px solid #d0ded5; border-radius: 12px; outline: none; }
-        input:focus { border-color: #006633; }
-        .btn-primary { background: #006633; color: white; border: none; padding: 1.2rem; border-radius: 50px; width: 100%; cursor: pointer; font-weight: 700; margin-top: 2rem; font-size: 1.1rem; }
-        .btn-secondary { background: #e0e0e0; padding: 1rem; border-radius: 50px; border: none; cursor: pointer; flex: 1; font-weight: 600; }
-        .revisao-card { background: #f9fdfa; border-radius: 20px; padding: 1.5rem; border: 1px solid #cce8d5; line-height: 1.8; }
-        .revisao-card p { border-bottom: 1px dashed #eee; padding: 5px 0; }
+        :root { --primary: #006633; --accent: #ffa500; }
+        * { margin:0; padding:0; box-sizing:border-box; font-family: "Segoe UI", sans-serif; }
+        body { background: #f4f7f6; display: flex; justify-content: center; padding: 40px 20px; }
+        .container { max-width: 800px; width: 100%; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: var(--primary); color: white; padding: 30px; text-align: center; }
+        .form-body { padding: 40px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full { grid-column: span 2; }
+        .campo { display: flex; flex-direction: column; gap: 8px; }
+        label { font-weight: bold; color: #555; font-size: 13px; }
+        input, select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 30px; font-size: 16px; }
+        .btn-sec { background: #eee; color: #333; border: none; padding: 15px; border-radius: 8px; cursor: pointer; flex: 1; }
         .hidden { display: none; }
-        .button-group { display: flex; gap: 1rem; margin-top: 2rem; }
-        .resultado-popup { text-align: center; padding: 2rem; }
-        .numero { background: #ffcc00; padding: 12px; border-radius: 50px; font-weight: bold; margin: 1.5rem 0; font-family: monospace; font-size: 1.2rem; }
+        .revisao-box { background: #f9f9f9; padding: 20px; border-radius: 10px; border: 1px solid #eee; margin-bottom: 20px; line-height: 1.8; }
+        .success-box { text-align: center; padding: 20px; }
+        .api-key { background: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; font-family: monospace; font-weight: bold; margin: 20px 0; border: 1px dashed #ffeeba; }
     </style>
 </head>
 <body>
+
 <div class="container">
     <div class="header">
-        <h1>🏥 Novo Registo SNS</h1>
-        <p>Ministério da Saúde - Cadastro Oficial de Unidades</p>
+        <h1>Ministério da Saúde</h1>
+        <p>Registo de Unidade no Sistema Nacional</p>
     </div>
 
-    <div class="form-card">
-        <form id="labForm">
-            <div class="section-title">🏛️ Identificação da Unidade</div>
-            <div class="grid-2">
-                <div class="campo full-width">
-                    <label>Nome da Instituição *</label>
-                    <input type="text" id="nome" required placeholder="Ex: Hospital Central de Luanda">
+    <div class="form-body">
+        <form id="formUnidade">
+            <div class="grid">
+                <div class="campo full">
+                    <label>Nome da Unidade *</label>
+                    <input type="text" id="nome" required>
                 </div>
                 <div class="campo">
                     <label>NIF (10 dígitos) *</label>
@@ -50,74 +46,61 @@
                 <div class="campo">
                     <label>Tipo de Unidade *</label>
                     <select id="tipo" required>
-                        <option value="Laboratório de Análises Clínicas">Laboratório de Análises Clínicas</option>
-                        <option value="Hospital Geral">Hospital Geral</option>
-                        <option value="Hospital Especializado">Hospital Especializado</option>
-                        <option value="Centro de Saúde">Centro de Saúde</option>
-                        <option value="Clínica Médica">Clínica Médica</option>
-                        <option value="Posto de Saúde">Posto de Saúde</option>
-                        <option value="Centro de Diagnóstico">Centro de Diagnóstico</option>
+                        <option value="laboratorio">Laboratório</option>
+                        <option value="hospital">Hospital</option>
+                        <option value="clinica">Clínica</option>
                     </select>
                 </div>
                 <div class="campo">
                     <label>Província *</label>
                     <select id="provincia" required>
-                        <option value="Bengo">Bengo</option><option value="Benguela">Benguela</option>
-                        <option value="Bié">Bié</option><option value="Cabinda">Cabinda</option>
-                        <option value="Cuando Cubango">Cuando Cubango</option><option value="Cuanza Norte">Cuanza Norte</option>
-                        <option value="Cuanza Sul">Cuanza Sul</option><option value="Cunene">Cunene</option>
-                        <option value="Huambo">Huambo</option><option value="Huíla">Huíla</option>
-                        <option value="Luanda" selected>Luanda</option><option value="Lunda Norte">Lunda Norte</option>
-                        <option value="Lunda Sul">Lunda Sul</option><option value="Malanje">Malanje</option>
-                        <option value="Moxico">Moxico</option><option value="Namibe">Namibe</option>
-                        <option value="Uíge">Uíge</option><option value="Zaire">Zaire</option>
-                    </select>
+                        <option value="Luanda">Luanda</option>
+                        <option value="Benguela">Benguela</option>
+                        <option value="Huambo">Huambo</option>
+                        <option value="Huíla">Huíla</option>
+                        <option value="Cabinda">Cabinda</option>
+                        </select>
                 </div>
                 <div class="campo">
                     <label>Município</label>
-                    <input type="text" id="municipio" placeholder="Ex: Belas">
+                    <input type="text" id="municipio">
                 </div>
-                <div class="campo full-width">
-                    <label>Endereço</label>
-                    <input type="text" id="endereco" placeholder="Rua, Bairro, Nº">
+                <div class="campo full">
+                    <label>Endereço Completo</label>
+                    <input type="text" id="endereco">
                 </div>
                 <div class="campo">
                     <label>Director Geral</label>
                     <input type="text" id="diretor">
                 </div>
                 <div class="campo">
-                    <label>Responsável Técnico</label>
-                    <input type="text" id="responsavelTecnico">
-                </div>
-                <div class="campo">
                     <label>Telefone</label>
-                    <input type="tel" id="telefone">
+                    <input type="text" id="telefone">
                 </div>
-                <div class="campo">
-                    <label>E-mail</label>
+                <div class="campo full">
+                    <label>E-mail Oficial</label>
                     <input type="email" id="email">
                 </div>
             </div>
-            <button type="button" class="btn-primary" id="btnRevisar">🔍 Revisar Dados para Envio</button>
+            <button type="button" class="btn-main" onclick="irParaRevisao()">🔍 Revisar Dados</button>
         </form>
 
-        <div id="revisaoArea" class="hidden">
-            <div class="section-title">🔍 Confirmar Dados do Registo</div>
-            <div class="revisao-card" id="dadosRevisao">
-                </div>
-            <div class="button-group">
-                <button class="btn-primary" id="btnConfirmar">🚀 Salvar Oficialmente</button>
-                <button class="btn-secondary" id="btnVoltar">✏️ Editar</button>
+        <div id="areaRevisao" class="hidden">
+            <h2 style="margin-bottom: 20px; color: var(--primary);">Confirmar Registo</h2>
+            <div id="resumoDados" class="revisao-box"></div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-main" style="margin-top:0;" onclick="salvarOficialmente()">🚀 Confirmar e Salvar</button>
+                <button class="btn-sec" onclick="voltarEdicao()">Editar</button>
             </div>
         </div>
 
-        <div id="resultadoArea" class="hidden">
-            <div class="resultado-popup">
-                <h2 style="color:#006633">✅ Registo Concluído!</h2>
-                <p>A chave de acesso da unidade é:</p>
-                <div class="numero" id="apiKeyDisplay">---</div>
-                <p>Esta unidade já aparece no Dashboard Geral.</p>
-                <button class="btn-primary" onclick="window.location.href='/admin-dashboard'">📋 Ir para o Dashboard</button>
+        <div id="areaSucesso" class="hidden">
+            <div class="success-box">
+                <h2 style="color: var(--primary);">✅ Unidade Registada!</h2>
+                <p>O registo foi concluído com sucesso no MongoDB.</p>
+                <div class="api-key" id="displayApiKey"></div>
+                <p style="font-size: 12px; color: #666;">Guarde esta API Key. Ela é necessária para o login da unidade.</p>
+                <button class="btn-main" onclick="window.location.href='/admin-dashboard'">Ir para o Dashboard</button>
             </div>
         </div>
     </div>
@@ -127,61 +110,42 @@
     const token = localStorage.getItem('token');
     if (!token) window.location.href = "/ministerio";
 
-    const labForm = document.getElementById('labForm');
-    const revisaoArea = document.getElementById('revisaoArea');
-    const resultadoArea = document.getElementById('resultadoArea');
-    const dadosRevisao = document.getElementById('dadosRevisao');
+    let payload = {};
 
-    // ÉTAPE 1 : RÉVISION (Affiche toutes les données sans exception)
-    document.getElementById('btnRevisar').addEventListener('click', () => {
-        const payload = {
-            nome: document.getElementById('nome').value.trim(),
-            nif: document.getElementById('nif').value.trim(),
-            tipo: document.getElementById('tipo').value,
+    function irParaRevisao() {
+        payload = {
+            nome: document.getElementById('nome').value,
+            nif: document.getElementById('nif').value,
+            tipo: document.getElementById('tipo').value, // Envoie 'laboratorio', 'hospital' ou 'clinica'
             provincia: document.getElementById('provincia').value,
-            municipio: document.getElementById('municipio').value || "Não informado",
-            endereco: document.getElementById('endereco').value || "Não informado",
-            diretor: document.getElementById('diretor').value || "Não informado",
-            responsavelTecnico: document.getElementById('responsavelTecnico').value || "Não informado",
-            telefone: document.getElementById('telefone').value || "Não informado",
-            email: document.getElementById('email').value || "Não informado",
-            ativo: true // Pour que le dashboard compte cette unité
+            municipio: document.getElementById('municipio').value,
+            endereco: document.getElementById('endereco').value,
+            diretor: document.getElementById('diretor').value,
+            telefone: document.getElementById('telefone').value,
+            email: document.getElementById('email').value,
+            ativo: true
         };
 
-        if (!payload.nome || !payload.nif) {
-            alert("Erro: Nome e NIF são obrigatórios.");
-            return;
-        }
+        if(!payload.nome || !payload.nif) return alert("Preencha os campos obrigatórios.");
 
-        window.dadosTemp = payload;
-
-        dadosRevisao.innerHTML = `
-            <p><b>Nome:</b> \${payload.nome}</p>
-            <p><b>NIF:</b> \${payload.nif}</p>
-            <p><b>Tipo:</b> \${payload.tipo}</p>
-            <p><b>Localização:</b> \${payload.municipio}, \${payload.provincia}</p>
-            <p><b>Endereço:</b> \${payload.endereco}</p>
+        document.getElementById('resumoDados').innerHTML = `
+            <p><b>Instituição:</b> \${payload.nome}</p>
+            <p><b>NIF:</b> \${payload.nif} | <b>Tipo:</b> \${payload.tipo.toUpperCase()}</p>
+            <p><b>Local:</b> \${payload.municipio}, \${payload.provincia}</p>
             <p><b>Director:</b> \${payload.diretor}</p>
-            <p><b>Técnico:</b> \${payload.responsavelTecnico}</p>
             <p><b>Contacto:</b> \${payload.telefone} | \${payload.email}</p>
         `;
 
-        labForm.classList.add('hidden');
-        revisaoArea.classList.remove('hidden');
-    });
+        document.getElementById('formUnidade').classList.add('hidden');
+        document.getElementById('areaRevisao').classList.remove('hidden');
+    }
 
-    // RETOUR À L'ÉDITION
-    document.getElementById('btnVoltar').addEventListener('click', () => {
-        revisaoArea.classList.add('hidden');
-        labForm.classList.remove('hidden');
-    });
+    function voltarEdicao() {
+        document.getElementById('areaRevisao').classList.add('hidden');
+        document.getElementById('formUnidade').classList.remove('hidden');
+    }
 
-    // ÉTAPE 2 : ENVOI FINAL (Salvar Oficialmente)
-    document.getElementById('btnConfirmar').addEventListener('click', async () => {
-        const btn = document.getElementById('btnConfirmar');
-        btn.disabled = true;
-        btn.innerText = "⏳ A gravar no Servidor...";
-
+    async function salvarOficialmente() {
         try {
             const response = await fetch('/api/labs', {
                 method: 'POST',
@@ -189,26 +153,23 @@
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + token 
                 },
-                body: JSON.stringify(window.dadosTemp)
+                body: JSON.stringify(payload)
             });
 
-            const result = await response.json();
+            const data = await response.json();
 
-            if (response.ok) {
-                revisaoArea.classList.add('hidden');
-                document.getElementById('apiKeyDisplay').innerText = result.apiKey || "SNS-REGISTADO";
-                resultadoArea.classList.remove('hidden');
+            if(response.ok) {
+                document.getElementById('areaRevisao').classList.add('hidden');
+                document.getElementById('displayApiKey').innerText = data.apiKey;
+                document.getElementById('areaSucesso').classList.remove('hidden');
             } else {
-                alert("❌ Erro do Servidor: " + (result.error || "Tente novamente."));
-                btn.disabled = false;
-                btn.innerText = "🚀 Salvar Oficialmente";
+                alert("Erro: " + (data.error || "Falha no servidor"));
             }
-        } catch (error) {
-            alert("🌐 Erro de rede: Sem resposta do Render.");
-            btn.disabled = false;
-            btn.innerText = "🚀 Salvar Oficialmente";
+        } catch (err) {
+            alert("Erro de conexão com Render.");
         }
-    });
+    }
 </script>
+
 </body>
 </html>
