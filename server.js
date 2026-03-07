@@ -263,7 +263,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ============================================
-// DASHBOARD DO MINISTÉRIO - VERSÃO RENDER OK
+// DASHBOARD DO MINISTÉRIO - VERSION AMENDÉE
 // ============================================
 app.get('/admin-dashboard', (req, res) => {
   res.send(`
@@ -277,40 +277,28 @@ app.get('/admin-dashboard', (req, res) => {
         :root {--primary: #006633; --bg: #f4f7f6; --text: #333; }
         * { margin:0; padding:0; box-sizing:border-box; font-family: "Segoe UI", sans-serif; }
         body { display: flex; background: var(--bg); min-height: 100vh; color: var(--text); }
-        
         .sidebar { width: 260px; background: var(--primary); color: white; position: fixed; height: 100vh; padding: 20px; display: flex; flex-direction: column; z-index: 100; }
         .sidebar h2 { font-size: 18px; text-align: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
         .sidebar button { background: none; border: none; color: white; padding: 15px; text-align: left; width: 100%; cursor: pointer; border-radius: 8px; margin-bottom: 5px; }
         .sidebar button.active { background: rgba(255,255,255,0.2); font-weight: bold; }
-        
         .main { margin-left: 260px; padding: 40px 20px; width: calc(100% - 260px); display: flex; flex-direction: column; align-items: center; }
         .section { width: 100%; max-width: 1100px; display: none; }
         .active-section { display: flex !important; flex-direction: column; }
-
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; width: 100%; }
         .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 5px solid var(--primary); }
         .stat-card p { font-size: 35px; font-weight: bold; color: var(--primary); }
-
         .card-table { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; width: 100%; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 700px; }
         th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-        
         .btn-acao { background: #f0f0f0; border: none; padding: 8px; border-radius: 5px; cursor: pointer; margin-right: 5px; font-size: 16px; }
         .btn-add { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
         .modal-content { background: white; padding: 30px; border-radius: 15px; width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
         .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .campo { display: flex; flex-direction: column; }
         .campo label { font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #666; }
         .campo input, .campo select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-
-        @media (max-width: 768px) {
-            .sidebar { width: 70px; }
-            .sidebar h2, .sidebar button span { display: none; }
-            .main { margin-left: 70px; width: calc(100% - 70px); }
-            .grid-form { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 768px) { .sidebar { width: 70px; } .sidebar h2, .sidebar button span { display: none; } .main { margin-left: 70px; width: calc(100% - 70px); } }
     </style>
 </head>
 <body>
@@ -352,9 +340,17 @@ app.get('/admin-dashboard', (req, res) => {
             <div id="formCorpo">
                 <h2 style="color:var(--primary); margin-bottom:20px;">Ficha de Registo</h2>
                 <div class="grid-form">
-                    <div class="campo" style="grid-column: span 2;"><label>Nome *</label><input type="text" id="labNome"></div>
+                    <div class="campo" style="grid-column: span 2;"><label>Nome Instituição *</label><input type="text" id="labNome"></div>
                     <div class="campo"><label>NIF *</label><input type="text" id="labNIF"></div>
-                    <div class="campo"><label>Tipo</label><select id="labTipo"><option>Laboratório</option><option>Hospital</option></select></div>
+                    <div class="campo">
+                        <label>Tipo *</label>
+                        <select id="labTipo">
+                            <option value="Laboratório">Laboratório</option>
+                            <option value="Hospital">Hospital</option>
+                            <option value="Clínica">Clínica</option>
+                            <option value="Centro de Saúde">Centro de Saúde</option>
+                        </select>
+                    </div>
                     <div class="campo">
                         <label>Província *</label>
                         <select id="labProvincia">
@@ -372,20 +368,22 @@ app.get('/admin-dashboard', (req, res) => {
                     <div class="campo" style="grid-column: span 2;"><label>Endereço</label><input type="text" id="labEndereco"></div>
                     <div class="campo"><label>Telefone</label><input type="text" id="labTelefone"></div>
                     <div class="campo"><label>Email</label><input type="email" id="labEmail"></div>
-                    <div class="campo"><label>Licença</label><input type="text" id="labLicenca"></div>
-                    <div class="campo"><label>Expiração</label><input type="date" id="labExpira"></div>
+                    <div class="campo"><label>Licença Nº</label><input type="text" id="labLicenca"></div>
+                    <div class="campo"><label>Data Expiração</label><input type="date" id="labExpira"></div>
                 </div>
                 <div style="margin-top:20px; display:flex; gap:10px;">
-                    <button class="btn-add" style="flex:2" onclick="preVisualizar()">✅ Confirmar Dados</button>
+                    <button class="btn-add" style="flex:2" onclick="preVisualizar()">✅ Revisar Todos os Dados</button>
                     <button onclick="closeModal()" style="flex:1; background:#eee; border:none; border-radius:8px; cursor:pointer;">Cancelar</button>
                 </div>
             </div>
+
             <div id="revisaoCorpo" style="display:none;">
-                <h2 style="color:orange; margin-bottom:20px;">🔍 Rever Dados</h2>
-                <div id="dadosResumo" style="background:#f9f9f9; padding:20px; border-radius:10px; line-height:1.8;"></div>
+                <h2 style="color:orange; margin-bottom:20px;">🔍 Confirmar Todos os Detalhes</h2>
+                <div id="dadosResumo" style="background:#f9f9f9; padding:20px; border-radius:10px; line-height:1.6; font-size:14px;">
+                    </div>
                 <div style="margin-top:20px; display:flex; gap:10px;">
                     <button class="btn-add" style="flex:2" onclick="confirmarOficialmente()">🚀 Salvar Oficialmente</button>
-                    <button onclick="voltarEdicao()" style="flex:1; background:#ccc; border:none; border-radius:8px; cursor:pointer;">✏️ Corrigir</button>
+                    <button onclick="voltarEdicao()" style="flex:1; background:#ccc; border:none; border-radius:8px; cursor:pointer;">✏️ Corrigir Dados</button>
                 </div>
             </div>
         </div>
@@ -429,26 +427,40 @@ app.get('/admin-dashboard', (req, res) => {
             } catch(e) { console.error(e); }
         }
 
+        // AMENDEMENT 1 : AFFICHER TOUTES LES DONNÉES DANS LA RÉVISION
         function preVisualizar() {
             dadosTemp = {
                 nome: document.getElementById("labNome").value,
                 nif: document.getElementById("labNIF").value,
                 tipo: document.getElementById("labTipo").value,
                 provincia: document.getElementById("labProvincia").value,
-                municipio: document.getElementById("labMunicipio").value || "---",
-                endereco: document.getElementById("labEndereco").value || "---",
-                telefone: document.getElementById("labTelefone").value || "---",
-                email: document.getElementById("labEmail").value || "---",
-                licenca: document.getElementById("labLicenca").value || "---",
-                expiracao: document.getElementById("labExpira").value || "---",
+                municipio: document.getElementById("labMunicipio").value || "Não informado",
+                endereco: document.getElementById("labEndereco").value || "Não informado",
+                telefone: document.getElementById("labTelefone").value || "Não informado",
+                email: document.getElementById("labEmail").value || "Não informado",
+                licenca: document.getElementById("labLicenca").value || "Não informado",
+                expiracao: document.getElementById("labExpira").value || "Não informado",
                 ativo: true
             };
-            if(!dadosTemp.nome || !dadosTemp.nif) return alert("Preencha Nome e NIF");
-            document.getElementById("formCorpo").style.display="none";
-            document.getElementById("revisaoCorpo").style.display="block";
-            document.getElementById("dadosResumo").innerHTML = "<p><b>Instituição:</b> "+dadosTemp.nome+"</p><p><b>NIF:</b> "+dadosTemp.nif+"</p><p><b>Local:</b> "+dadosTemp.provincia+"</p><p><b>Licença:</b> "+dadosTemp.licenca+"</p>";
+
+            if(!dadosTemp.nome || !dadosTemp.nif) return alert("Nome e NIF são obrigatórios");
+
+            document.getElementById("formCorpo").style.display = "none";
+            document.getElementById("revisaoCorpo").style.display = "block";
+            
+            document.getElementById("dadosResumo").innerHTML = \`
+                <p><b>Instituição:</b> \${dadosTemp.nome}</p>
+                <p><b>NIF:</b> \${dadosTemp.nif}</p>
+                <p><b>Tipo:</b> \${dadosTemp.tipo}</p>
+                <hr style="margin:10px 0; border:0; border-top:1px solid #ddd;">
+                <p><b>Localização:</b> \${dadosTemp.municipio}, \${dadosTemp.provincia}</p>
+                <p><b>Endereço:</b> \${dadosTemp.endereco}</p>
+                <p><b>Contacto:</b> \${dadosTemp.telefone} | \${dadosTemp.email}</p>
+                <p><b>Licença SNS:</b> \${dadosTemp.licenca} (Expira: \${dadosTemp.expiracao})</p>
+            \`;
         }
 
+        // AMENDEMENT 2 : BOUTON SALVAR OFICIALMENTE FONCTIONNEL
         async function confirmarOficialmente() {
             try {
                 const r = await fetch("/api/labs", {
@@ -456,8 +468,19 @@ app.get('/admin-dashboard', (req, res) => {
                     headers: { "Content-Type": "application/json", "Authorization": "Bearer "+token },
                     body: JSON.stringify(dadosTemp)
                 });
-                if(r.ok) { closeModal(); loadLabs(); loadStats(); alert("Registado!"); }
-            } catch(e) { alert("Erro ao salvar"); }
+                
+                if(r.ok) {
+                    alert("Unidade registada com sucesso!");
+                    closeModal();
+                    loadLabs();
+                    loadStats();
+                } else {
+                    const errorData = await r.json();
+                    alert("Erro ao salvar: " + (errorData.message || "Verifique o servidor"));
+                }
+            } catch(e) { 
+                alert("Erro de conexão com o servidor Render."); 
+            }
         }
 
         async function acaoPDF(id, acao) {
@@ -475,7 +498,7 @@ app.get('/admin-dashboard', (req, res) => {
                 if(acao==='view') window.open(url);
                 else if(acao==='print') { const w = window.open(url); w.onload = () => w.print(); }
                 else { const a = document.createElement("a"); a.href=url; a.download="Registo.pdf"; a.click(); }
-            } catch(e) { alert("Erro PDF"); }
+            } catch(e) { alert("Erro ao processar PDF"); }
         }
 
         function openModal() { document.getElementById("modalLab").style.display="flex"; voltarEdicao(); }
