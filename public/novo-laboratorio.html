@@ -71,10 +71,6 @@
         .section-title:first-of-type {
             margin-top: 0;
         }
-        .section-title i {
-            font-size: 1.6rem;
-            opacity: 0.8;
-        }
         .grid-2 {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -195,16 +191,47 @@
             font-size: 0.7rem;
             margin-left: 5px;
         }
-        .spinner {
-            border: 5px solid #e6f0ea;
-            border-top: 5px solid #006633;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 0.8s linear infinite;
+
+        /* ------- Style de la popup de succès (identique aux certificats) ------- */
+        .resultado-popup {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 600px;
             margin: 2rem auto;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .resultado-popup .sucesso {
+            color: #006633;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .resultado-popup .numero {
+            background: #ffcc00;
+            padding: 0.5rem 1rem;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            margin: 1rem 0;
+            word-break: break-all;
+        }
+        .resultado-popup .info {
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+        }
+        .link-voltar {
+            display: inline-block;
+            margin-top: 1.5rem;
+            color: #006633;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .link-voltar:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -218,10 +245,10 @@
     </div>
 
     <div class="form-card">
-        <!-- Mensagem de autenticação -->
+        <!-- Message d'authentification -->
         <div id="authMessage" class="info-message">🔐 A validar credenciais...</div>
 
-        <!-- Formulário de entrada (exibido inicialmente) -->
+        <!-- Formulaire de saisie (visible après auth) -->
         <form id="labForm" style="display: none;">
             <div class="section-title">
                 <span>🏛️</span> Dados da unidade
@@ -293,17 +320,17 @@
                 </div>
             </div>
 
-            <!-- Botão para avançar para revisão -->
+            <!-- Bouton pour passer à la révision -->
             <button type="button" class="btn-primary" id="btnRevisar">🔍 Revisar dados</button>
         </form>
 
-        <!-- Área de revisão (oculta inicialmente) -->
+        <!-- Zone de révision (cachée par défaut) -->
         <div id="revisaoArea" class="hidden">
             <div class="section-title">
                 <span>✅</span> Confirme os dados
             </div>
             <div class="revisao-card" id="dadosRevisao">
-                <!-- preenchido via js -->
+                <!-- rempli par JS -->
             </div>
             <div class="button-group">
                 <button class="btn-primary" id="btnConfirmar">📌 Confirmar registo</button>
@@ -311,7 +338,7 @@
             </div>
         </div>
 
-        <!-- Área de resultado / sucesso -->
+        <!-- Zone de résultat / succès (style identique aux certificats) -->
         <div id="resultadoArea" class="hidden"></div>
     </div>
 </div>
@@ -328,12 +355,11 @@
         const btnConfirmar = document.getElementById('btnConfirmar');
         const btnVoltar = document.getElementById('btnVoltar');
 
-        // Verificar autenticação
+        // Vérification de l'authentification
         if (!token) {
             authMsg.innerHTML = '❌ Sessão expirada. <a href="/ministerio" style="color:#006633;font-weight:bold;">Fazer login</a>';
             labForm.style.display = 'none';
         } else {
-            // Opcional: validar token com uma chamada simples (ex: /api/stats)
             fetch('/api/stats', { headers: { 'Authorization': 'Bearer ' + token } })
                 .then(res => {
                     if (!res.ok) throw new Error('Token inválido');
@@ -349,7 +375,7 @@
                 });
         }
 
-        // Botão "Revisar dados": valida campos obrigatórios e mostra pré-visualização
+        // Passage en mode révision
         btnRevisar.addEventListener('click', function() {
             const nome = document.getElementById('nome').value.trim();
             const nif = document.getElementById('nif').value.trim();
@@ -360,7 +386,6 @@
                 return;
             }
 
-            // Recolher todos os valores
             const dados = {
                 nome,
                 nif,
@@ -374,7 +399,6 @@
                 responsavelTecnico: document.getElementById('responsavelTecnico').value.trim() || 'Não informado'
             };
 
-            // Preencher card de revisão
             dadosRevisao.innerHTML = `
                 <p><strong>Nome:</strong> ${dados.nome}</p>
                 <p><strong>NIF:</strong> ${dados.nif}</p>
@@ -388,21 +412,18 @@
                 <p><strong>Resp. Técnico:</strong> ${dados.responsavelTecnico}</p>
             `;
 
-            // Guardar dados temporariamente para uso na confirmação
             window.dadosTemp = dados;
-
-            // Alternar visibilidade
             labForm.style.display = 'none';
             revisaoArea.classList.remove('hidden');
         });
 
-        // Botão "Voltar" da revisão
+        // Retour à l'édition
         btnVoltar.addEventListener('click', function() {
             revisaoArea.classList.add('hidden');
             labForm.style.display = 'block';
         });
 
-        // Botão "Confirmar registo"
+        // Confirmation finale
         btnConfirmar.addEventListener('click', async function() {
             if (!window.dadosTemp) return;
 
@@ -438,7 +459,24 @@
                     throw new Error(result.error || 'Erro ao registar laboratório');
                 }
 
-                // Sucesso: gerar PDF com os dados + apiKey
+                // Succès : afficher la popup avec la clé API
+                resultadoArea.innerHTML = `
+                    <div class="resultado-popup">
+                        <div class="sucesso">✔ Laboratório registado com sucesso!</div>
+                        <div class="numero">${result.apiKey}</div>
+                        <div class="info">
+                            <p><strong>Nome:</strong> ${dados.nome}</p>
+                            <p><strong>NIF:</strong> ${dados.nif}</p>
+                        </div>
+                        <button class="btn-primary" style="margin-top:1rem;" onclick="window.location.href='/admin-dashboard'">📋 Ir para listagem</button>
+                        <a href="/admin-dashboard" class="link-voltar">← Voltar ao dashboard</a>
+                    </div>
+                `;
+                resultadoArea.classList.remove('hidden');
+                revisaoArea.classList.add('hidden');
+                labForm.style.display = 'none';
+
+                // Génération automatique du PDF (identique au comportement précédent)
                 const pdfData = {
                     nome: dados.nome,
                     nif: dados.nif,
@@ -453,24 +491,7 @@
                     apiKey: result.apiKey,
                     ativo: true
                 };
-
-                // Chamar geração PDF (abre automaticamente)
-                await gerarPDF(pdfData);
-
-                // Mostrar mensagem de sucesso com a chave
-                resultadoArea.innerHTML = `
-                    <div class="revisao-card" style="text-align:center;">
-                        <div style="font-size:2rem; color:#006633;">✅</div>
-                        <h3 style="color:#006633; margin:10px 0;">Laboratório registado com sucesso!</h3>
-                        <p><strong>API Key gerada:</strong></p>
-                        <p style="background:#f0f0f0; padding:10px; border-radius:8px; font-family:monospace; word-break:break-all;">${result.apiKey}</p>
-                        <p style="margin-top:20px;">O PDF foi aberto automaticamente.</p>
-                        <button class="btn-primary" style="margin-top:20px;" onclick="window.location.href='/admin-dashboard'">📋 Ir para dashboard</button>
-                    </div>
-                `;
-                resultadoArea.classList.remove('hidden');
-                revisaoArea.classList.add('hidden');
-                labForm.style.display = 'none'; // esconder formulário
+                gerarPDF(pdfData).catch(e => console.error('Erro PDF secondaire', e));
 
             } catch (error) {
                 alert('Erro: ' + error.message);
@@ -479,7 +500,7 @@
             }
         });
 
-        // Função para gerar PDF (mesma lógica do dashboard)
+        // Fonction de génération PDF (identique au dashboard)
         async function gerarPDF(dados) {
             try {
                 const response = await fetch('/api/labs/pdf', {
@@ -490,19 +511,16 @@
                     },
                     body: JSON.stringify(dados)
                 });
-                if (!response.ok) throw new Error('Erro ao gerar PDF');
+                if (!response.ok) throw new Error('Erreur PDF');
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 window.open(url, '_blank');
                 setTimeout(() => window.URL.revokeObjectURL(url), 1000);
             } catch (e) {
-                console.error('Erro PDF', e);
-                alert('Erro ao gerar PDF do laboratório, mas o registo foi concluído.');
+                console.error('Erreur PDF', e);
+                // On ne bloque pas l'utilisateur, le laboratoire est déjà créé
             }
         }
-
-        // Opcional: voltar ao dashboard se clicar em "Cancelar" não existe, mas pode-se adicionar um botão
-        // (já temos o botão no resultado)
     })();
 </script>
 </body>
