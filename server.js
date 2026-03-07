@@ -803,7 +803,8 @@ app.get('/lab-dashboard', (req, res) => {
 });
 
 // ==============================================
-// ROTAS DA API
+// ==============================================
+// ROTAS DA API (ACTUALIZADAS)
 // ==============================================
 
 // Rota para obter dados do laboratório atual
@@ -825,10 +826,14 @@ app.post('/api/labs', authMiddleware, async (req, res) => {
     }
 });
 
-// Listar todos os laboratórios (apenas admin)
+// ============================================================
+// MODIFICATION ICI : Listar todos os laboratórios (apenas admin)
+// On retire { apiKey: 0 } pour permettre la génération du PDF complet
+// ============================================================
 app.get('/api/labs', authMiddleware, async (req, res) => {
     try {
-        const labs = await Lab.find({}, { apiKey: 0 });
+        // Modification : On récupère TOUS les champs, y compris l'apiKey
+        const labs = await Lab.find({}).sort({ createdAt: -1 });
         res.json(labs);
     } catch (error) {
         res.status(500).json({ error: 'Erro ao listar laboratórios' });
@@ -909,7 +914,6 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
             emitidoPor: req.lab._id
         });
         
-        // Os middlewares pre-save calcularão IMC e idade automaticamente
         await certificado.save();
         
         req.lab.totalEmissoes++;
@@ -927,6 +931,7 @@ app.post('/api/certificados/emitir/:tipo', labMiddleware, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 // =============================================
 // ROUTE POUR GÉNÉRER LES PDF
