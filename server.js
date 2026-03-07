@@ -264,7 +264,8 @@ app.post('/api/login', async (req, res) => {
 
 // ============================================
 // ============================================
-// DASHBOARD DO MINISTÉRIO (CORRIGIDO PARA MOBILE)
+// ============================================
+// DASHBOARD DO MINISTÉRIO (AJUSTADO E CENTRALIZADO)
 // ============================================
 app.get('/admin-dashboard', (req, res) => {
   res.send(`
@@ -272,75 +273,83 @@ app.get('/admin-dashboard', (req, res) => {
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SNS - Ministério da Saúde</title>
     <style>
         :root {--primary: #006633; --bg: #f4f7f6; --text: #333; }
         * { margin:0; padding:0; box-sizing:border-box; font-family: "Segoe UI", sans-serif; }
+        body { display: flex; background: var(--bg); min-height: 100vh; color: var(--text); }
         
-        body { display: flex; background: var(--bg); min-height: 100vh; color: var(--text); overflow-x: hidden; }
-
-        /* Sidebar responsive */
-        .sidebar { width: 260px; background: var(--primary); color: white; position: fixed; height: 100vh; padding: 20px; z-index: 1000; }
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--primary); color: white; position: fixed; height: 100vh; padding: 20px; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 100; }
+        .sidebar h2 { font-size: 18px; text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; letter-spacing: 1px; }
+        .sidebar button { background: none; border: none; color: rgba(255,255,255,0.8); padding: 15px; text-align: left; width: 100%; cursor: pointer; border-radius: 8px; font-size: 15px; transition: 0.3s; margin-bottom: 5px; }
+        .sidebar button:hover { background: rgba(255,255,255,0.1); color: white; }
+        .sidebar button.active { background: rgba(255,255,255,0.2); color: white; font-weight: bold; }
+        .logout-btn { margin-top: auto; background: #c0392b !important; color: white !important; text-align: center !important; }
         
-        /* Ajuste da Main para centralizar */
+        /* Main - Ajustado para centrar conteúdo */
         .main { 
             margin-left: 260px; 
-            padding: 20px; 
+            padding: 40px 20px; 
             width: calc(100% - 260px); 
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Centraliza o conteúdo */
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
         }
-
-        .section { width: 100%; max-width: 1000px; }
-
-        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; width: 100%; }
-
-        /* Estilo dos Cards de Estatísticas */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; width: 100%; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; border-top: 4px solid var(--primary); }
-
-        /* TABELA RESPONSIVA - O SEGREDO DO CENTRAMENTO */
-        .card-table { 
-            background: white; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-            width: 100%; 
-            overflow-x: auto; /* Permite deslizar a tabela no telemóvel */
-            -webkit-overflow-scrolling: touch;
-        }
-
-        table { width: 100%; border-collapse: collapse; min-width: 600px; /* Garante que a tabela não esmague os dados */ }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
-
-        /* Botões de Ação Cinzas (como na sua foto) */
-        .btn-acao { background: #f0f0f0; border: none; padding: 8px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-right: 2px; }
-
-        .btn-add { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-
-        /* MEDIA QUERY PARA TELEMÓVEL (FOTO 61740.jpg) */
+        
+        .section { width: 100%; max-width: 1000px; } /* Limita a largura para não esticar demais */
+        
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; width: 100%; }
+        
+        /* Stats Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; width: 100%; }
+        .stat-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-top: 4px solid var(--primary); }
+        .stat-card h3 { font-size: 13px; color: #777; text-transform: uppercase; margin-bottom: 10px; }
+        .stat-card p { font-size: 32px; font-weight: bold; color: var(--primary); }
+        
+        /* Tabela Responsiva */
+        .card-table { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 20px; width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 500px; }
+        th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #555; font-size: 14px; }
+        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
+        tr:hover { background: #f9f9f9; }
+        
+        .btn-acao { background: #f0f0f0; border: none; padding: 8px; border-radius: 5px; cursor: pointer; transition: 0.2s; margin-right: 5px; font-size: 16px; }
+        .btn-acao:hover { background: #e0e0e0; transform: scale(1.1); }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        
+        /* Responsividade para telemóvel (Foto 61740) */
         @media (max-width: 768px) {
-            .sidebar { width: 60px; padding: 10px; }
+            .sidebar { width: 70px; padding: 10px; }
             .sidebar h2, .sidebar button span { display: none; }
-            .main { margin-left: 60px; width: calc(100% - 60px); padding: 15px; }
-            .stat-card p { font-size: 20px; }
+            .main { margin-left: 70px; width: calc(100% - 70px); padding: 20px 10px; }
+            .header-flex h1, .header-flex h2 { font-size: 18px; }
+            .btn-add { padding: 8px 12px; font-size: 12px; }
         }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px); }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+        .campo { margin-bottom: 15px; }
+        .campo label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; color: #555; }
+        .campo input, .campo select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media (max-width: 500px) { .grid-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <div class="sidebar">
         <h2>SNS</h2>
-        <button onclick="showTab('dash')" id="btn-dash" class="active">📊 <span>Dashboard</span></button>
-        <button onclick="showTab('labs')" id="btn-labs">🔬 <span>Laboratórios</span></button>
-        <button onclick="logout()" style="margin-top:auto; background:#c0392b; color:white; border-radius:8px; border:none; padding:10px; cursor:pointer;">🚪 <span>Sair</span></button>
+        <button id="btn-dash" onclick="showTab('dash')" class="active">📊 <span>Dashboard</span></button>
+        <button id="btn-labs" onclick="showTab('labs')">🔬 <span>Laboratórios</span></button>
+        <button class="logout-btn" onclick="logout()">🚪 <span>Sair</span></button>
     </div>
 
     <div class="main">
         <div id="sec-dash" class="section">
             <div class="header-flex"><h1>Painel Geral</h1></div>
             <div class="stats-grid">
-                <div class="stat-card"><h3>Labs</h3><p id="countLabs">0</p></div>
+                <div class="stat-card"><h3>Laboratórios</h3><p id="countLabs">0</p></div>
                 <div class="stat-card"><h3>Hospitais</h3><p>0</p></div>
                 <div class="stat-card"><h3>Empresas</h3><p>0</p></div>
             </div>
@@ -348,7 +357,7 @@ app.get('/admin-dashboard', (req, res) => {
 
         <div id="sec-labs" class="section" style="display:none;">
             <div class="header-flex">
-                <h2>Registados</h2>
+                <h2>Laboratórios</h2>
                 <button class="btn-add" onclick="openModal('modalLab')">➕ Novo</button>
             </div>
             <div class="card-table">
@@ -357,6 +366,7 @@ app.get('/admin-dashboard', (req, res) => {
                         <tr>
                             <th>Nome</th>
                             <th>Província</th>
+                            <th>Status</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -366,25 +376,31 @@ app.get('/admin-dashboard', (req, res) => {
         </div>
     </div>
 
-    <div id="modalLab" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:2000; padding:20px;">
-        <div style="background:white; padding:25px; border-radius:15px; width:100%; max-width:500px;">
-            <h2 style="color:var(--primary); margin-bottom:15px;">Novo Registo</h2>
-            <input type="text" id="labNome" placeholder="Nome do Laboratório" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
-            <input type="text" id="labNIF" placeholder="NIF" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
-            <select id="labProvincia" style="width:100%; padding:12px; margin-bottom:20px; border:1px solid #ddd; border-radius:8px;">
-                <option value="">Selecione Província</option>
-                <option value="Bengo">Bengo</option><option value="Benguela">Benguela</option><option value="Bié">Bié</option>
-                <option value="Cabinda">Cabinda</option><option value="Cuando Cubango">Cuando Cubango</option>
-                <option value="Cuanza Norte">Cuanza Norte</option><option value="Cuanza Sul">Cuanza Sul</option>
-                <option value="Cunene">Cunene</option><option value="Huambo">Huambo</option><option value="Huíla">Huíla</option>
-                <option value="Luanda">Luanda</option><option value="Lunda Norte">Lunda Norte</option>
-                <option value="Lunda Sul">Lunda Sul</option><option value="Malanje">Malanje</option>
-                <option value="Moxico">Moxico</option><option value="Namibe">Namibe</option>
-                <option value="Uíge">Uíge</option><option value="Zaire">Zaire</option>
-            </select>
-            <div style="display:flex; gap:10px;">
-                <button onclick="salvarLab()" style="flex:2; background:var(--primary); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">✅ Salvar</button>
-                <button onclick="document.getElementById('modalLab').style.display='none'" style="flex:1; background:#eee; border:none; padding:12px; border-radius:8px; cursor:pointer;">X</button>
+    <div id="modalLab" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom:20px; color:var(--primary)">Registar Laboratório</h2>
+            <div class="grid-2">
+                <div class="campo" style="grid-column: span 2;"><label>Nome *</label><input type="text" id="labNome"></div>
+                <div class="campo"><label>NIF *</label><input type="text" id="labNIF" maxlength="10"></div>
+                <div class="campo">
+                    <label>Província *</label>
+                    <select id="labProvincia">
+                        <option value="">Selecione</option>
+                        <option value="Bengo">Bengo</option><option value="Benguela">Benguela</option>
+                        <option value="Bié">Bié</option><option value="Cabinda">Cabinda</option>
+                        <option value="Cuando Cubango">Cuando Cubango</option><option value="Cuanza Norte">Cuanza Norte</option>
+                        <option value="Cuanza Sul">Cuanza Sul</option><option value="Cunene">Cunene</option>
+                        <option value="Huambo">Huambo</option><option value="Huíla">Huíla</option>
+                        <option value="Luanda">Luanda</option><option value="Lunda Norte">Lunda Norte</option>
+                        <option value="Lunda Sul">Lunda Sul</option><option value="Malanje">Malanje</option>
+                        <option value="Moxico">Moxico</option><option value="Namibe">Namibe</option>
+                        <option value="Uíge">Uíge</option><option value="Zaire">Zaire</option>
+                    </select>
+                </div>
+            </div>
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <button class="btn-add" style="flex:2" onclick="salvarLaboratorio()">✅ Salvar</button>
+                <button onclick="closeModal('modalLab')" style="flex:1; border:none; border-radius:8px; cursor:pointer;">X</button>
             </div>
         </div>
     </div>
@@ -398,61 +414,92 @@ app.get('/admin-dashboard', (req, res) => {
             document.querySelectorAll(".sidebar button").forEach(b => b.classList.remove("active"));
             document.getElementById("sec-" + tab).style.display = "block";
             document.getElementById("btn-" + tab).classList.add("active");
-            if (tab === "labs") loadLabs();
             if (tab === "dash") loadStats();
+            if (tab === "labs") loadLabs();
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = "flex"; }
+        function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+        async function loadStats() {
+            try {
+                const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
+                const labs = await r.json();
+                document.getElementById("countLabs").innerText = labs.length; // Usa o comprimento da lista para contar
+            } catch(e) { console.error(e); }
         }
 
         async function loadLabs() {
-            const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
-            const labs = await r.json();
-            document.getElementById("tableLabs").innerHTML = labs.map(l => \`
-                <tr>
-                    <td><strong>\${l.nome}</strong></td>
-                    <td>\${l.provincia}</td>
-                    <td>
-                        <button class="btn-acao" onclick="gerarPDF('\${l._id}', 'view')">👁️</button>
-                        <button class="btn-acao" onclick="gerarPDF('\${l._id}', 'print')">🖨️</button>
-                        <button class="btn-acao" onclick="gerarPDF('\${l._id}', 'download')">📥</button>
-                    </td>
-                </tr>
-            \`).join("");
+            try {
+                const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
+                const labs = await r.json();
+                const tbody = document.getElementById("tableLabs");
+                tbody.innerHTML = labs.map(l => \`
+                    <tr>
+                        <td><strong>\${l.nome}</strong></td>
+                        <td>\${l.provincia}</td>
+                        <td><span style="color:\${l.ativo ? 'green' : 'red'}">\${l.ativo ? 'Ativo' : 'Inativo'}</span></td>
+                        <td>
+                            <button class="btn-acao" onclick="acaoPDF('\${l._id}', 'view')" title="Ver">👁️</button>
+                            <button class="btn-acao" onclick="acaoPDF('\${l._id}', 'print')" title="Imprimir">🖨️</button>
+                            <button class="btn-acao" onclick="acaoPDF('\${l._id}', 'download')" title="Baixar">📥</button>
+                        </td>
+                    </tr>
+                \`).join("");
+            } catch(e) { console.error(e); }
         }
 
-        async function gerarPDF(id, acao) {
-            const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
-            const labs = await r.json();
-            const lab = labs.find(x => x._id === id);
-            const res = await fetch("/api/labs/pdf", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-                body: JSON.stringify(lab)
-            });
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            if(acao==='view') window.open(url);
-            else if(acao==='print') { const w = window.open(url); w.onload = () => w.print(); }
-            else { const a = document.createElement("a"); a.href=url; a.download="Lab.pdf"; a.click(); }
+        async function acaoPDF(id, acao) {
+            try {
+                const r = await fetch("/api/labs", { headers: { "Authorization": "Bearer " + token } });
+                const labs = await r.json();
+                const lab = labs.find(item => item._id === id);
+                const res = await fetch("/api/labs/pdf", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+                    body: JSON.stringify(lab)
+                });
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                if(acao === 'view') window.open(url, "_blank");
+                if(acao === 'download') {
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = \`Lab_\${lab.nome}.pdf\`;
+                    a.click();
+                }
+                if(acao === 'print') {
+                    const win = window.open(url, "_blank");
+                    win.onload = () => win.print();
+                }
+            } catch(e) { alert("Erro ao processar PDF"); }
         }
 
-        async function salvarLab() {
+        async function salvarLaboratorio() {
             const dados = {
                 nome: document.getElementById("labNome").value,
                 nif: document.getElementById("labNIF").value,
                 provincia: document.getElementById("labProvincia").value,
                 ativo: true
             };
-            const r = await fetch("/api/labs", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-                body: JSON.stringify(dados)
-            });
-            const res = await r.json();
-            if(res.success) { alert("Sucesso!"); location.reload(); }
+            if(!dados.nome || !dados.nif) return alert("Preencha os campos!");
+            try {
+                const r = await fetch("/api/labs", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+                    body: JSON.stringify(dados)
+                });
+                const res = await r.json();
+                if(res.success) {
+                    closeModal("modalLab");
+                    loadLabs();
+                    loadStats();
+                }
+            } catch(e) { alert("Erro ao salvar"); }
         }
 
-        function openModal(id) { document.getElementById(id).style.display = "flex"; }
         function logout() { localStorage.clear(); window.location.href = "/"; }
-        window.onload = () => { if(token) loadStats(); };
+        window.onload = loadStats;
     </script>
 </body>
 </html>
