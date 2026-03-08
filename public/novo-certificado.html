@@ -3,207 +3,502 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNS - Emitir Certificado</title>
+    <title>Novo Certificado · SNS Angola</title>
     <style>
-        :root {--primary: #006633; --bg: #f4f7f6; --text: #333;}
-        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); min-height: 100vh; display: flex; justify-content: center; padding: 20px; }
-        .container { max-width: 800px; width: 100%; margin: 20px auto; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px; }
-        h1 { color: var(--primary); margin-bottom: 25px; font-size: 24px; border-left: 6px solid var(--primary); padding-left: 15px; }
-        .campo { margin-bottom: 20px; }
-        .campo label { display: block; font-weight: bold; margin-bottom: 6px; color: #555; font-size: 13px; text-transform: uppercase; }
-        .campo input, .campo select, .campo textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
-        .campo textarea { min-height: 80px; resize: vertical; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .btn-primary { background: var(--primary); color: white; border: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,102,51,0.3); }
-        .btn-secondary { background: #f0f0f0; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; }
-        .info-lab { background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid var(--primary); }
-        .info-lab p { margin: 5px 0; font-size: 14px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        body {
+            background: #f0f4f0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 950px;
+            width: 100%;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 40, 20, 0.15);
+            overflow: hidden;
+            border: 1px solid rgba(0, 102, 51, 0.2);
+        }
+        .header {
+            background: #006633;
+            color: white;
+            padding: 2rem 2.5rem;
+        }
+        .header h1 {
+            font-weight: 600;
+            font-size: 2rem;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header h1 span {
+            background: #ffcc00;
+            color: #006633;
+            font-size: 1rem;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-weight: 500;
+        }
+        .header p {
+            opacity: 0.85;
+            margin-top: 6px;
+            font-size: 1rem;
+        }
+        .form-card {
+            padding: 2.5rem;
+        }
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #006633;
+            border-bottom: 2px solid #cce8d5;
+            padding-bottom: 0.5rem;
+            margin: 2rem 0 1.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title:first-of-type {
+            margin-top: 0;
+        }
+        .section-title i {
+            font-size: 1.6rem;
+            opacity: 0.8;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.2rem;
+        }
+        .campo {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 0.8rem;
+        }
+        .campo.full-width {
+            grid-column: span 2;
+        }
+        label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #2d4a3b;
+        }
+        input, select, textarea {
+            padding: 12px 14px;
+            border: 1.5px solid #d0ded5;
+            border-radius: 14px;
+            font-size: 0.95rem;
+            background: white;
+            transition: 0.2s;
+            outline: none;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #006633;
+            box-shadow: 0 0 0 3px rgba(0, 102, 51, 0.2);
+        }
+        .tipo-selector {
+            background: #f4faf6;
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 6px solid #006633;
+        }
+        .tipo-selector select {
+            background: white;
+            font-weight: 500;
+            font-size: 1.1rem;
+            padding: 14px;
+        }
+        .btn-emitir {
+            background: #006633;
+            color: white;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 1.2rem;
+            border-radius: 50px;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.15s;
+            margin-top: 2.5rem;
+            box-shadow: 0 8px 16px rgba(0, 102, 51, 0.3);
+            letter-spacing: 0.5px;
+        }
+        .btn-emitir:hover {
+            background: #008040;
+            transform: scale(1.02);
+        }
+        .btn-emitir:disabled {
+            background: #99bbaa;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .campos-dinamicos {
+            background: #fafdfb;
+            border-radius: 24px;
+            padding: 1.8rem 1.5rem;
+            border: 1px dashed #99bbaa;
+            margin-top: 1rem;
+        }
+        .info-message {
+            color: #2c5e3f;
+            background: #e0f0e5;
+            padding: 1rem;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            border-left: 4px solid #ffaa00;
+            margin-bottom: 1.5rem;
+        }
+        .resultado-popup {
+            background: white;
+            border-radius: 24px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 450px;
+            margin: 2rem auto;
+        }
+        .resultado-popup .sucesso {
+            color: #006633;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .resultado-popup .numero {
+            background: #ffcc00;
+            padding: 0.5rem 1rem;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 1.4rem;
+            margin: 1rem 0;
+        }
+        .link-voltar {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #006633;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .erro {
+            color: #b33;
+            background: #ffe5e5;
+            padding: 1rem;
+            border-radius: 16px;
+        }
+        .spinner {
+            border: 5px solid #e6f0ea;
+            border-top: 5px solid #006633;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .hidden { display: none; }
-        .loading { text-align: center; padding: 30px; color: #666; }
-        .error { color: #c0392b; background: #fdeaea; padding: 10px; border-radius: 6px; margin-bottom: 20px; }
-        .success { color: var(--primary); background: #e8f5e9; padding: 10px; border-radius: 6px; margin-bottom: 20px; }
+        .badge-obrigatorio {
+            color: #cc3300;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>📄 Emitir Novo Certificado</h1>
-            <div id="infoLab" class="info-lab">Carregando informações do laboratório...</div>
-            <div id="errorMsg" class="error hidden"></div>
-            <div id="successMsg" class="success hidden"></div>
-
-            <form id="certForm">
-                <!-- Tipo de certificado -->
-                <div class="campo">
-                    <label>Tipo de Certificado *</label>
-                    <select id="tipo" required>
-                        <option value="">Selecione</option>
-                        <option value="1">GENÓTIPO</option>
-                        <option value="2">BOA SAÚDE</option>
-                        <option value="3">INCAPACIDADE</option>
-                        <option value="4">APTIDÃO</option>
-                        <option value="5">SAÚDE MATERNA</option>
-                        <option value="6">PRÉ-NATAL</option>
-                        <option value="7">EPIDEMIOLÓGICO</option>
-                        <option value="8">CSD (Deslocação)</option>
-                    </select>
-                </div>
-
-                <h3 style="color: var(--primary); margin: 20px 0 10px;">👤 Dados do Paciente</h3>
-                <div class="grid-2">
-                    <div class="campo"><label>Nome Completo *</label><input type="text" id="pacienteNome" required></div>
-                    <div class="campo"><label>BI / Passaporte</label><input type="text" id="pacienteBi"></div>
-                    <div class="campo"><label>Data Nascimento</label><input type="date" id="pacienteDataNasc"></div>
-                    <div class="campo">
-                        <label>Género</label>
-                        <select id="pacienteGenero">
-                            <option value="">Selecione</option>
-                            <option value="M">Masculino</option>
-                            <option value="F">Feminino</option>
-                        </select>
-                    </div>
-                </div>
-
-                <h3 style="color: var(--primary); margin: 20px 0 10px;">🔬 Responsável pela Emissão</h3>
-                <div class="grid-2">
-                    <div class="campo"><label>Nome do Laborantin</label><input type="text" id="laborantinNome"></div>
-                    <div class="campo"><label>Registro Profissional</label><input type="text" id="laborantinRegistro"></div>
-                </div>
-
-                <h3 style="color: var(--primary); margin: 20px 0 10px;">📋 Dados Médicos</h3>
-                <div class="grid-2">
-                    <div class="campo"><label>Genótipo</label><input type="text" id="dadosGenotipo" placeholder="ex: AA, AS, SS"></div>
-                    <div class="campo"><label>Grupo Sanguíneo</label><input type="text" id="dadosGrupoSanguineo" placeholder="A+, O-..."></div>
-                    <div class="campo"><label>Avaliação / Observações</label><textarea id="dadosAvaliacao"></textarea></div>
-                    <div class="campo"><label>Período (início)</label><input type="date" id="dadosPeriodoInicio"></div>
-                    <div class="campo"><label>Período (fim)</label><input type="date" id="dadosPeriodoFim"></div>
-                    <div class="campo"><label>Dias de Incapacidade</label><input type="number" id="dadosDiasIncapacidade" min="0"></div>
-                    <div class="campo"><label>Tipo de Aptidão</label><input type="text" id="dadosTipoAptidao" placeholder="ex: APTO, NÃO APTO"></div>
-                    <div class="campo"><label>Restrições (separadas por vírgula)</label><input type="text" id="dadosRestricoes" placeholder="ex: não dirigir, evitar esforços"></div>
-                </div>
-
-                <div style="display: flex; gap: 15px; margin-top: 30px;">
-                    <button type="submit" class="btn-primary">✅ Emitir Certificado</button>
-                    <button type="button" class="btn-secondary" onclick="history.back()">↩️ Cancelar</button>
-                </div>
-            </form>
-        </div>
+<div class="container" id="app">
+    <div class="header">
+        <h1>
+            📄 Novo Certificado
+            <span>LAB</span>
+        </h1>
+        <p>Pré‑preenchimento automático de IMC, idade e classificação</p>
     </div>
 
-    <script>
+    <div class="form-card">
+        <!-- mensagem de carregamento / erro de chave -->
+        <div id="loadingMessage" class="info-message">🔐 A validar credenciais...</div>
+        
+        <form id="certForm" style="display: none;">
+            <!-- Tipo de certificado -->
+            <div class="tipo-selector">
+                <label for="tipo">TIPO DE CERTIFICADO <span class="badge-obrigatorio">obrigatório</span></label>
+                <select id="tipo" name="tipo" required>
+                    <option value="" disabled selected>— Selecione o tipo —</option>
+                    <option value="1">1 · GENÓTIPO</option>
+                    <option value="2">2 · BOA SAÚDE</option>
+                    <option value="3">3 · INCAPACIDADE</option>
+                    <option value="4">4 · APTIDÃO</option>
+                    <option value="5">5 · SAÚDE MATERNA</option>
+                    <option value="6">6 · PRÉ-NATAL</option>
+                    <option value="7">7 · EPIDEMIOLÓGICO</option>
+                    <option value="8">8 · CSD (deslocação)</option>
+                </select>
+            </div>
+
+            <!-- PACIENTE -->
+            <div class="section-title">
+                <span>🧑‍⚕️</span> Dados do paciente
+            </div>
+            <div class="grid-2">
+                <div class="campo full-width">
+                    <label>Nome completo</label>
+                    <input type="text" id="nomeCompleto" required placeholder="Ex: Joana Maria Sacramento">
+                </div>
+                <div class="campo">
+                    <label>BI / Documento</label>
+                    <input type="text" id="bi" placeholder="006789234BA049">
+                </div>
+                <div class="campo">
+                    <label>Data nascimento</label>
+                    <input type="date" id="dataNascimento" required>
+                </div>
+                <div class="campo">
+                    <label>Género</label>
+                    <select id="genero">
+                        <option value="M">Masculino</option>
+                        <option value="F" selected>Feminino</option>
+                    </select>
+                </div>
+                <div class="campo full-width">
+                    <label>Telefone (opcional)</label>
+                    <input type="tel" id="telefone" placeholder="+244 900 000 000">
+                </div>
+            </div>
+
+            <!-- LABORANTIN -->
+            <div class="section-title">
+                <span>🔬</span> Responsável pela emissão
+            </div>
+            <div class="grid-2">
+                <div class="campo full-width">
+                    <label>Nome do laborantin / técnico</label>
+                    <input type="text" id="laborantinNome" required placeholder="Dr. António Costa">
+                </div>
+                <div class="campo">
+                    <label>Registro profissional</label>
+                    <input type="text" id="laborantinRegistro" placeholder="ORD 1234/L">
+                </div>
+            </div>
+
+            <!-- CAMPOS DINÂMICOS POR TIPO -->
+            <div class="section-title">
+                <span>📋</span> Parâmetros específicos
+            </div>
+            <div class="campos-dinamicos" id="camposEspecificosContainer">
+                <p class="info-message" style="margin-bottom:0;">👆 Selecione um tipo de certificado para ver os campos.</p>
+            </div>
+
+            <!-- BOTÃO -->
+            <button type="submit" class="btn-emitir" id="btnEmitir">📥 Emitir certificado</button>
+        </form>
+
+        <!-- Área de resposta / sucesso -->
+        <div id="resultadoArea" class="hidden"></div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---- CONFIGURAÇÃO ----
+        const API_BASE = '';  // relativo ao mesmo domínio
         const labKey = localStorage.getItem('labKey');
-        if (!labKey) {
-            window.location.href = '/lab-login';
-        }
-
-        const infoLabDiv = document.getElementById('infoLab');
-        const errorDiv = document.getElementById('errorMsg');
-        const successDiv = document.getElementById('successMsg');
+        const loadingEl = document.getElementById('loadingMessage');
         const form = document.getElementById('certForm');
+        const resultadoArea = document.getElementById('resultadoArea');
+        const tipoSelect = document.getElementById('tipo');
+        const containerCampos = document.getElementById('camposEspecificosContainer');
+        const btnEmitir = document.getElementById('btnEmitir');
 
-        // Carregar dados do laboratório
-        async function loadLabInfo() {
-            try {
-                const res = await fetch('/api/labs/me', { headers: { 'x-api-key': labKey } });
-                if (!res.ok) throw new Error('Não foi possível carregar os dados do laboratório');
-                const lab = await res.json();
-                infoLabDiv.innerHTML = `
-                    <p><strong>${lab.nome}</strong> (${lab.provincia})</p>
-                    <p>NIF: ${lab.nif} | Telefone: ${lab.telefone || '---'}</p>
-                    <p>Total de emissões: ${lab.totalEmissoes || 0}</p>
-                `;
-            } catch (e) {
-                infoLabDiv.innerHTML = '<p class="error">Erro ao carregar laboratório. Verifique sua conexão.</p>';
-            }
+        // ---- VERIFICAÇÃO DE CHAVE ----
+        if (!labKey) {
+            loadingEl.innerHTML = '❌ Chave de laboratório não encontrada. <a href="/lab-login" style="color:#006633;font-weight:bold;">Fazer login</a>';
+            form.style.display = 'none';
+        } else {
+            // valida rapidamente a chave (opcional)
+            fetch('/api/labs/me', { headers: { 'x-api-key': labKey } })
+                .then(res => {
+                    if (!res.ok) throw new Error('Chave inválida ou inativa');
+                    return res.json();
+                })
+                .then(lab => {
+                    loadingEl.innerHTML = `✅ Autenticado como <strong>${lab.nome}</strong>`;
+                    form.style.display = 'block';
+                })
+                .catch(err => {
+                    loadingEl.innerHTML = `❌ Erro de autenticação: ${err.message}. <a href="/lab-login" style="color:#006633;">Tentar novamente</a>`;
+                    form.style.display = 'none';
+                });
         }
 
-        // Submissão do formulário
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideMessages();
+        // ---- BASE DE CAMPOS POR TIPO (conforme código) ----
+        const examesPorTipo = {
+            1: ['grupoSanguíneo', 'fatorRh', 'genotipo', 'hemoglobina', 'hematocrito', 'contagem_reticulocitos', 'eletroforese'],
+            2: ['peso', 'altura', 'pressaoArterial', 'frequenciaCardiaca', 'frequenciaRespiratoria', 'temperatura', 'saturacaoOxigenio', 'glicemia', 'colesterolTotal', 'triglicerideos'],
+            3: ['tipolncapacidade', 'causa', 'grau', 'datalnicio', 'partesAfetadas', 'limitacoes', 'necessitaAcompanhante'],
+            4: ['tipoAptidao', 'modalidade', 'resultado', 'restricoes', 'validade'],
+            5: ['gestacoes', 'partos', 'abortos', 'nascidosVivos', 'dum', 'dpp', 'idadeGestacional', 'consultasCPN', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'glicemia', 'creatinina', 'ureia', 'tgo', 'grupoSanguíneo', 'fatorRh', 'exsudadoVaginal', 'pesoAtual', 'alturaUterina', 'batimentosCardiacosFeto', 'movimentosFetais', 'edema', 'proteinuria'],
+            6: ['grupoSanguineo', 'fatorRh', 'hemograma', 'gotaEspessa', 'hiv', 'vdrl', 'hbs', 'vidal', 'glicemia', 'creatinina', 'urea', 'tgo', 'testeGravidez', 'exsudadoVaginal', 'vs', 'falsiformacao'],
+            7: ['doenca', 'outraDoenca', 'datalnicioSintomas', 'dataDiagnostico', 'metodoDiagnostico', 'tipoExame', 'resultado', 'tratamento', 'internamento', 'datalnternamento', 'contatos'],
+            8: ['destino', 'motivoViagem', 'dataPartida', 'dataRetorno', 'vacinaFebreAmarela', 'dataVacinaFebreAmarela', 'loteVacinaFebreAmarela', 'vacinaCovid19', 'dosesCovid', 'testeCovid', 'tipoTesteCovid', 'dataTesteCovid', 'resultadoTesteCovid', 'outrasVacinas', 'medicamentos', 'condicoesEspeciais', 'recomendações']
+        };
 
-            const tipo = document.getElementById('tipo').value;
-            if (!tipo) {
-                showError('Selecione o tipo de certificado.');
+        // para exibição amigável
+        function formatarNomeCampo(chave) {
+            return chave
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, str => str.toUpperCase())
+                .replace('datalnicio', 'Data início')
+                .replace('datalnternamento', 'Data internamento')
+                .replace('tipolncapacidade', 'Tipo incapacidade')
+                .replace('partesAfetadas', 'Partes afetadas')
+                .replace('necessitaAcompanhante', 'Acompanhante necessário?');
+        }
+
+        // Atualiza campos quando troca o tipo
+        tipoSelect.addEventListener('change', function() {
+            const tipo = parseInt(this.value);
+            if (!tipo || !examesPorTipo[tipo]) {
+                containerCampos.innerHTML = '<p class="info-message" style="margin-bottom:0;">⬆ Selecione um tipo válido</p>';
                 return;
             }
 
-            // Montar objeto paciente
-            const paciente = {
-                nomeCompleto: document.getElementById('pacienteNome').value,
-                bi: document.getElementById('pacienteBi').value || undefined,
-                dataNascimento: document.getElementById('pacienteDataNasc').value || undefined,
-                genero: document.getElementById('pacienteGenero').value || undefined
-            };
+            const lista = examesPorTipo[tipo];
+            let html = '<div class="grid-2">'; // usaremos grid de 2 colunas
 
-            // Montar objeto laborantin
-            const laborantin = {
-                nome: document.getElementById('laborantinNome').value || 'Não informado',
-                registro: document.getElementById('laborantinRegistro').value || undefined
-            };
+            lista.forEach(campo => {
+                const nomeFormatado = formatarNomeCampo(campo);
+                // Dica: se for peso/altura, podemos sugerir passo
+                let tipoInput = 'text';
+                if (campo.includes('data') || campo.includes('datalnicio') || campo.includes('datalnternamento') || campo.includes('dum') || campo.includes('dpp')) tipoInput = 'date';
+                if (campo === 'peso' || campo === 'altura' || campo === 'gestacoes' || campo === 'partos' || campo === 'abortos' || campo === 'nascidosVivos' || campo === 'dosesCovid') tipoInput = 'number';
+                if (campo === 'validade' || campo === 'idadeGestacional') tipoInput = 'number';
+                if (campo === 'proteinuria' || campo === 'edema') tipoInput = 'text'; // pode ser "+" etc
 
-            // Montar objeto dados (apenas campos preenchidos)
-            const dados = {};
-            const camposDados = {
-                genotipo: document.getElementById('dadosGenotipo').value,
-                grupoSanguineo: document.getElementById('dadosGrupoSanguineo').value,
-                avaliacao: document.getElementById('dadosAvaliacao').value,
-                periodoInicio: document.getElementById('dadosPeriodoInicio').value,
-                periodoFim: document.getElementById('dadosPeriodoFim').value,
-                diasIncapacidade: document.getElementById('dadosDiasIncapacidade').value ? parseInt(document.getElementById('dadosDiasIncapacidade').value) : undefined,
-                tipoAptidao: document.getElementById('dadosTipoAptidao').value,
-                restricoes: document.getElementById('dadosRestricoes').value ? document.getElementById('dadosRestricoes').value.split(',').map(s => s.trim()) : []
-            };
-            for (let [key, value] of Object.entries(camposDados)) {
-                if (value !== undefined && value !== '' && (Array.isArray(value) ? value.length > 0 : true)) {
-                    dados[key] = value;
-                }
+                html += `
+                    <div class="campo">
+                        <label>${nomeFormatado}</label>
+                        <input type="${tipoInput}" name="${campo}" id="campo_${campo}" placeholder="${nomeFormatado}" step="any">
+                    </div>
+                `;
+            });
+
+            // se ímpar, completa com div vazia? não necessário, grid ajusta.
+            html += '</div>';
+            containerCampos.innerHTML = html;
+        });
+
+        // ---- SUBMISSÃO DO FORMULÁRIO ----
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const tipo = tipoSelect.value;
+            if (!tipo) {
+                alert('Selecione o tipo de certificado');
+                return;
             }
 
-            const payload = { paciente, laborantin, dados };
+            // recolher dados do paciente
+            const paciente = {
+                nomeCompleto: document.getElementById('nomeCompleto').value.trim(),
+                bi: document.getElementById('bi').value.trim(),
+                dataNascimento: document.getElementById('dataNascimento').value,
+                genero: document.getElementById('genero').value,
+                telefone: document.getElementById('telefone').value.trim()
+            };
+            if (!paciente.nomeCompleto || !paciente.dataNascimento) {
+                alert('Nome completo e data de nascimento são obrigatórios');
+                return;
+            }
+
+            const laborantin = {
+                nome: document.getElementById('laborantinNome').value.trim(),
+                registro: document.getElementById('laborantinRegistro').value.trim()
+            };
+            if (!laborantin.nome) {
+                alert('Nome do responsável é obrigatório');
+                return;
+            }
+
+            // dados específicos
+            const dadosEspecificos = {};
+            const camposTipo = examesPorTipo[parseInt(tipo)] || [];
+            camposTipo.forEach(campo => {
+                const input = document.getElementById(`campo_${campo}`);
+                if (input) {
+                    const val = input.value.trim();
+                    if (val !== '') dadosEspecificos[campo] = val;
+                }
+            });
+
+            const payload = {
+                paciente,
+                laborantin,
+                dados: dadosEspecificos
+            };
+
+            // loading visual
+            btnEmitir.disabled = true;
+            btnEmitir.textContent = '⏳ Emitindo...';
+            resultadoArea.classList.add('hidden');
 
             try {
-                const res = await fetch(`/api/certificados/emitir/${tipo}`, {
+                const response = await fetch(`/api/certificados/emitir/${tipo}`, {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
                         'x-api-key': labKey
                     },
                     body: JSON.stringify(payload)
                 });
-                const data = await res.json();
-                if (res.ok) {
-                    showSuccess(`Certificado emitido com sucesso! Número: ${data.numero}`);
-                    form.reset();
-                } else {
-                    showError(data.error || 'Erro ao emitir certificado.');
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Erro ao emitir certificado');
                 }
-            } catch (err) {
-                showError('Erro de conexão com o servidor.');
+
+                // sucesso: mostrar resultado com numero e dados calculados
+                resultadoArea.innerHTML = `
+                    <div class="resultado-popup">
+                        <div class="sucesso">✔ Certificado emitido</div>
+                        <div class="numero">${data.numero}</div>
+                        <p><strong>IMC:</strong> ${data.imc || '—'} <br> <strong>Classificação:</strong> ${data.classificacaoIMC || '—'}</p>
+                        <p><strong>Idade calculada:</strong> ${data.idade || '?'} anos</p>
+                        <button class="btn-emitir" style="margin-top:1rem;" onclick="window.open('/lab-dashboard', '_self')">📋 Ir para listagem</button>
+                        <a href="/lab-dashboard" class="link-voltar">← Voltar ao dashboard</a>
+                    </div>
+                `;
+                resultadoArea.classList.remove('hidden');
+                form.reset();          // limpa formulário
+                containerCampos.innerHTML = '<p class="info-message" style="margin-bottom:0;">👆 Selecione um tipo de certificado para começar.</p>';
+                tipoSelect.value = '';
+            } catch (error) {
+                alert('Erro: ' + error.message);
+            } finally {
+                btnEmitir.disabled = false;
+                btnEmitir.textContent = '📥 Emitir certificado';
             }
         });
 
-        function showError(msg) {
-            errorDiv.innerText = msg;
-            errorDiv.classList.remove('hidden');
-            successDiv.classList.add('hidden');
-        }
-
-        function showSuccess(msg) {
-            successDiv.innerText = msg;
-            successDiv.classList.remove('hidden');
-            errorDiv.classList.add('hidden');
-        }
-
-        function hideMessages() {
-            errorDiv.classList.add('hidden');
-            successDiv.classList.add('hidden');
-        }
-
-        loadLabInfo();
-    </script>
+        // ---- pequeno helper: data atual para campos date (opcional)
+        const today = new Date().toISOString().split('T')[0];
+        // se quiser predefinir data nascimento, mas não.
+    })();
+</script>
 </body>
 </html>
